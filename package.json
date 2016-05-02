@@ -1,0 +1,7 @@
+{
+  "name": "Flox-Web",
+  "version": "0.0.1",
+  "dependencies": {
+    "leaflet-toolbar": "^0.1.2"
+  }
+}

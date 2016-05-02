@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<table>
+	<metadata>
+		<column name='name' label='NAME' datatype='string' editable='true'></column>
+		<column name='firstname' label='FIRSTNAME' datatype='string' editable='true'></column>
+		<column name='age' label='AGE' datatype='integer' editable='true'></column>
+		<column name='height' label='HEIGHT' datatype='double(m,2)' bar='false' editable='true'></column>
+		<column name='action' label='' datatype='html' editable='false'></column>
+	</metadata>
+
+	<data>
+
+		<!-- NB: It is recommended to name your columns. 
+			 This way you can give them in any order and skip some columns if you want. 
+		-->
+		<row id="1">
+			<column name="age">33</column>
+			<column name="name">Duke</column>
+			<column name="firstname">Patience</column>
+			<column name="height">1.842</column>
+		</row>
+
+		<!-- ... but naming the columns is not mandatory. 
+			 The order used in metadata must then be respected. 
+		-->
+		<row id="2">
+			<column>Rogers</column>		
+			<column>Denise</column>		
+			<column>59</column>		
+			<column>1.627</column>
+		</row>
+
+		<row id="3">
+			<column name="name">Dujardin</column>		
+			<column name="firstname">Antoine</column>		
+			<column name="age">21</column>		
+			<column name="height">1.73</column>		
+		</row>
+	</data>
+</table>
