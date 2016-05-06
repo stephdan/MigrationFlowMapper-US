@@ -390,7 +390,7 @@ Flox.FlowLayouter = function (model) {
 				
 				// if flowDistW is high, that means they are close together. 
 				// If it's high enough, add the current flow to the subset
-				if (flowDistance > 0 && flowDistW > threshold) {
+				if (true){//(flowDistance > 0 && flowDistW > threshold) {
 					//console.log("close together!")
 					flowSubset.push(flows[i]);
 				}
@@ -676,7 +676,7 @@ Flox.FlowLayouter = function (model) {
 		var flowStrokeWidth = model.getFlowStrokeWidth(flow),
 		
 			nodeRadius = model.getNodeRadius(node) 
-		                     + model.getNodeTolerancePx(),
+		                     + (model.getNodeTolerancePx() / model.getMapScale()),
 		
 			threshDist =  nodeRadius + (flowStrokeWidth/2),
 		
@@ -809,8 +809,8 @@ Flox.FlowLayouter = function (model) {
 				// Add the unitVectors to the control point. Also, multiply the
 		        // unitVectors by 2. This will cut the iterations in half without
 		        // losing significant fidelity. 
-		        newX = cPt.x + (unitVectorX * 2);
-		        newY = cPt.y + (unitVectorY * 2);
+		        newX = cPt.x + ((unitVectorX / model.getMapScale()) * 2);
+		        newY = cPt.y + ((unitVectorY / model.getMapScale()) * 2);
 		        
 		        cPt.x = newX;
 		        cPt.y = newY;

@@ -16,6 +16,7 @@ Flox.FlowImporter = (function(d3) {
 				return nodes[i];
 			}
 		}
+		//console.log("It's not in there!");
 		return false; // It's not in there!
 	}
 	
@@ -62,6 +63,86 @@ Flox.FlowImporter = (function(d3) {
         });
     };
     
+	my.importNetCountyFlowData = function (nodePath, flowPath) {
+		// Arrays to store the stuff
+		var nodes = [],
+			flows = [],
+			stateNodes = [];
+			
+		// The node data is easy. 
+		d3.csv(nodePath, function(nodeData){
+			
+			var i, lat, lng, id, val, propt, startPt, endPt, newPt, nodes = [];
+			
+			for (i = 0; i < nodeData.length; i += 1) {
+				if (!nodeData[i].value) {
+					val = 1;
+				} else {
+					val = nodeData[i].val;
+				}
+				
+				
+				
+				newPt = new Flox.Point(Number(nodeData[i].latitude), 
+									   Number(nodeData[i].longitude), 
+									   1, nodeData[i].FIPS);
+			    
+			    // new point migth not have an xy if the latLng is outside the 
+			    // d3 projection boundary. Don't add it to nodes if so.
+			    // Flows with these point's won't be drawn. 
+			    if(newPt.x && newPt.y) {
+			    	nodes.push(newPt);
+			    } else {
+			    	console.log("Node " + newPt.id + " was omitted from the map");
+			    }
+			    
+			}
+			
+			//  Ok, now you have the nodes. 
+			d3.csv(flowPath, function(flowData) {
+				
+				var aFIPS, bFIPS, flow, j, aPt, bPt, netFlowAmt;
+				
+				// For each row in the table...
+				for (j = 0; j < flowData.length; j += 1) {
+					
+					aFIPS = flowData[j].placeA_FIPS;
+					bFIPS = flowData[j].placeB_FIPS;
+					
+					aPt = findNodeID(nodes, aFIPS);
+					bPt = findNodeID(nodes, bFIPS);
+					
+					
+					if(aPt && bPt) { // both points exist in nodes!
+						netFlowAmt = Number(flowData[j].BtoA_net);
+						
+						if(netFlowAmt){ // It's in there!
+							// If it's positive, then B is start point.
+							if(netFlowAmt > 0) {
+								Flox.addFlow(new Flow(bPt, aPt, netFlowAmt));
+							}
+							
+							if(netFlowAmt < 0) {
+								Flox.addFlow(new Flow(aPt, bPt,Math.abs(netFlowAmt)));
+							}
+						}
+					}
+				}
+
+				// Don't have to do this because I'm already loading net flows.
+				//Flox.setUseNetFlows(true);
+				Flox.sortFlows();
+				
+				Flox.setFilteredFlows();
+				
+				Flox.layoutFlows();
+				
+				Flox.refreshMap();
+			});
+			
+		});
+	};
+    
 	my.importStateMigrationData = function(nodePath, flowPath) {
 		// Arrays to store the stuff
 		var nodes = [],
@@ -105,7 +186,7 @@ Flox.FlowImporter = (function(d3) {
 						// if originID matches one if the ids in nodes
 						startPt = findNodeID(nodes, startID);
 						
-						if (startPt && endID !== startID) {
+						if (startPt && endPt && (startPt && endID !== startID)) {
 							
 							// get the value!
 							val = Number(flowData[j][startID]);
@@ -119,9 +200,7 @@ Flox.FlowImporter = (function(d3) {
 					}
 				}
 				
-				Flox.sortFlows();
-				
-				Flox.setFilteredFlows();
+				Flox.setUseNetFlows(true);
 				
 				Flox.layoutFlows();
 				

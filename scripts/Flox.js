@@ -71,8 +71,10 @@ function initLayoutWorker() {
 }
 
 function runLayoutWorker() {
+	
 	console.log("layout worker isn't working");
 	return;
+	
 	initLayoutWorker();
 	console.log("running layoutWorker");
 	var modelJSON = model.toJSON();
@@ -80,8 +82,9 @@ function runLayoutWorker() {
 }
 
 function refreshMap() {
+	var drawSettings = model.getDrawSettings();
     mapComponent.clearAll();
-    mapComponent.drawFeatures();
+    mapComponent.drawFeatures(drawSettings);
 }
 
 function importCSV(path) {
@@ -310,6 +313,8 @@ function getNodeRadius(node) {
 	return model.getNodeRadius(node);
 }
 
+
+
 function endClipRadius(endNode) {
 	// distance between end of flow and end point
 	var gapDistanceToEndNode = model.getFlowDistanceFromEndPointPixel(),
@@ -372,7 +377,7 @@ function importCensusData() {
 	Flox.FlowImporter.importStateMigrationData(nodePath, flowPath);
 	
 	// move and zoom to the correct location
-	mapComponent.setView([39,-95], 4);
+	//mapComponent.setView([39,-95], 4);
 }
 
 function importTelecomData() {
@@ -464,13 +469,7 @@ Flox.getClippedFlow = function(flow, startClipRadius, endClipRadius) {
 	getClippedFlow(flow, startClipRadius, endClipRadius);
 };
 
-Flox.endClipRadius = function(endNode) {
-	endClipRadius(endNode);
-};
 
-Flox.startClipRadius = function(startNode) {
-	startClipRadius(startNode);
-};	
 
 Flox.isShowLockedFlows = function() {
 	return model.isShowLockedFlows();
@@ -481,11 +480,11 @@ Flox.getFlowStrokeWidth = function(flow) {
 	    maxFlowValue = model.getMaxFlowValue(),
 	    strokeWidth =  (maxFlowWidth * flow.getValue()) / maxFlowValue;
 	    
-	if (strokeWidth >= 1.5) { // FIXME hardcoded value. Min stroke width?
+	//if (strokeWidth >= 1.5) { // FIXME hardcoded value. Min stroke width?
 		return strokeWidth;
-	}
+	//}
 	
-	return 1.5; // FIXME hardcoded value
+	//return 1.5; // FIXME hardcoded value
 	
 };
 
@@ -675,362 +674,6 @@ Flox.runLayoutWorker = function() {
 	runLayoutWorker();
 };
 
-// ----------------------- GUI STUFF---------------------------------------------
-
-Flox.nodeWeightSliderOninput = function() {
-	var sliderVal = document.getElementById("nodeWeightSlider").value,
-		outText = document.getElementById("nodeWeightSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(0);
-	model.setNodeWeight(parseFloat(sliderVal) / 10);
-};
-
-// Change the height of the rangeboxes as the slider moves.
-Flox.flowRangeboxHeightSliderOninput = function() {
-    var sliderVal = document.getElementById("flowRangeboxHeightSlider").value,
-		outText = document.getElementById("flowRangeboxHeightSliderOutputText");
-    outText.innerHTML = parseFloat(sliderVal).toFixed(0);
-    model.setFlowRangeboxHeight(parseFloat(sliderVal) / 100);
-    mapComponent.update();
-};
-
-// Draw rangeboxes when the rangebox size slider is mousedowned
-Flox.flowRangeboxHeightSliderMousedown = function() {
-    model.setDrawRangeboxes(true);
-    refreshMap();
-};
-
-// Stop drawing rangeboxes when the rangebox size slider is mouseuped
-Flox.flowRangeboxHeightSliderMouseup = function() {
-    if(!document.getElementById("showRangeboxesCheckbox").checked){
-        model.setDrawRangeboxes(false);
-		refreshMap();
-    }
-};
-
-Flox.peripheralFlowStiffnessSliderOninput = function() {
-	var sliderVal = document.getElementById("peripheralFlowStiffnessSlider").value,
-		outText = document.getElementById("peripheralFlowStiffnessSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(0);
-	model.setPeripheralStiffnessFactor(parseFloat(sliderVal) / 100);
-};
-
-
-Flox.angularDistributionSliderOninput = function() {
-	var sliderVal = document.getElementById("angularDistributionSlider").value,
-	    outText = document.getElementById("angularDistributionSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(0);
-	model.setAngularDistributionWeight(parseFloat(sliderVal) / 100);
-};
-
-/**
- * Fires whenever the lostestFlowSpringStiffnessSLider is moved or clicked.
- * Sets the value of the output text to the value of the slider. Updates the
- * model with the new values. 
- */
-Flox.longestFlowSpringStiffnessSliderOninput = function() {
-	var sliderVal = document.getElementById("longestFlowSpringStiffnessSlider").value,
-	    outText = document.getElementById("longestFlowSpringStiffnessSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(0);
-	model.setMaxFlowLengthSpringConstant(parseFloat(sliderVal) / 100);
-};
-
-/**
- * Fires whenever the shortestFlowSpringStiffnessSLider is moved or clicked.
- * Sets the value of the output text to the value of the slider. Updates the
- * model with the new values. 
- */
-Flox.shortestFlowSpringStiffnessSliderOninput = function() {
-	var sliderVal = document.getElementById("shortestFlowSpringStiffnessSlider").value,
-		outText = document.getElementById("shortestFlowSpringStiffnessSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(0);
-	model.setMinFlowLengthSpringConstant(parseFloat(sliderVal) / 100);
-};
-
-/**
- * Fires whenever the distanceWeightExponentSlider is moved or clicked.
- * Sets the value of the output text to the value of the slider. Updates the
- * model with the new values. 
- */
-Flox.distanceWeightExponentSliderOninput = function() {
-	var sliderVal = document.getElementById("distanceWeightExponentSlider").value,
-		outText = document.getElementById("distanceWeightExponentSliderOutputText");
-	outText.innerHTML = Math.pow(2, parseFloat(sliderVal)).toFixed(0);
-	model.setDistanceWeightExponent(parseFloat(sliderVal));
-};
-
-Flox.antiTorsionSliderOninput = function() {
-	var sliderVal = document.getElementById("antiTorsionSlider").value,
-		outText = document.getElementById("antiTorsionSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(0);
-	model.setAntiTorsionWeight(parseFloat(sliderVal) / 100);
-};
-
-Flox.minDistOfFlowsFromNodesSliderOninput = function() {
-	var sliderVal = document.getElementById("minDistOfFlowsFromNodesSlider").value,
-		outText = document.getElementById("minDistOfFlowsFromNodesSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(0);
-	model.setNodeTolerancePx(parseFloat(sliderVal));
-};
-
-Flox.checkFlowBoundingBoxesCheckboxClicked = function() {
-	model.setCheckFlowBoundingBoxes(document.getElementById("checkFlowBoundingBoxesCheckbox").checked);
-};
-
-
-/**
- * Fires whenever the maxFlowWidthSlider is moved or clicked.
- * Gets the mapComponent to directly update the flow widths.
- */
-// FIXME it might be better if this updated a value in the model?
-// Right now the mapComponent directly accesses the slider, which will
-// break if I change the slider at all. 
-Flox.maxFlowWidthSliderOninput = function() {
-	var sliderVal = document.getElementById("maxFlowWidthSlider").value,
-		outText = document.getElementById("maxFlowWidthSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(1);
-	model.setMaxFlowWidth(parseFloat(sliderVal));
-	mapComponent.resizeFlows();
-};
-
-/**
- * Fires whenever the maxNodeRadiusSlider is moved or clicked.
- * Gets the mapComponent to directly update the node size.
- */
-Flox.maxNodeRadiusSliderOninput = function() {
-	var sliderVal = document.getElementById("maxNodeRadiusSlider").value,
-		outText = document.getElementById("maxNodeRadiusSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(1);
-	model.setMaxNodeRadius(parseFloat(sliderVal));
-	mapComponent.resizePoints();
-};
-
-Flox.showFlowPointsCheckboxClicked = function() {
-	var boo = document.getElementById("showFlowPointsCheckbox").checked;
-	model.setDrawIntermediateFlowPoints(boo);
-	refreshMap();
-};
-
-Flox.showControlPointsCheckboxClicked = function() {
-	model.setDrawControlPoints(document.getElementById("showControlPointsCheckbox").checked);
-	refreshMap();
-};
-
-Flox.showForceAnimationCheckboxClicked = function () {
-	var boo = document.getElementById("showForceAnimationCheckbox").checked;
-	model.setShowForceAnimation(boo);
-};
-
-Flox.isDrawControlPoints = function() {
-	return model.isDrawControlPoints();
-};
-
-Flox.showRangeboxesCheckboxClicked = function() {
-    model.setDrawRangeboxes(document.getElementById("showRangeboxesCheckbox").checked);
-    refreshMap();
-};
-
-Flox.moveFlowsIntersectingNodesCheckboxClicked = function() {
-	var boo = document.getElementById("moveFlowsIntersectingNodesCheckbox").checked;
-	model.setMoveFlowsIntersectingNodes(boo);
-};
-
-Flox.multipleIterationsCheckboxClicked = function() {
-	var boo = document.getElementById("multipleIterationsCheckbox").checked;
-	model.setMultipleIterations(boo);
-};
-
-
-
-
-Flox.flowDistanceFromStartPointTextBoxOnkeypress = function(e) {
-	var evt = e || window.event,
-		charCode = evt.which || evt.keyCode,
-		textBox, val;
-	if ( charCode === 13 ) {
-      console.log("enter pressed");
-      updateFlowDistanceFromStartPointTextBox();
-		
-    }
-};
-
-Flox.flowDistanceFromEndPointTextBoxOnkeypress = function(e) {
-	var evt = e || window.event,
-		charCode = evt.which || evt.keyCode,
-		textBox, val;
-	if ( charCode === 13 ) {
-      console.log("enter pressed");
-      updateFlowDistanceFromEndPointTextBox();
-    }
-};
-
-Flox.updateFlowDistanceFromStartPointTextBox= function() {
-	updateFlowDistanceFromStartPointTextBox();
-};
-
-Flox.updateFlowDistanceFromEndPointTextBox= function() {
-	updateFlowDistanceFromEndPointTextBox();
-};
-
-
-// -----------> ARROW STUFF
-
-
-Flox.addArrowsCheckboxClicked = function() {
-	var boo = document.getElementById("addArrowsCheckbox").checked;
-	model.setDrawArrows(boo);
-	refreshMap();
-};
-
-Flox.arrowLengthSliderOninput = function() {
-	var sliderVal = document.getElementById("arrowLengthSlider").value,
-		outText = document.getElementById("arrowLengthSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(2);
-	model.setArrowLengthScaleFactor(parseFloat(sliderVal));
-	refreshMap();
-};
-
-Flox.arrowWidthSliderOninput = function() {
-	var sliderVal = document.getElementById("arrowWidthSlider").value,
-		outText = document.getElementById("arrowWidthSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(2);
-	model.setArrowWidthScaleFactor(parseFloat(sliderVal));
-	refreshMap();
-};
-
-Flox.arrowEdgeCtrlPointLengthSliderOninput = function() {
-	var sliderVal = document.getElementById("arrowEdgeCtrlPointLengthSlider").value,
-		outText = document.getElementById("arrowEdgeCtrlPointLengthSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(2);
-	model.setArrowEdgeCtrlLength(parseFloat(sliderVal));
-	refreshMap();
-};
-
-Flox.arrowEdgeCtrlPointWidthSliderOninput = function() {
-	var sliderVal = document.getElementById("arrowEdgeCtrlPointWidthSlider").value,
-		outText = document.getElementById("arrowEdgeCtrlPointWidthSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(2);
-	model.setArrowEdgeCtrlWidth(parseFloat(sliderVal));
-	refreshMap();
-};
-
-Flox.arrowCornerPositionSliderOninput = function() {
-	var sliderVal = document.getElementById("arrowCornerPositionSlider").value,
-		outText = document.getElementById("arrowCornerPositionSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(2);
-	model.setArrowCornerPosition(parseFloat(sliderVal));
-	refreshMap();
-};
-
-Flox.arrowSizeRatioSliderOninput = function() {
-	var sliderVal = document.getElementById("arrowSizeRatioSlider").value,
-		outText = document.getElementById("arrowSizeRatioSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(2);
-	model.setArrowSizeRatio(parseFloat(sliderVal));
-	refreshMap();
-};
-
-Flox.arrowLengthRatioSliderOninput = function() {
-	var sliderVal = document.getElementById("arrowLengthRatioSlider").value,
-		outText = document.getElementById("arrowLengthRatioSliderOutputText");
-	outText.innerHTML = parseFloat(sliderVal).toFixed(2);
-	model.setArrowLengthRatio(parseFloat(sliderVal));
-	refreshMap();
-};
-
-Flox.updateTextBoxes = function () {
-	
-		// Get an array of selected nodes.
-	var selectedNodes = model.getSelectedNodes(),
-	
-		// Get an array of selected flows.
-		selectedFlows = model.getSelectedFlows(),
-		
-		flowValueTextBox = $("#flowValueTextBox"),
-		flowStartPointTextBox = $("#flowStartPointTextBox"),
-		flowEndPointTextBox = $("#flowEndPointTextBox"),
-		flow;
-	
-	if (selectedFlows.length === 1) {
-		flow = selectedFlows[0];
-		flowValueTextBox.val(flow.getValue());
-		flowStartPointTextBox.val(flow.getStartPt().id);
-		flowEndPointTextBox.val(flow.getEndPt().id);
-	} else {
-		flowValueTextBox.val("");
-	}
-};
-
-
-// Here is an example of how jQuery can maybe help!
-// Adds an event to the editModeCheckbox that does a thing, 
-// rather than clicking on the checkbox calling a function. 
-// It makes the HTML a bit cleaner by removing onclick events. 
-$("#editModeCheckbox").change(function() {
-	editMode = this.checked;
-	if(editMode) {
-		$("#editTab").removeClass("disabled");
-	} else {
-		$("#editTab").addClass("disabled");
-	}
-	refreshMap();
-});
-
-$("#skipEndPointsCheckbox").change(function() {
-	skipEndPoints = this.checked;
-	console.log(skipEndPoints);
-});
-
-
-$("#telecomMenuItem").click(function() {
-	importTelecomData();
-});
-
-$("#usBetweenStateMigrationMenuItem").click(function() {
-	importCensusData();
-});
-
-$("#clearAllDataMenuItem").click(function() {
-	model.deleteAllFlows();
-	refreshMap();
-});
-
-$("#maxFlowsSlider").change(function() {
-	model.setMaxFlows(this.value);
-	layoutFlows();
-	//refreshMap();
-}).on("input", function() {
-	var outputText = document.getElementById("maxFlowsSliderOutputText");
-	outputText.innerHTML = parseFloat(this.value).toFixed(0);
-});
-
-$("#showNetFlowsCheckbox").change(function() {
-	
-	// Inform the model
-	model.setUseNetFlows(this.checked);
-	layoutFlows();
-	refreshMap();
-});
-
-
-// $("#maxFlowsSlider").on("input", function() {
-	// var outputText = document.getElementById("maxFlowsSliderOutputText");
-	// outputText.innerHTML = parseFloat(this.value).toFixed(0);
-// });
-
-// Flox.editModeCheckboxClicked = function () {
-	// var editMode = document.getElementById("editModeCheckbox").checked;
-	// if(editMode) {
-		// $("#editTab").removeClass("disabled");
-	// } else {
-		// $("#editTab").addClass("disabled");
-	// }
-	// refreshMap(); // map is refreshed in order to apply d3 drag listeners to
-// };
-
-//---------------------------END GUI STUFF--------------------------------------
-
-
-
 Flox.getCtrlPts = function() {
 	return model.getCtrlPts();
 };
@@ -1121,8 +764,13 @@ Flox.Point = function(lat, lng, val, id) {
 	if(id) {
 		this.id = id;
 	}
-	this.x = mapComponent.latLngToLayerPt([lat,lng]).x;
-	this.y = mapComponent.latLngToLayerPt([lat,lng]).y;
+	
+	var xy = mapComponent.latLngToLayerPt(this);
+	
+	if(xy) {
+		this.x = mapComponent.latLngToLayerPt(this).x;
+		this.y = mapComponent.latLngToLayerPt(this).y;
+	}
 };
 
 Flox.rotatePoint = function(pt, origin, angle) {
@@ -1202,6 +850,17 @@ Flox.importCensusData = function () {
 	importCensusData();
 };
 
+Flox.setUseNetFlows = function (boo) {
+	model.setUseNetFlows(boo);
+};
+
+
+Flox.loadTestFlows = function () {
+	// make a few flows to test 
+	importCSV("data/testFlows.csv");
+};
+
+
 Flox.setFilteredFlows = function (n) {
 	model.setFilteredFlows(n);
 	model.updateCachedValues();
@@ -1211,11 +870,71 @@ Flox.sortFlows = function (property) {
 	model.sortFlows(property);
 };
 
+Flox.getNodeStrokeWidth = function() {
+	return model.getNodeStrokeWidth();
+};
+
+
+Flox.importNetCountyFlowData = function(stateString) {
+	var nodePath = "data/geometry/centroids_counties_all.csv",
+		flowPath = "data/census/flows/" + stateString + "_net.csv";
+	
+	// Set the mapScale in the model to the appropriate scale for this map.
+	// This scale is used by the layouter!
+	// Could it also be used by the renderer?
+	model.setStateMapScale(stateString);
+	
+	//Flox.FlowImporter.importNetCountyFlowData(nodePath, flowPath);
+	
+	mapComponent.goToState(stateString);
+};
+
+Flox.getMapScale = function () {
+	return mapComponent.getMapScale();
+};
+
+Flox.setMapScaleInModel = function (scale) {
+	model.setMapScale(scale);
+};
+
+Flox.getStateMapScale = function(stateString) {
+	return model.getStateMapScale(stateString);
+};
+
+Flox.rotateProjection = function(lat, lng, roll) {
+	mapComponent.rotateProjection(lat, lng, roll);
+};
+
+Flox.drawCircles = function() {
+	
+	var circles = [
+		{
+			cx: 0,
+			cy: 0,
+			r: 100
+		},
+		{
+			cx: 500,
+			cy: 500,
+			r: 200
+		},
+		{
+			cx: 1000,
+			cy: 1000,
+			r: 300
+		}
+	];
+	
+	mapComponent.drawCircles(circles);
+};
+
 Flox.initFlox = function() {
 	model = new FloxModel();
-	mapComponent = new Flox.MapComponent_Leaflet();
+	mapComponent = new Flox.MapComponent_d3();
 	mapComponent.initMap();
-	initGUI();
+	//mapComponent.drawFeatures();
+	//initGUI(); // no GUI yet!
+	
 	// var p1 = {lat: 10, lng: 10},
 		// p2 = {lat: 20, lng: 20},
 		// p3 = {lat: 30, lng: 30},
@@ -1238,7 +957,7 @@ Flox.initFlox = function() {
 	// model.addFlow(flow1);
 	// model.addFlow(flow2);
 	
-	mapComponent.drawFeatures();
+	
 };
 
 

@@ -12,7 +12,7 @@ var FloxModel = function() {
 		netFlows = [],
 		netNodes = [],
 	
-		// Settings
+		// Layout Settings
 		maxFlowPoints = 20,
 		distanceWeightExponent = 3,
 		peripheralStiffnessFactor = 0.1,
@@ -20,32 +20,32 @@ var FloxModel = function() {
 		minFlowLengthSpringConstant = 0.5,
 		enforceRangebox = true,
 		flowRangeboxHeight = 0.30,
-		maxFlowWidth = 20,
-		maxNodeRadius = 10,
 		antiTorsionWeight = 0.8,
 		angularDistributionWeight = 0.5,
 		nodeWeight = 0.5,
 		nodeTolerancePx = 5,
 		moveFlowsIntersectingNodes = true,
 		multipleIterations = true,
-		isShowLockedFlows = true,
-		flowDistanceFromEndPointPx = 0,
-		flowDistanceFromStartPointPx = 0,
-		NODE_STROKE_WIDTH = 2,
 		NBR_ITERATIONS = 100,
 		showForceAnimation = false,
 		FLOW_DISTANCE_THRESHOLD = 0.00000001, // TODO what should this be??
-		flowDistanceFromStartPointPixel = 0,
-		flowDistanceFromEndPointPixel = 0,
 		checkFlowBoundingBoxes = true,
-		maxFlows = 20,
+		maxFlows = 75,
 		useNetFlows = false,
+		mapScale = 1,
 		
+		// Map Appearance Settings
+		maxFlowWidth = 30,
+		maxNodeRadius = 5,
+		isShowLockedFlows = true,
+		flowDistanceFromStartPointPixel = 5,
+		flowDistanceFromEndPointPixel = 5,
+		NODE_STROKE_WIDTH = 0.5,
 		
-		// arrow stuff
+		// arrow settings
 		// TODO Add arrowstuff to settings export and Flox.initGUI
 		arrowSizeRatio = 0.1,
-		arrowLengthRatio = 0,
+		arrowLengthRatio = 0.2,
 		arrowLengthScaleFactor = 1.6,
 		arrowWidthScaleFactor = 0.8,
 		arrowEdgeCtrlLength = 0.5,
@@ -61,18 +61,20 @@ var FloxModel = function() {
 		maxFlowLength,
 		minNodeValue,
 		maxNodeValue,
-		meanNodeValue,
+		meanNodeValue,	
 		
-		// Draw instructions
+		// Draw Settings
 		drawFlows = true,
-		drawNodes = true,
+		drawNodes = false,
 		drawArrows = true,
 		drawControlPoints = false,
 		drawIntermediateFlowPoints = false,
 		drawRangeboxes = false,
 
-
-
+		// Not really a setting. Doesn't get passed in to the layoutWorker. 
+		stateScales = {
+			"wv" : 0.5
+		},
 
 		
 		
@@ -237,11 +239,6 @@ var FloxModel = function() {
 				return b.getValue() - a.getValue();
 			});
 		}
-		
-		// Log to see if it works
-		for (i = 0; i < 10; i += 1) {
-			console.log(flows[i].getValue());
-		}
     }
     
     function sortTheseFlows(theseFlows) {
@@ -398,10 +395,10 @@ var FloxModel = function() {
 	function getFlowStrokeWidth(flow) {
 		var strokeWidth =  (maxFlowWidth * flow.getValue()) / maxFlowValue;
 		    
-		if (strokeWidth >= 1.5) { // FIXME hardcoded value. Min stroke width?
+		//if (strokeWidth >= 1.5) { // FIXME hardcoded value. Min stroke width?
 			return strokeWidth;
-		}
-		return 1.5; // FIXME hardcoded value
+		//}
+		//return 1.5; // FIXME hardcoded value
 	}
 
 
@@ -414,7 +411,7 @@ var FloxModel = function() {
 			minFlowWidth = (maxFlowWidth * minFlowValue / maxFlowValue),
 			endClipRadius, startClipRadius;
 			
-			minFlowWidth = minFlowWidth > 1.5 ? minFlowWidth : 1.5;
+			//minFlowWidth = minFlowWidth > 1.5 ? minFlowWidth : 1.5;
 			// FIXME again with the hard-coded minimum flow width. Stop doing this!
 		
 		// if flows haven't been filtered, filter them;
@@ -617,7 +614,8 @@ var FloxModel = function() {
 			flowDistanceFromStartPointPixel : flowDistanceFromStartPointPixel,
 			flowDistanceFromEndPointPixel : flowDistanceFromEndPointPixel,
 			checkFlowBoundingBoxes: checkFlowBoundingBoxes,
-			maxFlows : maxFlows
+			maxFlows : maxFlows,
+			mapScale: mapScale
 		};
 		
 		for(i = 0, j = flows.length; i < j; i += 1) {
@@ -1298,6 +1296,33 @@ var FloxModel = function() {
 		updateCachedValues();
 	};
 	
+	my.getDrawSettings = function () {
+		return {
+			drawFlows: drawFlows,
+			drawNodes: drawNodes,
+			drawArrows: drawArrows,
+			drawControlPoints: drawControlPoints,
+			drawIntermediateFlowPoints: drawIntermediateFlowPoints,
+			drawRangeboxes: drawRangeboxes
+		};
+	};
+	
+	my.getMapScale = function () {
+		return mapScale;
+	};
+	
+	my.setMapScale = function (d) {
+		mapScale = d;
+	};
+	
+	my.setStateMapScale = function(stateString) {
+		mapScale = stateScales[stateString];
+	};
+	
+	my.getStateMapScale = function(stateString) {
+		return stateScales[stateString];
+	};
+	
 	/**
 	 * 
  * @param {Object} settings Key: value pairs of FloxModel parameters, 
@@ -1331,6 +1356,7 @@ var FloxModel = function() {
 		flowDistanceFromEndPointPixel = settings.flowDistanceFromEndPointPixel;
 		checkFlowBoundingBoxes = settings.checkFlowBoundingBoxes;
 		maxFlows = settings.maxFlows;
+		mapScale = settings.mapScale;
 	};
 
 	return my;

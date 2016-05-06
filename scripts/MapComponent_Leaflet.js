@@ -413,6 +413,7 @@ Flox.MapComponent_Leaflet = function() {
 				})
 				.attr("stroke-width", 0);
 				
+				
 		// Change the width on hover		
 		svgFlows.on("mouseover", function (d) {
                  d3.select(this).select(".curve").transition().duration(50)

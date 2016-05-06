@@ -6,6 +6,42 @@ html, body {
 	width: 100%;
 	height: 100%;
     font: 10pt;
+    margin: 0px;
+}
+
+.background {
+  fill: none;
+  pointer-events: all;
+}
+
+.feature {
+  fill: #ccc;
+  cursor: pointer;
+}
+
+.feature.county {
+  fill: none;
+  stroke: #fff;
+  cursor: pointer;
+}
+
+.feature.active {
+  fill: orange;
+}
+
+.mesh {
+  fill: none;
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mesh.county {
+	fill: none;
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
 }
 
 p {
@@ -32,6 +68,7 @@ p {
 	margin-bottom: 0px;
 	display: inline-block;
 }
+
 
 .checkboxHolder {
 	margin-bottom: -10px;

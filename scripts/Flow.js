@@ -805,7 +805,7 @@ var Flow = function(sPt, ePt, val, newID) {
 	function configureArrow(endClipRadius, minFlowWidth, maxFlowWidth, flowWidth,
 				arrowSizeRatio, arrowLengthRatio, arrowLengthScaleFactor,
 				arrowWidthScaleFactor, arrowCornerPosition, pointArrowTowardsEndpoint,
-				arrowEdgeCtrlLength, arrowEdgeCtrlWidth) {
+				arrowEdgeCtrlLength, arrowEdgeCtrlWidth, nodeStrokeWidth) {
 
 			// Get the difference between this flow's stroke size and the biggest
 	        // stroke size.
@@ -919,9 +919,13 @@ var Flow = function(sPt, ePt, val, newID) {
 			baseT = endT + ((tipT - endT) * 0.1);
         } else if (arrowLength > 5) {
 			baseT = endT + ((tipT - endT) * 0.2);
-        } else {
-			baseT = endT + ((tipT - endT) * 0.3);
-        }
+        } else if (arrowLength > 1){
+			baseT = endT + ((tipT - endT) * 0.6);
+		} else if (arrowLength > 0.5) {
+			baseT = endT + ((tipT - endT) * 1);
+		} else {
+			baseT = endT + ((tipT - endT) * 5);
+		}
         
         // Split the flow, add the first half to the arrow object.
 		//arrow.outFlow = split(baseT)[0];
@@ -934,12 +938,12 @@ var Flow = function(sPt, ePt, val, newID) {
 	my.configureArrow = function (endClipRadius, minFlowWidth, maxFlowWidth, flowWidth,
 				arrowSizeRatio, arrowLengthRatio, arrowLengthScaleFactor,
 				arrowWidthScaleFactor, arrowCornerPosition, pointArrowTowardsEndpoint,
-				arrowEdgeCtrlLength, arrowEdgeCtrlWidth) {
+				arrowEdgeCtrlLength, arrowEdgeCtrlWidth, nodeStrokeWidth) {
 			
 		configureArrow(endClipRadius, minFlowWidth, maxFlowWidth, flowWidth,
 				arrowSizeRatio, arrowLengthRatio, arrowLengthScaleFactor,
 				arrowWidthScaleFactor, arrowCornerPosition, pointArrowTowardsEndpoint,
-				arrowEdgeCtrlLength, arrowEdgeCtrlWidth);
+				arrowEdgeCtrlLength, arrowEdgeCtrlWidth, nodeStrokeWidth);
 	};
 	
 	my.getIntersectionTWithCircleAroundEndPoint = function(r) {
