@@ -11,8 +11,11 @@ Flox.MapComponent_d3 = function() {
 	    background,
 	    mapScale = 1,
 	    projection_albersUsa = d3.geo.albersUsa().scale(20000).translate([width / 2, height / 2]),
-	    projection_mercator = d3.geo.mercator().translate([width / 2, height / 2]),
+	    projection_mercator = d3.geo.mercator().scale(20000).translate([width / 2, height / 2]),
+	    //projection_conicEqualArea = d3.geo.conicEqualArea().scale(1).translate([width / 2, height / 2]),
 	    projection = projection_albersUsa,
+	    // TODO the scale setting below could be set to zoom in to the bounding
+	    // box of the lower 48 based on the window size. 
 	    zoom = d3.behavior.zoom().translate([width / 2, height / 2]).scale(0.06).scaleExtent([0.05, 80])// change these numbers to be able to zoom in or out further.
 	.on("zoom", zoomed),
 
@@ -48,7 +51,16 @@ Flox.MapComponent_d3 = function() {
 				throw error;
 			}
 			//console.log(us);
-			mapFeaturesLayer.append("g").attr("id", "statesLayer").selectAll("path").data(topojson.feature(us, us.objects.states).features).enter().append("path").attr("d", path).attr("class", "feature state").attr("stroke", "white").on("click", stateClicked);
+			mapFeaturesLayer.append("g").attr("id", "statesLayer")
+				.selectAll("path").data(topojson.feature(us, us.objects.states)
+				.features).enter().append("path")
+				.attr("d", path)
+				.attr("id", function(d) {
+					return d.properties.STUSPS;
+				})
+				.attr("class", "feature state")
+				.attr("stroke", "white")
+				.on("click", stateClicked);
 			// g.append("path")
 			// .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
 			// .attr("class", "mesh")
@@ -94,7 +106,7 @@ Flox.MapComponent_d3 = function() {
 		    cPY,
 		    ePX,
 		    ePY;
-		// The place where this thing is clipped will depend on whether or
+		// The place where this curve is clipped will depend on whether or
 		// not arrows are drawn.
 		if (drawArrows && f.getArrow()) {
 			flow = f.getArrow()[6];
@@ -363,7 +375,7 @@ Flox.MapComponent_d3 = function() {
 		d = Math.sqrt(dx * dx + dy * dy);
 
 		if (d === 0) {
-			console.log("pt is the center of the circle");
+			//console.log("pt is the center of the circle");
 			return {
 				x : circle.cx,
 				y : circle.cy
@@ -371,7 +383,7 @@ Flox.MapComponent_d3 = function() {
 		}
 
 		if (d <= circle.r) {
-			console.log("pt is inside the circle");
+			//console.log("pt is inside the circle");
 			return {
 				x : pt.x,
 				y : pt.y
@@ -387,15 +399,11 @@ Flox.MapComponent_d3 = function() {
 		};
 	}
 
-	function getPointOnCircleFromAngle(angle, circle) {
-
-	}
-
 	/**
 	 * Places circles on outerCircle that correspond to the states array.
 	 *
 	 * @param {cx, cy, r} outerCircle Circle around central state.
-	 * @param {[states]} states Array of state abbreviations to make cicles for.
+	 * @param {[states]} states Array of state abbreviations to make circles for.
 	 */
 	function getStateCircles(outerCircle, states) {
 
@@ -409,9 +417,8 @@ Flox.MapComponent_d3 = function() {
 		    centroid;
 
 		// Get the state polygons in an array
-		d3.selectAll("#statesLayer").selectAll(".state").each(function(d) {
+		d3.selectAll("#statesLayer").selectAll(".feature.state").each(function(d) {
 			if (states.indexOf(d.properties.STUSPS) > -1) {// Is this state in states?
-				//console.log(d);
 				statePolygons.push(d);
 			}
 		});
@@ -431,65 +438,111 @@ Flox.MapComponent_d3 = function() {
 
 			pt = getProjectedPointOnCircle(centroid, outerCircle);
 
-			stateCircles.push({
-				x : pt.x,
-				y : pt.y,
-				r : 150
-			});
+			pt.r = 150;
+			pt.STUSPS = statePolygons[i].properties.STUSPS;
+			
+			
+			stateCircles.push(pt);
 		}
 
 		return stateCircles;
 	}
 
-	// Zooms in to the state, makes county boundaries in the state visible.
-	function stateClicked(d) {
-		if (active.node() === this) {
-			return reset();
-		}
-
-		// Remove active class from currently active state, add active class
-		// to the state that was clicked.
-		active.classed("active", false);
-		active = d3.select(this).classed("active", true);
-
-		// Hide county boundaries
-		hideAllCountyBorders();
-		removeAllCircles();
-
-		// Show just the county boundaries for the clicked state
-		showCountyBordersWithinState(d.properties.STATEFP);
-
+	/**
+	 * Zooms in to the provided json-based d3-style feature object. Needs
+	 * to be compatible with the d3.geo.path().bounds(d) function. 
+	 */
+	function zoomToPolygon(d){
 		var bounds = path.bounds(d),
-		    outerCircle = getCircleAroundBoundingBox(bounds),
-		    dx = bounds[1][0] - bounds[0][0],
+			dx = bounds[1][0] - bounds[0][0],
 		    dy = bounds[1][1] - bounds[0][1],
 		    x = (bounds[0][0] + bounds[1][0]) / 2,
 		    y = (bounds[0][1] + bounds[1][1]) / 2,
 		    scale = 0.6 / Math.max(dx / width, dy / height),
-		    translate = [width / 2 - scale * x, height / 2 - scale * y],
-		    testStates,
-		    allCircles = [],
-		    stateCircles;
-
-		//console.log(bounds);
-		console.log("State: " + d.properties.STUSPS + ", FIPS: " + d.properties.STATEFP);
-		//cornerCircles = getCirclesAtBoundingBoxCorners(bounds);
-
-		//drawCircles(cornerCircles);
-
-		testStates = ["WA", "FL", "ME", "TX", "CA", "WV", "CO"];
-		stateCircles = getStateCircles(outerCircle, testStates);
-		//console.log(stateCircles);
-		//drawCircles([outerCircle]);
-		drawCircles(stateCircles);
-			
-		addNecklaceMap(outerCircle, stateCircles);
-		console.log(path.centroid(d));
+		    translate = [width / 2 - scale * x, height / 2 - scale * y];
+		    
 		svg.transition()
 		.duration(1000)
 		.call(zoom.translate(translate).scale(scale).event);
 	}
 
+	/**
+	 * Does all the things needed when a state is selected. Makes a necklace
+	 * map, zooms in, lays out the flows, displays the flows, everything.
+	 * @param {object} Object containing the geometry and properties of the 
+	 * selected state. 
+	 */
+	function selectState(stateAbbreviation) {
+		
+		var statePolygon, 
+			stateBoundingBox,
+			outerCircle,
+		    testStates,
+		    stateCircles;
+		
+		// get the statePolygon, yes?
+		d3.select("#" + stateAbbreviation).each(function(d) {
+			statePolygon = d; // Yes!
+		});
+		
+		// Tell the importer which flows need loadin'
+		Flox.importNetCountyFlowData(statePolygon.properties.STUSPS);
+		
+		zoomToPolygon(statePolygon); // Zoom in!
+		// As soon as the layout operation begins, the zoom freezes. 
+		// Layout needs to occur in a webworker. 
+		
+		// Hide county boundaries
+		hideAllCountyBorders();
+		removeAllCircles();
+
+		// Show just the county boundaries for the selected state
+		showCountyBordersWithinState(statePolygon.properties.STATEFP);
+		
+		// Necklace map stuff all needs to happen after the flows are loaded
+		// and the model has processed them. In other words, not here. 
+		
+		// // Get circle around the state bounding box
+		// stateBoundingBox = path.bounds(statePolygon);
+		// outerCircle = getCircleAroundBoundingBox(stateBoundingBox);
+// 
+		// console.log("State: " + statePolygon.properties.STUSPS + ", FIPS: " + statePolygon.properties.STATEFP);
+// 
+		// // Figure out which states besides the selected one have flows
+		// // what need showin'
+		// testStates = ["WA", "FL", "ME", "TX", "CA", "WV", "CO"];
+// 		
+		// stateCircles = getStateCircles(outerCircle, testStates);
+		// //console.log(stateCircles);
+		// //drawCircles([outerCircle]);
+		// drawCircles(stateCircles);
+// 			
+		// addNecklaceMap(outerCircle, stateCircles);
+		// //console.log(path.centroid(d));
+		
+	}
+
+
+	// Selects the state. 
+	function stateClicked(d) {
+
+		// If the currently active state was clicked, reset.
+		// TODO this should happen in selectState somehow.
+		// "this" is the SVG path object that was clicked. I think.
+		if (active.node() === this) {
+			return reset();
+		}
+		// Remove active class from currently active state, add active class
+		// to the state that was clicked.
+		active.classed("active", false);
+		active = d3.select(this).classed("active", true);
+		// Select the state
+		selectState(d.properties.STUSPS);
+
+		
+	}
+
+	
 	// Zooms out to full extent, deselects everything, hides all county
 	// boundaries.
 	function reset() {
@@ -498,6 +551,9 @@ Flox.MapComponent_d3 = function() {
 
 		d3.selectAll(".county").classed("hidden", true);
 		removeAllCircles();
+		
+		// Also remove all necklace maps.
+		d3.select("#necklaceMapLayer").remove(); 
 
 		svg.transition().duration(750).call(zoom.translate([width / 2, height / 2]).scale(0.06).event);
 	}
@@ -535,98 +591,165 @@ Flox.MapComponent_d3 = function() {
 	 * @param {Object} circle
 	 */
 	function addNecklaceMap(outerCircle, stateNodes) {
+		console.log(stateNodes);
 		var w = 0, // width of force graph.
 		    h = 0, // height of force graph. 
-		    radius = 100; // radius of nodes.
+		    radius = outerCircle.r * 0.1, // radius of nodes.
 
 		// center of circle the points must stay outside of.
-		var cx = outerCircle.cx, // center x of circle nodes stay out of
+			cx = outerCircle.cx, // center x of circle nodes stay out of
 		    cy = outerCircle.cy, // center y of circle nodes stay out of
-		    r = outerCircle.r + stateNodes[0].r; // radius of the circle nodes stay out of
-
+		    r = outerCircle.r + radius,
+		    necklaceMapNodes = {}; // radius of the circles the necklace
+		    // nodes are arranged around. Radius of the nodes is added to keep
+		    // them from overlapping outer counties. 
+		
+		//console.log("radius of outer circle: " + r);
+		
 		// delete the previous necklace map
 		d3.select("#necklaceMapLayer").remove(); 
 	
 		// Initialize the force layout settings
-		var force = d3.layout.force().gravity(0.0).charge(-500).size([w, h]);
+		// 0 gravity has great results! Otherwize nodes arrange themselves lopsided. 
+		var force = d3.layout.force().gravity(0.0).charge(-r * 0.28).size([w, h]).nodes(stateNodes);
 
 		// Add an SVG group to hold the necklace map.
-		var necklaceMap = d3.select("#mapFeaturesLayer").append("g").attr("id", "necklaceMapLayer");//.attr("width", w).attr("height", h);
-
-		// Move the necklace map layer to the location of cx and cy
-		// This sets the center of gravity to the center of the circle, so the
-		// points don't arrange all lop-sided.
-		//necklaceMap.attr("transform", "translate( " + cx + ", " + cy + ")");
+		var necklaceMap = d3.select("#mapFeaturesLayer").append("g").attr("id", "necklaceMapLayer");
 
 		// Load the data.
-		d3.json("data/graph.json", function(error, graph) {
-			if (error) {throw error;}
-				
-			var node = necklaceMap.selectAll("circle")
-						  .data(stateNodes)
-						  .enter().append("circle")
-						  .attr("r", function(d) {
-						  	return d.r;
-						  })
-						  .style("fill", "#D6F5FF")
-						  .style("stroke", "black")
-						  .style("stroke-width", 20)
-						  .call(force.drag)
-						  .on("mousedown", function() {
-						  	d3.event.stopPropagation();
-						  });
+		var node = necklaceMap.selectAll("circle")
+					  .data(stateNodes)
+					  .enter().append("circle")
+					  .attr("r", function(d) {
+					  	return radius;
+					  })
+					  .style("fill", "#D6F5FF")
+					  .style("stroke", "black")
+					  .style("stroke-width", function(d) {
+					  	return (radius * 0.2);
+					  })
+					  .call(force.drag)
+					  .on("mousedown", function() {
+					  	d3.event.stopPropagation();
+					  });
+	
+		function tick () {
+			node.attr("cx", function(d) {
+				var dx = d.x - cx;
+				var dy = d.y - cy;
+				var dist = Math.sqrt(dx * dx + dy * dy);
+				d.x = dx * r / dist + cx;
+				return d.x;
+			});
+			node.attr("cy", function(d) {
+				var dx = d.x - cx;
+				var dy = d.y - cy;
+				var dist = Math.sqrt(dx * dx + dy * dy);
+				d.y = dy * r / dist + cy;
+				return d.y;
+			});
+		}
 
-			force.nodes(stateNodes).links(graph.links).on("tick", function(e) {
-				
-				// Grab the current alpha, which is sortof a weight factor that 
-				//determines how far the nodes move during this tick. 
-				// I don't know how 0.1 is determined. Might be one of the
-				// force layout settings? Friction maybe?
-				// k is needed to move the center of gravity. 
-				var k = 0.1 * e.alpha;
-
-				// relocate the node to a location on the outer rim of the 
-				// circle.
-				node.attr("cx", function(d) {
-					var dx = d.x - cx;
-					var dy = d.y - cy;
-					var dist = Math.sqrt(dx * dx + dy * dy);
-					d.x = dx * r / dist + cx;
-					return d.x;
-				});
-				node.attr("cy", function(d) {
-					var dx = d.x - cx;
-					var dy = d.y - cy;
-					var dist = Math.sqrt(dx * dx + dy * dy);
-					d.y = dy * r / dist + cy;
-					return d.y;
-				});
-				
-				// This effectively moves the center of gravity of the layout
-				// to the center of the circle. Prevents lop-sided arrangement
-				// of nodes around the circle. 
-				graph.nodes.forEach(function(o, i) {
-				    o.y += ((cy * 2) - o.y) * k;
-				    o.x += ((cx * 2) - o.x) * k;
-				});
-			}).start();
-		});
+		// On each tick of the force layout,
+		force.on("tick", tick);
+		
+		var i; // More nodes? More ticks
+		
+		// Start the force layout, run 
+		force.start();
+		for (i = stateNodes.length * 10; i > 0; i -= 1) {
+			force.tick();
+		}
+		force.stop();
+		
+		// TODO return a convenient object for getting nodes by STUSPS keys.
+		//return force.nodes(); // This is not that.
+		
+		// For each node, add it's STUSPS and itself to an object?
+		for(i = 0; i < stateNodes.length; i += 1) {
+			var STUSPS = stateNodes[i].STUSPS;
+			necklaceMapNodes[STUSPS] = stateNodes[i];
+		}
+		return necklaceMapNodes;
 	}
 
-	
+	function configureNecklaceMap(targetStateAbbreviation) {
+		
+		// Figure out which states need necklace map nodes.
+		var flows = Flox.getFlows(),
+			outerStates = [],
+			flow,
+			targetStatePolygon,
+			stateBoundingBox,
+			outerCircle,
+			stateCircles,
+			i, j, sPt, ePt,
+			necklaceMapNodes;
+		
+		// get the statePolygon, yes?
+		d3.select("#" + targetStateAbbreviation).each(function(d) {
+			targetStatePolygon = d; // Yes!
+		});
+		
+		for(i = 0, j = flows.length; i < j; i += 1) {
+			flow = flows[i];
+			
+			sPt = flow.getStartPt();
+			ePt = flow.getEndPt();
+			
+			if(sPt.STUSPS !== targetStateAbbreviation && (outerStates.indexOf(sPt.STUSPS) < 0)) {
+				//console.log("found an outer state");
+				outerStates.push(sPt.STUSPS);
+			}
+			
+			if(ePt.STUSPS !== targetStateAbbreviation && (outerStates.indexOf(ePt.STUSPS) < 0)) {
+				//console.log("found an outer state");
+				outerStates.push(ePt.STUSPS);
+			}
+		}
+		console.log("Outer States: " + outerStates);
+		// get the necklace for the target state.
+		stateBoundingBox = path.bounds(targetStatePolygon);
+		outerCircle = getCircleAroundBoundingBox(stateBoundingBox);
+		// get necklace map locations for each outerState, go ahead and add
+		// them to the map using existing function
+		
+		stateCircles = getStateCircles(outerCircle, outerStates);
+		
+		necklaceMapNodes = addNecklaceMap(outerCircle, stateCircles);
+		
+		// Swap out the offending node in each flow with the necklace map node.
+		for(i = 0, j = flows.length; i < j; i += 1) {
+			flow = flows[i];
+			sPt = flow.getStartPt();
+			ePt = flow.getEndPt();
+			
+			// if the SPUSPS in sPt isn't the target flow, replace it with
+			// the necklaceMapNode it should be. 
+			if(sPt.STUSPS !== targetStateAbbreviation) {
+				flow.setStartPt(necklaceMapNodes[sPt.STUSPS]);
+			}
+			
+			if(ePt.STUSPS !== targetStateAbbreviation) {
+				flow.setEndPt(necklaceMapNodes[ePt.STUSPS]);
+			}
+		}
+		// Tell Flox it can layout flows now.
+		//Flox.layoutFlows(); // No need, Flox will do it.
+	}
 	
 	// PUBLIC ---------------------------------------------------------------------
 
 	// start MapComponent_d3 only-----------------------------------------------
 
-	my.goToState = function(stateString) {
-		goToState(stateString);
-	};
-
 	// Circles are an array of point objects like this:
 	// { x, y, r } where r is the radius.
 	my.drawCircles = function(circlesArray) {
 		drawCircles(circlesArray);
+	};
+
+	my.configureNecklaceMap = function (stateAbbreviation) {
+		configureNecklaceMap(stateAbbreviation);
 	};
 
 	// end MapComponent_d3 only-------------------------------------------------
@@ -673,7 +796,7 @@ Flox.MapComponent_d3 = function() {
 		var xy = projection([latLng.lng, latLng.lat]);
 
 		if (xy === null) {
-			console.log("latLngToLayerPt resulted in null. LatLng is possibly outside projection boundary.");
+			//console.log("latLngToLayerPt resulted in null. LatLng is possibly outside projection boundary.");
 			return false;
 		}
 

@@ -875,18 +875,26 @@ Flox.getNodeStrokeWidth = function() {
 };
 
 
-Flox.importNetCountyFlowData = function(stateString) {
+Flox.importNetCountyFlowData = function(stateAbbreviation) {
 	var nodePath = "data/geometry/centroids_counties_all.csv",
-		flowPath = "data/census/flows/" + stateString + "_net.csv";
+		flowPath = "data/census/flows/" + stateAbbreviation + "_net.csv";
 	
 	// Set the mapScale in the model to the appropriate scale for this map.
 	// This scale is used by the layouter!
 	// Could it also be used by the renderer?
-	model.setStateMapScale(stateString);
+	model.setStateMapScale(stateAbbreviation);
 	
-	//Flox.FlowImporter.importNetCountyFlowData(nodePath, flowPath);
-	
-	mapComponent.goToState(stateString);
+	Flox.FlowImporter.importNetCountyFlowData(nodePath, flowPath, function(){
+		Flox.sortFlows();
+				
+		Flox.setFilteredFlows();
+		
+		mapComponent.configureNecklaceMap(stateAbbreviation);
+				
+		Flox.layoutFlows();
+				
+		Flox.refreshMap();
+	});
 };
 
 Flox.getMapScale = function () {

@@ -63,7 +63,7 @@ Flox.FlowImporter = (function(d3) {
         });
     };
     
-	my.importNetCountyFlowData = function (nodePath, flowPath) {
+	my.importNetCountyFlowData = function (nodePath, flowPath, callback) {
 		// Arrays to store the stuff
 		var nodes = [],
 			flows = [],
@@ -87,13 +87,15 @@ Flox.FlowImporter = (function(d3) {
 									   Number(nodeData[i].longitude), 
 									   1, nodeData[i].FIPS);
 			    
+			    newPt.STUSPS = nodeData[i].STUSPS;
+			    
 			    // new point migth not have an xy if the latLng is outside the 
 			    // d3 projection boundary. Don't add it to nodes if so.
 			    // Flows with these point's won't be drawn. 
 			    if(newPt.x && newPt.y) {
 			    	nodes.push(newPt);
 			    } else {
-			    	console.log("Node " + newPt.id + " was omitted from the map");
+			    	//console.log("Node " + newPt.id + " was omitted from the map");
 			    }
 			    
 			}
@@ -131,13 +133,9 @@ Flox.FlowImporter = (function(d3) {
 
 				// Don't have to do this because I'm already loading net flows.
 				//Flox.setUseNetFlows(true);
-				Flox.sortFlows();
+				callback();
 				
-				Flox.setFilteredFlows();
 				
-				Flox.layoutFlows();
-				
-				Flox.refreshMap();
 			});
 			
 		});
