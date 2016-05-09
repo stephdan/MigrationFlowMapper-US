@@ -409,7 +409,7 @@ var FloxModel = function() {
 	function configureArrows() {
 		var i, j, flow, flowWidth,	
 			minFlowWidth = (maxFlowWidth * minFlowValue / maxFlowValue),
-			endClipRadius, startClipRadius;
+			endClipRadius, startClipRadius, endPt, startPt;
 			
 			//minFlowWidth = minFlowWidth > 1.5 ? minFlowWidth : 1.5;
 			// FIXME again with the hard-coded minimum flow width. Stop doing this!
@@ -422,8 +422,21 @@ var FloxModel = function() {
 		for(i = 0, j = filteredFlows.length; i < j; i += 1) {
 			flow = filteredFlows[i];
 			flowWidth = getFlowStrokeWidth(flow);	
-			endClipRadius = getEndClipRadius(flow.getEndPt());	
-			startClipRadius = getStartClipRadius(flow.getStartPt());	
+			
+			endPt = flow.getEndPt();
+			startPt = flow.getStartPt();
+			
+			if(endPt.necklaceMapNode) {
+				endClipRadius = endPt.r + endPt.strokeWidth;
+			} else {
+				endClipRadius = getEndClipRadius(endPt);	
+			}
+			
+			if(startPt.necklaceMapNode) {
+				startClipRadius = startPt.r + startPt.strokeWidth;
+			} else {
+				startClipRadius = getStartClipRadius(startPt);	
+			}
 			
 			flow.configureArrow(endClipRadius, minFlowWidth, maxFlowWidth, flowWidth,
 				arrowSizeRatio, arrowLengthRatio, arrowLengthScaleFactor,
@@ -545,6 +558,7 @@ var FloxModel = function() {
 
 
 // PUBLIC ======================================================================
+	
 	
 	my.getNodeRadius = function (node) {
 		return getNodeRadius(node);

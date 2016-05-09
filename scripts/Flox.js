@@ -913,29 +913,6 @@ Flox.rotateProjection = function(lat, lng, roll) {
 	mapComponent.rotateProjection(lat, lng, roll);
 };
 
-Flox.drawCircles = function() {
-	
-	var circles = [
-		{
-			cx: 0,
-			cy: 0,
-			r: 100
-		},
-		{
-			cx: 500,
-			cy: 500,
-			r: 200
-		},
-		{
-			cx: 1000,
-			cy: 1000,
-			r: 300
-		}
-	];
-	
-	mapComponent.drawCircles(circles);
-};
-
 Flox.initFlox = function() {
 	model = new FloxModel();
 	mapComponent = new Flox.MapComponent_d3();

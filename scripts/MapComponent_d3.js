@@ -8,12 +8,16 @@ Flox.MapComponent_d3 = function() {
 	    path,
 	    width = $(window).width(),
 	    height = $(window).height(),
-	    background,
+	   
 	    mapScale = 1,
+	    
+	    background,
+	    
 	    projection_albersUsa = d3.geo.albersUsa().scale(20000).translate([width / 2, height / 2]),
 	    projection_mercator = d3.geo.mercator().scale(20000).translate([width / 2, height / 2]),
 	    //projection_conicEqualArea = d3.geo.conicEqualArea().scale(1).translate([width / 2, height / 2]),
 	    projection = projection_albersUsa,
+	    
 	    // TODO the scale setting below could be set to zoom in to the bounding
 	    // box of the lower 48 based on the window size. 
 	    zoom = d3.behavior.zoom().translate([width / 2, height / 2]).scale(0.06).scaleExtent([0.05, 80])// change these numbers to be able to zoom in or out further.
@@ -27,13 +31,26 @@ Flox.MapComponent_d3 = function() {
 	// and whatnot, add it all to the map div.
 	function initMap() {
 
+		// Make a d3 path object, which will handle translating path objects
+		// onto the projection. I think. 
 		path = d3.geo.path().projection(projection);
-
+		
+		// Create the svg element to hold all the map features.
 		svg = d3.select("#map").append("svg").attr("width", width).attr("height", height).on("click", stopped, true);
 
-		// Add a background layer for detecting pointer events
-		background = svg.append("rect").attr("class", "background").attr("width", width).attr("height", height).on("click", reset);
 
+		// MAP LAYERS ------------------------------------
+		// Add a background layer for detecting pointer events
+		
+		
+		background = svg.append("rect").attr("class", "background").attr("width", width).attr("height", height).on("click", reset);
+		var mapFeaturesLayer = svg.append("g").attr("id", "mapFeaturesLayer"),
+			statesLayer = mapFeaturesLayer.append("g").attr("id", "statesLayer"),
+			countiesLayer = mapFeaturesLayer.append("g").attr("id", "countieslayer");
+		
+		mapFeaturesLayer.append("g").attr("id", "flowsLayer");
+		
+		
 		$(window).resize(function() {
 			width = this.innerWidth;
 			height = this.innerHeight;
@@ -41,7 +58,8 @@ Flox.MapComponent_d3 = function() {
 			background.attr("width", width).attr("height", height);
 		});
 
-		var mapFeaturesLayer = svg.append("g").attr("id", "mapFeaturesLayer");
+		// Create and arrange layers in the appropriate order.
+
 
 		svg.call(zoom)// delete this line to disable free zooming
 		.call(zoom.event);
@@ -51,8 +69,7 @@ Flox.MapComponent_d3 = function() {
 				throw error;
 			}
 			//console.log(us);
-			mapFeaturesLayer.append("g").attr("id", "statesLayer")
-				.selectAll("path").data(topojson.feature(us, us.objects.states)
+			statesLayer.selectAll("path").data(topojson.feature(us, us.objects.states)
 				.features).enter().append("path")
 				.attr("d", path)
 				.attr("id", function(d) {
@@ -73,8 +90,9 @@ Flox.MapComponent_d3 = function() {
 				if (error) {
 					throw error;
 				}
-				//console.log(us);
-				mapFeaturesLayer.append("g").attr("id", "countieslayer").selectAll("path").data(topojson.feature(us, us.objects.counties).features).enter().append("path").attr("d", path)
+				countiesLayer.selectAll("path")
+					.data(topojson.feature(us, us.objects.counties).features)
+					.enter().append("path").attr("d", path)
 				//.attr("stroke", "white")
 				.attr("class", function(d) {
 					return "feature county hidden FIPS" + d.properties.STATEFP;
@@ -94,7 +112,8 @@ Flox.MapComponent_d3 = function() {
 	}// End initMap();
 
 	// takes a flow object, builts an SVG curve out of the 3 points, translating
-	// the LatLng coordinates to screen coordinates.
+	// the LatLng coordinates to screen coordinates. Also handles flow clipping.
+	// Accounts for necklace map nodes.
 	function buildSvgFlowPath(f, drawArrows) {
 
 		var rs,
@@ -106,9 +125,11 @@ Flox.MapComponent_d3 = function() {
 		    cPY,
 		    ePX,
 		    ePY;
-		// The place where this curve is clipped will depend on whether or
-		// not arrows are drawn.
+		    
 		if (drawArrows && f.getArrow()) {
+			
+			// The place where this curve is clipped will depend on whether or
+			// not arrows are drawn.
 			flow = f.getArrow()[6];
 			rs = Flox.getFlowDistanceFromStartPointPixel() > 0 ? Flox.getStartClipRadius(f.getStartPt()) : 0;
 			flow = flow.getClippedFlow(rs, 1);
@@ -177,8 +198,10 @@ Flox.MapComponent_d3 = function() {
 		    curves,
 		    arrows;
 
-		svgFlows = d3.select("#mapFeaturesLayer").append("g")// a group to hold all the flows
-		.attr("id", "flowsLayer").selectAll("g")// a group for each flow
+		// clear the existing flows?
+		//d3.select("#flowsLayer").selectAll("g").remove();
+		
+		svgFlows = d3.select("#flowsLayer").selectAll("g")// a group for each flow
 		.data(flows)// flow data added to GROUP
 		.enter().append("g");
 		// add the g to the flowsLayer
@@ -438,9 +461,12 @@ Flox.MapComponent_d3 = function() {
 
 			pt = getProjectedPointOnCircle(centroid, outerCircle);
 
-			pt.r = 150;
 			pt.STUSPS = statePolygons[i].properties.STUSPS;
+			pt.necklaceMapNode = true;
 			
+			// set the radius now. How do you do this later?
+			pt.r = outerCircle.r * 0.1;
+			pt.strokeWidth = pt.r * 0.15;
 			
 			stateCircles.push(pt);
 		}
@@ -551,6 +577,7 @@ Flox.MapComponent_d3 = function() {
 
 		d3.selectAll(".county").classed("hidden", true);
 		removeAllCircles();
+		d3.select("#flowsLayer").selectAll("g").remove();
 		
 		// Also remove all necklace maps.
 		d3.select("#necklaceMapLayer").remove(); 
@@ -591,21 +618,18 @@ Flox.MapComponent_d3 = function() {
 	 * @param {Object} circle
 	 */
 	function addNecklaceMap(outerCircle, stateNodes) {
-		console.log(stateNodes);
 		var w = 0, // width of force graph.
 		    h = 0, // height of force graph. 
-		    radius = outerCircle.r * 0.1, // radius of nodes.
+		    nodeRadius = stateNodes[0].r, // radius of nodes.
 
 		// center of circle the points must stay outside of.
 			cx = outerCircle.cx, // center x of circle nodes stay out of
 		    cy = outerCircle.cy, // center y of circle nodes stay out of
-		    r = outerCircle.r + radius,
-		    necklaceMapNodes = {}; // radius of the circles the necklace
+		    r = outerCircle.r + nodeRadius,
+		    necklaceMapNodes = {}; // radius of the circle the necklace
 		    // nodes are arranged around. Radius of the nodes is added to keep
 		    // them from overlapping outer counties. 
-		
-		//console.log("radius of outer circle: " + r);
-		
+				
 		// delete the previous necklace map
 		d3.select("#necklaceMapLayer").remove(); 
 	
@@ -621,12 +645,12 @@ Flox.MapComponent_d3 = function() {
 					  .data(stateNodes)
 					  .enter().append("circle")
 					  .attr("r", function(d) {
-					  	return radius;
+					  	return nodeRadius;
 					  })
 					  .style("fill", "#D6F5FF")
 					  .style("stroke", "black")
 					  .style("stroke-width", function(d) {
-					  	return (radius * 0.2);
+					  	return (d.strokeWidth);
 					  })
 					  .call(force.drag)
 					  .on("mousedown", function() {
@@ -707,7 +731,7 @@ Flox.MapComponent_d3 = function() {
 				outerStates.push(ePt.STUSPS);
 			}
 		}
-		console.log("Outer States: " + outerStates);
+
 		// get the necklace for the target state.
 		stateBoundingBox = path.bounds(targetStatePolygon);
 		outerCircle = getCircleAroundBoundingBox(stateBoundingBox);
@@ -776,7 +800,7 @@ Flox.MapComponent_d3 = function() {
 
 	my.clearAll = function() {
 		// Just clear the flows, ok?
-		d3.select("#flowsLayer").remove();
+		d3.select("#flowsLayer").selectAll("g").remove();
 	};
 
 	my.resizeFlows = function() {
