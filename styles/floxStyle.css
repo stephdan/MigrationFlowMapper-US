@@ -9,6 +9,18 @@ html, body {
     margin: 0px;
 }
 
+.tooltip-flow {
+	position: absolute;
+	text-align: left;
+	width: 100px;
+	height: 40px;
+	padding: 3px;
+	margin-top: -10px;
+	font: 10px sans-serif;
+	background: #ddd;
+	pointer-events: none;
+}
+
 .background {
   fill: none;
   pointer-events: all;

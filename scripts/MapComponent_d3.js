@@ -196,7 +196,12 @@ Flox.MapComponent_d3 = function() {
 		    clippedFlow,
 		    svgFlows,
 		    curves,
+		    tooltip,
 		    arrows;
+	
+		tooltip = d3.select("body").append("div")
+					.attr("class", "tooltip-flow")
+					.style("display", "none");
 
 		flows.sort(function(a, b){ return a.getValue() - b.getValue(); });
 
@@ -228,6 +233,15 @@ Flox.MapComponent_d3 = function() {
 			})
 			.attr("d", function(d) {
 				return buildSvgFlowPath(d, drawArrows);
+			})
+			.on("mouseover", function(d){
+				flowMouseover();
+			})
+			.on("mousemove", function(d){
+				flowMousemove(d);
+			})
+			.on("mouseout", function(d){
+				flowMouseout();
 			});
 	
 	
@@ -244,7 +258,33 @@ Flox.MapComponent_d3 = function() {
 				.attr("stroke-width", 5)
 				.attr("d", function(d) {
 					return buildSvgArrowPath(d);
+				})
+				.on("mouseover", function(d){
+					flowMouseover();
+				})
+				.on("mousemove", function(d){
+					flowMousemove(d);
+				})
+				.on("mouseout", function(d){
+					flowMouseout();
 				});
+				
+		}
+
+		function flowMouseover(d){
+			tooltip.style("display", "inline");
+	    }
+
+		function flowMousemove(d) {
+			tooltip.html("Value: " + d.getValue() + "<br/>" + 
+			             "From: " + d.getStartPt().id + "<br/>" + 
+			             "To: " + d.getEndPt().id )
+			       .style("left", (d3.event.pageX + 1) + "px")
+			       .style("top", (d3.event.pageY - 34) + "px");
+		}
+
+		function flowMouseout(d) {
+			tooltip.style("display", "none");
 		}
 
 		// Draw flow curves
@@ -260,28 +300,12 @@ Flox.MapComponent_d3 = function() {
 			})
 			.attr("d", function(d) {
 				return buildSvgFlowPath(d, drawArrows);
-			});
+			})
+			.attr("pointer-events", "none");
 		
 		
-		// // Change the width on hover		
-		// svgFlows.on("mouseover", function (d) {
-                 // d3.select(this).select(".curve").transition().duration(50)
-                   // .attr("stroke-width", function(){
-						// return Flox.getFlowStrokeWidth(d) + 3;
-                   // });
-                 // d3.select(this).select(".arrow").transition().duration(50)
-                   // .attr("stroke-width", 3);
-             // })
-             // .on("mouseout", function (d) {
-                 // d3.select(this).select(".curve").transition().duration(50)
-                   // .attr("stroke-width", function (){
-						// return Flox.getFlowStrokeWidth(d);
-                   // });
-                 // d3.select(this).select(".arrow").transition().duration(50)
-                   // .attr("stroke-width", 0);
-             // });
-		
-		
+         
+         
 	}
 
 	function drawPoints() {
