@@ -19,12 +19,12 @@ var FloxModel = function() {
 		maxFlowLengthSpringConstant = 0.05,
 		minFlowLengthSpringConstant = 0.5,
 		enforceRangebox = true,
-		flowRangeboxHeight = 0.30,
+		flowRangeboxHeight = 0.3,
 		antiTorsionWeight = 0.8,
 		angularDistributionWeight = 0.5,
-		nodeWeight = 0.5,
+		nodeWeight = 0.1,
 		nodeTolerancePx = 5,
-		moveFlowsIntersectingNodes = true,
+		moveFlowsIntersectingNodes = false,
 		multipleIterations = true,
 		NBR_ITERATIONS = 100,
 		showForceAnimation = false,
@@ -32,7 +32,7 @@ var FloxModel = function() {
 		checkFlowBoundingBoxes = true,
 		maxFlows = 75,
 		useNetFlows = false,
-		mapScale = 1,
+		mapScale = 0.5,
 		
 		// Map Appearance Settings
 		maxFlowWidth = 30,
@@ -53,7 +53,7 @@ var FloxModel = function() {
 		arrowCornerPosition = 0.0,
 		pointArrowTowardsEndpoint = true,
 		
-		// cached values
+		// cached values. Does the layouter need these? I think these are set
 		minFlowValue,
 		maxFlowValue,
 		meanFlowValue,
@@ -72,6 +72,8 @@ var FloxModel = function() {
 		drawRangeboxes = false,
 
 		// Not really a setting. Doesn't get passed in to the layoutWorker. 
+		// ...Why doesn't it get passed into the layout worker? Is it used for
+		// anything in the layout?
 		stateScales = {
 			"wv" : 0.5
 		},
@@ -619,8 +621,6 @@ var FloxModel = function() {
 			moveFlowsIntersectingNodes : moveFlowsIntersectingNodes,
 			multipleIterations : multipleIterations,
 			isShowLockedFlows : isShowLockedFlows,
-			flowDistanceFromEndPointPx : flowDistanceFromEndPointPx,
-			flowDistanceFromStartPointPx : flowDistanceFromStartPointPx,
 			NODE_STROKE_WIDTH : NODE_STROKE_WIDTH,
 			NBR_ITERATIONS: NBR_ITERATIONS,
 			showForceAnimation: showForceAnimation,
@@ -1344,6 +1344,7 @@ var FloxModel = function() {
 	 */
 	my.updateSettings = function(settings) {
 		
+		// Layout Settings
 		maxFlowPoints = settings.maxFlowPoints;
 		distanceWeightExponent = settings.distanceWeightExponent;
 		peripheralStiffnessFactor = settings.peripheralStiffnessFactor;
@@ -1351,26 +1352,27 @@ var FloxModel = function() {
 		minFlowLengthSpringConstant = settings.minFlowLengthSpringConstant;
 		enforceRangebox = settings.enforceRangebox;
 		flowRangeboxHeight = settings.flowRangeboxHeight;
-		maxFlowWidth = settings.maxFlowWidth;
-		maxNodeRadius = settings.maxNodeRadius;
 		antiTorsionWeight = settings.antiTorsionWeight;
 		angularDistributionWeight = settings.angularDistributionWeight;
 		nodeWeight = settings.nodeWeight;
 		nodeTolerancePx = settings.nodeTolerancePx;
 		moveFlowsIntersectingNodes = settings.moveFlowsIntersectingNodes;
 		multipleIterations = settings.multipleIterations;
-		isShowLockedFlows = settings.isShowLockedFlows;
-		flowDistanceFromEndPointPx = settings.flowDistanceFromEndPointPx;
-		flowDistanceFromStartPointPx = settings.flowDistanceFromStartPointPx;
-		NODE_STROKE_WIDTH = settings.NODE_STROKE_WIDTH;
 		NBR_ITERATIONS = settings.NBR_ITERATIONS;
 		showForceAnimation = settings.showForceAnimation;
 		FLOW_DISTANCE_THRESHOLD = settings.FLOW_DISTANCE_THRESHOLD;
-		flowDistanceFromStartPointPixel = settings.flowDistanceFromStartPointPixel;
-		flowDistanceFromEndPointPixel = settings.flowDistanceFromEndPointPixel;
 		checkFlowBoundingBoxes = settings.checkFlowBoundingBoxes;
 		maxFlows = settings.maxFlows;
 		mapScale = settings.mapScale;
+		
+		// Map Appearance Settings
+		maxFlowWidth = settings.maxFlowWidth;
+		maxNodeRadius = settings.maxNodeRadius;
+		isShowLockedFlows = settings.isShowLockedFlows;
+		flowDistanceFromStartPointPixel = settings.flowDistanceFromStartPointPixel;
+		flowDistanceFromEndPointPixel = settings.flowDistanceFromEndPointPixel;
+		NODE_STROKE_WIDTH = settings.NODE_STROKE_WIDTH;
+
 	};
 
 	return my;

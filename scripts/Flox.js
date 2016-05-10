@@ -19,14 +19,20 @@ var mapComponent,
     flowGrid = null,
 	nodeGrid = null;
     
+function refreshMap() {
+	var drawSettings = model.getDrawSettings();
+    mapComponent.clearAll();
+    mapComponent.drawFeatures(drawSettings);
+}
+
 function initLayoutWorker() {
 	
 	var flows,
 		ctrlPts,
 		flow, flowCPt, 
-		i, j, latLng,
-		progress = document.getElementById("layoutProgressBar");
-		progress.style.visibility = "visible";
+		i, j, latLng, progress;
+		//progress = document.getElementById("layoutProgressBar");
+		//progress.style.visibility = "visible";
 	
 	if (window.Worker) {
 	
@@ -39,14 +45,12 @@ function initLayoutWorker() {
 		layoutWorker = new Worker("scripts/layoutWorker.js");
 		
 		// This happens when layoutWorker sends out a message
-		// What it SHOULD do is update the control points of flows in the model
-		// with new locations.
 		layoutWorker.onmessage = function(e) {
 			
-			progress.value = (e.data[1] / model.getIterations()) * 100;
-			if(((e.data[1] / model.getIterations()) * 100)===100) {
-				progress.style.visibility = "hidden";
-			}
+			// progress.value = (e.data[1] / model.getIterations()) * 100;
+			// if(((e.data[1] / model.getIterations()) * 100)===100) {
+				// progress.style.visibility = "hidden";
+			// }
 			
 			ctrlPts = e.data[0];			
 			flows = model.getFlows();
@@ -71,21 +75,13 @@ function initLayoutWorker() {
 }
 
 function runLayoutWorker() {
-	
-	console.log("layout worker isn't working");
-	return;
-	
 	initLayoutWorker();
 	console.log("running layoutWorker");
 	var modelJSON = model.toJSON();
 	layoutWorker.postMessage(modelJSON);
 }
 
-function refreshMap() {
-	var drawSettings = model.getDrawSettings();
-    mapComponent.clearAll();
-    mapComponent.drawFeatures(drawSettings);
-}
+
 
 function importCSV(path) {
     // clear the model
@@ -879,21 +875,26 @@ Flox.importNetCountyFlowData = function(stateAbbreviation) {
 	var nodePath = "data/geometry/centroids_counties_all.csv",
 		flowPath = "data/census/flows/" + stateAbbreviation + "_net.csv";
 	
+	// erase all flows from the model.
+	model.deleteAllFlows();
+	
 	// Set the mapScale in the model to the appropriate scale for this map.
 	// This scale is used by the layouter!
 	// Could it also be used by the renderer?
 	model.setStateMapScale(stateAbbreviation);
 	
 	Flox.FlowImporter.importNetCountyFlowData(nodePath, flowPath, function(){
+		console.log("data imported");
+		
 		Flox.sortFlows();
 				
 		Flox.setFilteredFlows();
 		
 		mapComponent.configureNecklaceMap(stateAbbreviation);
-				
 		Flox.layoutFlows();
-				
 		Flox.refreshMap();
+		
+		//runLayoutWorker();
 	});
 };
 

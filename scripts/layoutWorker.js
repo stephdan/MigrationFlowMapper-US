@@ -3,18 +3,17 @@
 "use strict";
 
 // Import bezier.js for doing curve things
-importScripts("../node_modules/bezier-js/bezier.js",
-				"Flow.js",
-				"FloxModel.js");
+importScripts("Flow.js",
+			  "FloxModel.js");
 
-var model;
+var model, Force;
 
 /**
  * A force vector. 
  * @param {Number} fx x direction of this Force
  * @param {Number} fy y direction of this Force
  */
-var Force = function(fx, fy) {
+Force = function(fx, fy) {
     this.fx = fx;
     this.fy = fy;
     /**
@@ -84,19 +83,24 @@ function addForces(f1, f2) {
     return new Force(f1.fx + f2.fx, f1.fy + f2.fy);
 }
 
+function boxesOverlap(a, b) {
+	if (a.max.x < b.min.x) {return false;} // a is left of b
+	if (a.min.x > b.max.x) {return false;} // a is right of b
+	if (a.max.y < b.min.y) {return false;}// a is above b
+	if (a.min.y > b.max.y) {return false;} // a is below b
+	return true; // boxes overlap
+}
 
-function getShortestAxisDistanceBetweenFlowBoundingBoxes(flow1, flow2) {
-	
+
+function getLongestAxisDistanceBetweenFlowBoundingBoxes(flow1, flow2) {
+
 	var dx, dy, 
 		box1 = flow1.getCachedBoundingBox(), 
 		box2 = flow2.getCachedBoundingBox();
 	
 	// Do the boxes overlap or touch?
-	if (box1.max.x < box2.min.x &&
-		box1.min.x > box2.max.x &&
-		box1.max.y < box2.min.y &&
-		box1.min.y > box2.max.y
-		) {
+	// This doesn't work
+	if (boxesOverlap(box1, box2)) {
 		return 0;
 	}
 	
@@ -109,7 +113,7 @@ function getShortestAxisDistanceBetweenFlowBoundingBoxes(flow1, flow2) {
 	if (box1.max.y < box2.min.y) { // box1 is above box2
 		dy = box2.min.y - box1.max.y;
 	} else { // box1 is below box2
-		dy = box1.min.y - box2.max.y;
+		dy = box1.min.y - box2.max.y; // can be negative
 	}
 	
 	if (dx > dy) {
@@ -118,55 +122,56 @@ function getShortestAxisDistanceBetweenFlowBoundingBoxes(flow1, flow2) {
 	return dy;
 }
 
-/**
- * Computes the force of all intermediat flow points on the map against a 
- * target point.
- * @param targetPoint Forces upon this point will be computed.
- * @param targetFlow Flow containing the targetPoint
- */
-function computeForceOnPoint(targetPoint, targetFlow) {
-   
-    var flows = model.getFlows(), // Get the flows
-    
-        // Get the distance weight exponent
-		distWeightExponent = model.getDistanceWeightExponent(),
+	/**
+	 * Computes the force of all intermediat flow points on the map against a 
+	 * target point.
+	 * @param targetPoint Forces upon this point will be computed.
+	 * @param targetFlow Flow containing the targetPoint
+	 */
+	function computeForceOnPoint(targetPoint, targetFlow, flowSubset) {
+	   
+	   // var flows = model.getFlows(), // Get the flows
+	    
+	        // Get the distance weight exponent
+		var distWeightExponent = model.getDistanceWeightExponent(),
+			fxTotal = 0, // total force along the x axis
+			fyTotal = 0, // total force along the y axis
+			wTotal = 0, // sum of the weight of all forces
+			i, j, k, flow, points, point, ptID, xDist, yDist, lSq, w, 
+			fxFinal, fyFinal, flowDist, flowDistW, threshold,
+			skipEndPoints, beginPtID, endPtID;
+	
+	    // Iterate through the flows. The forces of each flow on the target 
+	    // is calculated and added to the total force.
+	    for (i = 0, j = flowSubset.length; i< j; i += 1){
+	        
+	        flow = flowSubset[i];
+	        
+	        //console.log("shortest distance between bb's: " + flowDist);
+	        // set flowDistW. If this number is really small, that means the bounding
+	        // boxes are far apart.
+	        // If this number is LARGE, than the boxes are close together, yes?
+	        // TODO this is kindof messy and I don't really know if I'm doing it right.
+	        // On hold until further experimentation is done.
+			//flowDistW = 1/geometricSeriesPower(flowDist * flowDist, distWeightExponent);
 		
-		fxTotal = 0, // total force along the x axis
-		fyTotal = 0, // total force along the y axis
-		wTotal = 0, // sum of the weight of all forces
-		i, j, k, flow, points, point, ptID, xDist, yDist, lSq, w, 
-		fxFinal, fyFinal, flowDist, flowDistW, threshold;
-
-    // Iterate through the svgFlows. The forces of each flow on the target 
-    // is calculated and added to the total force.
-    for (i = 0, j = flows.length; i< j; i += 1){
-        
-        flowDistW = 0;
-        flow = flows[i];
-        
-        flowDist = getShortestAxisDistanceBetweenFlowBoundingBoxes(targetFlow, flow);
-        
-        console.log("shortest distance between bb's: " + flowDist);
-        
-        // set flowDistW. If this number is really small, that means the bounding
-        // boxes are far apart.
-        // If this number is LARGE, than the boxes are close together, yes?
-        // TODO this is kindof messy and I don't really know if I'm doing it right.
-        // On hold until further experimentation is done.
-		//flowDistW = 1/geometricSeriesPower(flowDist * flowDist, distWeightExponent);
-		
-		// TODO the threshold is a constant that needs reviewing. 
-        threshold = model.getFlowDistanceThreshold();
-        
-        // If this Flow is the targetFlow, skip it;
-        if (flow !== targetFlow){
-			
-			//console.log("It's not the target flow!");
+			// TODO the threshold is a constant that needs reviewing. 	        
+	        
             // get the points along this flow
 			points = flow.getCachedLineSegments();
 
+			//skipEndPoints = Flox.isSkipEndPoints();
+
+			// if (skipEndPoints) {
+				// beginPtID = 1;
+				// endPtID = 1;
+			// } else {
+				beginPtID = 0;
+				endPtID = 0;
+			// }
+
             // Iterate through the points
-            for (ptID = 0, k = points.length; ptID < k; ptID += 1) {
+            for (ptID = beginPtID, k = points.length - endPtID; ptID < k; ptID += 1) {
                 point = points[ptID];
 
                 xDist = targetPoint.x - point.x; // x dist from node to target
@@ -190,28 +195,22 @@ function computeForceOnPoint(targetPoint, targetFlow) {
 	                wTotal += w;
                 }  
             }
-        } 
-    }
-
-// Calculate the final force of all nodes on the target point
+	    }
 	
-	if(wTotal!==0) {
-		fxFinal = fxTotal / wTotal;
-		fyFinal = fyTotal / wTotal;
-	} else {
-		fxFinal = 0;
-		fyFinal = 0;
+	// Calculate the final force of all nodes on the target point
+		if(wTotal!==0) {
+			fxFinal = fxTotal; // wTotal;
+			fyFinal = fyTotal; // wTotal;
+		} else {
+			fxFinal = 0;
+			fyFinal = 0;
+		}
+		
+	    if(isNaN(fxFinal) || isNaN(fyFinal)) {
+			throw new Error("NaN in computeForceOnPoint()!");
+	    }
+	    return new Force(fxFinal, fyFinal);
 	}
-
-    
-    
-    if(isNaN(fxFinal) || isNaN(fyFinal)) {
-		throw new Error("NaN in computeForceOnPoint()!");
-    }
-    return new Force(fxFinal, fyFinal);
-}
-
-
 
 function computeAntiTorsionForce(flow) {
     var basePt = flow.getBaselineMidPoint(),
@@ -348,32 +347,59 @@ function computeNodeForceOnFlow(flow) {
 // flow: the target flow
 // maxFlowLength: The longest distance between endpoints of all Flows.
 // TODO missing node on flow forces
-function computeForceOnFlow(flow, maxFlowLength) {      
+function computeForceOnFlow(targetFlow, maxFlowLength) {      
 
-    var basePt = flow.getBaselineMidPoint(),
-		cPt = flow.getCtrlPt(),
-		flowBaseLength = flow.getBaselineLength(),
-		flowPoints = flow.getCachedLineSegments(),
+    var basePt = targetFlow.getBaselineMidPoint(),
+		cPt = targetFlow.getCtrlPt(),
+		flowBaseLength = targetFlow.getBaselineLength(),
+		flowPoints = targetFlow.getCachedLineSegments(),
 		externalF = new Force(0,0),
 		lengthOfForceVectorsSum = 0,
 		forceRatio, antiTorsionF, flowSpringConstant, springF, fx, fy,
 		finalForce, nodeF,
-		i, j, pt, f;
+		i, j, pt, f,
+		flowSubset = [],
+		flows, 
+		flowDistance, // longest axis distance between flow bounding boxes
+		flowDistW,
+		distWeightExponent = model.getDistanceWeightExponent(),
+		threshold = model.getFlowDistanceThreshold();
 
-    // Iterate through the points in flowPoints
+	// Get the subset of flows that will exert force on targetFlow
+	flows = model.getFlows();
+	for (i = 0, j = flows.length; i < j; i += 1) {
+		
+		if (flows[i] !== targetFlow) { // Don't add the targetFlow
+		
+			flowDistance = getLongestAxisDistanceBetweenFlowBoundingBoxes(targetFlow, flows[i]);
+			//console.log("Longest distance between " + targetFlow.getId() + " and " + flows[i].getId() + ": " + flowDistance);	
+			
+			flowDistW = 1/geometricSeriesPower(flowDistance * flowDistance, distWeightExponent);
+			//console.log("flowDistW: " + flowDistW);
+			
+			// if flowDistW is high, that means they are close together. 
+			// If it's high enough, add the current flow to the subset
+			if (true){//(flowDistance > 0 && flowDistW > threshold) {
+				//console.log("close together!")
+				flowSubset.push(flows[i]);
+			}
+		}
+	}
+
+    // Iterate through the points along targetFlow
     for (i=0, j = flowPoints.length; i < j; i += 1) {
 
         pt = flowPoints[i];
 
-        f = computeForceOnPoint(pt, flow);
+        f = computeForceOnPoint(pt, targetFlow, flowSubset);
 
         // add f to totals
         externalF.addForce(f);
         lengthOfForceVectorsSum += f.getLength();
     }
-    
+
     // Compute ratio between lengh of total vector and the summed length 
-    // of the shorter forces. This is a measure of how peripheral the flow 
+    // of the shorter forces. This is a measure of how peripheral the targetFlow 
     // is.
     forceRatio = externalF.getLength() / lengthOfForceVectorsSum;
 	if (isNaN(forceRatio)) {
@@ -383,11 +409,11 @@ function computeForceOnFlow(flow, maxFlowLength) {
     externalF.fx /= flowPoints.length;
     externalF.fy /= flowPoints.length;
 
-    // compute anti-torsion force of flow
+    // compute anti-torsion force of targetFlow
     // FIXME producing NaN
-    antiTorsionF = computeAntiTorsionForce(flow);
+    antiTorsionF = computeAntiTorsionForce(targetFlow);
 
-    // Compute spring force of flow
+    // Compute spring force of targetFlow
     flowSpringConstant = computeSpringConstant(flowBaseLength, 
 		maxFlowLength); 
     //FIXME Don't ask the model for stuff. Have Flox get it. 
@@ -399,16 +425,12 @@ function computeForceOnFlow(flow, maxFlowLength) {
 	// FIXME This doesn't work right. Results in NaN. 
 	// Bad things happen in Flow.distance() probably. 
 	// Also, _pow() is weird. 
-	nodeF = computeNodeForceOnFlow(flow);
+	nodeF = computeNodeForceOnFlow(targetFlow);
 
     // Add up the forces, return a new force
     fx = externalF.fx + springF.fy + antiTorsionF.fx + nodeF.fx;
     fy = externalF.fy + springF.fy + antiTorsionF.fy + nodeF.fy;
-
-	if (isNaN(fx) || isNaN(fy)) {
-		throw new Error("NaN in computeForceOnFlow()!");
-	}	
-
+	
 	finalForce = new Force(fx, fy);
 
     return finalForce;
@@ -601,18 +623,12 @@ function layoutAllFlows(weight) {
 
 
             if(model.isEnforceRangebox()) {
-                //tempPoint = Flox.enforceRangebox(flow);
-                
-                //ctrlPt.x = tempPoint.x;
-                //ctrlPt.y = tempPoint.y;
-                
                 flow.enforceRangebox(model.getFlowRangeboxHeight());
             }
             
             // reset the latLng of ctrlPt
             ctrlPt.lat = undefined;
             ctrlPt.lng = undefined;
-            
         }
     }
 }  
@@ -633,10 +649,6 @@ function straightenFlows(onlySelected) {
 		}
     }
 }
-
-
-
-
 
 function flowIntersectsNode(flow, node) {
 	
@@ -668,7 +680,6 @@ function flowIntersectsANode(flow) {
 			}
 		}
 	}
-	
 	return false;
 }
 
@@ -749,8 +760,6 @@ function moveFlowIntersectingANode(flow) {
         unitVectorX = -dy / dist;
         unitVectorY = dx / dist;
     }
-    
-
     
     // save the starting coordinates of the cPt
     startingXY = { x : cPt.x, y : cPt.y };
@@ -848,7 +857,7 @@ function buildModel(e){
 	newModel = new FloxModel();	
 	newModel.addFlows(flows);
 	newModel.updateSettings(e.data.settings);
-	newModel.updateCachedValues();
+	newModel.updateCachedValues(); // TODO These could be passed in as settings. 
 	
 	return newModel;
 }

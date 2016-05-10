@@ -5,16 +5,14 @@ Flox.FlowLayouter = function (model) {
    
 	"use strict";
    
-	var	my = {};
+	var	Force, my = {};
 
-	// Should this be a separate class like Points and Flows? 
-    // It's only used by the layouter.
     /**
      * A force vector. 
      * @param {Number} fx x direction of this Force
      * @param {Number} fy y direction of this Force
      */
-    var Force = function(fx, fy) {
+    Force = function(fx, fy) {
         this.fx = fx;
         this.fy = fy;
     };
@@ -73,9 +71,6 @@ Flox.FlowLayouter = function (model) {
         }
         return a8 * a8;
     }
-
-
-	
 
     /**
      * Add two forces together
@@ -162,15 +157,15 @@ Flox.FlowLayouter = function (model) {
             // get the points along this flow
 			points = flow.getCachedLineSegments();
 
-			skipEndPoints = Flox.isSkipEndPoints();
-
-			if (skipEndPoints) {
-				beginPtID = 1;
-				endPtID = 1;
-			} else {
+			// skipEndPoints = Flox.isSkipEndPoints();
+// 
+			// if (skipEndPoints) {
+				// beginPtID = 1;
+				// endPtID = 1;
+			// } else {
 				beginPtID = 0;
 				endPtID = 0;
-			}
+			// }
 
             // Iterate through the points
             for (ptID = beginPtID, k = points.length - endPtID; ptID < k; ptID += 1) {
@@ -200,7 +195,6 @@ Flox.FlowLayouter = function (model) {
 	    }
 	
 	// Calculate the final force of all nodes on the target point
-		
 		if(wTotal!==0) {
 			fxFinal = fxTotal; // wTotal;
 			fyFinal = fyTotal; // wTotal;
@@ -208,18 +202,12 @@ Flox.FlowLayouter = function (model) {
 			fxFinal = 0;
 			fyFinal = 0;
 		}
-	
-	    
-	    
+		
 	    if(isNaN(fxFinal) || isNaN(fyFinal)) {
 			throw new Error("NaN in computeForceOnPoint()!");
 	    }
 	    return new Force(fxFinal, fyFinal);
 	}
-
-
-
-
 
 	function computeAntiTorsionForce(flow) {
         var basePt = flow.getBaselineMidPoint(),
@@ -288,7 +276,6 @@ Flox.FlowLayouter = function (model) {
 	function isEven(i) {
         return ((i % 2) === 0);
     }
-	
 	
 	function computeNodeForceOnFlow(flow) {
 		
@@ -633,19 +620,13 @@ Flox.FlowLayouter = function (model) {
 	            ctrlPt.y = newCPtY;
 	
 	
-	            if(model.isEnforceRangebox()) {
-	                //tempPoint = Flox.enforceRangebox(flow);
-	                
-	                //ctrlPt.x = tempPoint.x;
-	                //ctrlPt.y = tempPoint.y;
-	                
+	            if(model.isEnforceRangebox()) {	                
 	                flow.enforceRangebox(model.getFlowRangeboxHeight());
 	            }
 	            
 	            // reset the latLng of ctrlPt
 	            ctrlPt.lat = undefined;
 	            ctrlPt.lng = undefined;
-	            
             }
         }
     }  
@@ -666,10 +647,6 @@ Flox.FlowLayouter = function (model) {
 			}
         }
     }
-
-	
-
-	
 
 	function flowIntersectsNode(flow, node) {
 		
@@ -701,7 +678,6 @@ Flox.FlowLayouter = function (model) {
 				}
 			}
 		}
-		
 		return false;
 	}
 
@@ -782,8 +758,6 @@ Flox.FlowLayouter = function (model) {
             unitVectorX = -dy / dist;
             unitVectorY = dx / dist;
         }
-        
-
         
         // save the starting coordinates of the cPt
         startingXY = { x : cPt.x, y : cPt.y };

@@ -198,35 +198,90 @@ Flox.MapComponent_d3 = function() {
 		    curves,
 		    arrows;
 
-		// clear the existing flows?
-		//d3.select("#flowsLayer").selectAll("g").remove();
-		
-		svgFlows = d3.select("#flowsLayer").selectAll("g")// a group for each flow
-		.data(flows)// flow data added to GROUP
-		.enter().append("g");
-		// add the g to the flowsLayer
+		flows.sort(function(a, b){ return a.getValue() - b.getValue(); });
 
-		svgFlows.append("path")// Add a new path. This is the flow curve!
-		.classed("curve", true).attr("stroke", function(d) {
-			return getFlowColor(d);
-		}).style("cursor", "default").attr("fill", "none").attr("stroke-width", function(d) {
-			return Flox.getFlowStrokeWidth(d);
-		}).attr("d", function(d) {
-			return buildSvgFlowPath(d, drawArrows);
-		});
-
+		// called svgFlows because flows is already taken!
+		svgFlows = d3.select("#flowsLayer").append("g").attr("id", "svgFlows")
+			.selectAll("g")// a group for each flow
+			.data(flows)// flow data added to GROUP
+			.enter().append("g");
+	
+		// Draw outlines first
 		if (drawArrows) {
 			svgFlows.append("path")// add a new path. This is the arrowhead!
-			.classed("arrow", true).style("cursor", "default").attr("stroke", function(d) {
-				return "blue";
-				//getFlowColor(d);
-			}).attr("fill", function(d) {
-				return getFlowColor(d);
-				//return "none";
-			}).attr("stroke-width", 0).attr("d", function(d) {
-				return buildSvgArrowPath(d);
-			});
+				.classed("arrowOutline", true)
+				.style("cursor", "default")
+				.attr("stroke", "white")
+				.attr("fill", "white")
+				.attr("stroke-width", 2)
+				.attr("d", function(d) {
+					return buildSvgArrowPath(d);
+				});
 		}
+		svgFlows.append("path")
+			.classed("curveOutline", true)
+			.attr("stroke", "white")
+			.style("cursor", "default")
+			.attr("fill", "none")
+			.attr("stroke-width", function(d) {
+				return Flox.getFlowStrokeWidth(d) + 2;
+			})
+			.attr("d", function(d) {
+				return buildSvgFlowPath(d, drawArrows);
+			});
+	
+	
+		// Draw arrowheads
+		if (drawArrows) {
+			svgFlows.append("path")// add a new path. This is the arrowhead!
+				.classed("arrow", true)
+				.style("cursor", "default")
+				.attr("stroke", "none")
+				.attr("fill", function(d) {
+					return getFlowColor(d);
+					//return "none";
+				})
+				.attr("stroke-width", 5)
+				.attr("d", function(d) {
+					return buildSvgArrowPath(d);
+				});
+		}
+
+		// Draw flow curves
+		svgFlows.append("path")
+			.classed("curve", true)
+			.attr("stroke", function(d) {
+				return getFlowColor(d);
+			})
+			.style("cursor", "default")
+			.attr("fill", "none")
+			.attr("stroke-width", function(d) {
+				return Flox.getFlowStrokeWidth(d);
+			})
+			.attr("d", function(d) {
+				return buildSvgFlowPath(d, drawArrows);
+			});
+		
+		
+		// // Change the width on hover		
+		// svgFlows.on("mouseover", function (d) {
+                 // d3.select(this).select(".curve").transition().duration(50)
+                   // .attr("stroke-width", function(){
+						// return Flox.getFlowStrokeWidth(d) + 3;
+                   // });
+                 // d3.select(this).select(".arrow").transition().duration(50)
+                   // .attr("stroke-width", 3);
+             // })
+             // .on("mouseout", function (d) {
+                 // d3.select(this).select(".curve").transition().duration(50)
+                   // .attr("stroke-width", function (){
+						// return Flox.getFlowStrokeWidth(d);
+                   // });
+                 // d3.select(this).select(".arrow").transition().duration(50)
+                   // .attr("stroke-width", 0);
+             // });
+		
+		
 	}
 
 	function drawPoints() {
@@ -506,6 +561,10 @@ Flox.MapComponent_d3 = function() {
 		    testStates,
 		    stateCircles;
 		
+		// Clear out all flows and necklace maps.
+		d3.select("#flowsLayer").selectAll("g").remove();
+		d3.select("#necklaceMapLayer").remove(); 
+		
 		// get the statePolygon, yes?
 		d3.select("#" + stateAbbreviation).each(function(d) {
 			statePolygon = d; // Yes!
@@ -617,7 +676,7 @@ Flox.MapComponent_d3 = function() {
 	 * @param {Object} nodes
 	 * @param {Object} circle
 	 */
-	function addNecklaceMap(outerCircle, stateNodes) {
+	function addNecklaceMap(outerCircle, stateNodes, callback) {
 		var w = 0, // width of force graph.
 		    h = 0, // height of force graph. 
 		    nodeRadius = stateNodes[0].r, // radius of nodes.
@@ -652,7 +711,7 @@ Flox.MapComponent_d3 = function() {
 					  .style("stroke-width", function(d) {
 					  	return (d.strokeWidth);
 					  })
-					  .call(force.drag)
+					  //.call(force.drag)
 					  .on("mousedown", function() {
 					  	d3.event.stopPropagation();
 					  });
@@ -694,7 +753,7 @@ Flox.MapComponent_d3 = function() {
 			var STUSPS = stateNodes[i].STUSPS;
 			necklaceMapNodes[STUSPS] = stateNodes[i];
 		}
-		return necklaceMapNodes;
+		callback(necklaceMapNodes);
 	}
 
 	function configureNecklaceMap(targetStateAbbreviation) {
@@ -740,26 +799,30 @@ Flox.MapComponent_d3 = function() {
 		
 		stateCircles = getStateCircles(outerCircle, outerStates);
 		
-		necklaceMapNodes = addNecklaceMap(outerCircle, stateCircles);
-		
-		// Swap out the offending node in each flow with the necklace map node.
-		for(i = 0, j = flows.length; i < j; i += 1) {
-			flow = flows[i];
-			sPt = flow.getStartPt();
-			ePt = flow.getEndPt();
-			
-			// if the SPUSPS in sPt isn't the target flow, replace it with
-			// the necklaceMapNode it should be. 
-			if(sPt.STUSPS !== targetStateAbbreviation) {
-				flow.setStartPt(necklaceMapNodes[sPt.STUSPS]);
+		addNecklaceMap(outerCircle, stateCircles, function(necklaceMapNodes) {
+			// Swap out the offending node in each flow with the necklace map node.
+			for(i = 0, j = flows.length; i < j; i += 1) {
+				flow = flows[i];
+				sPt = flow.getStartPt();
+				ePt = flow.getEndPt();
+				
+				// if the SPUSPS in sPt/ePt isn't the target, replace it with
+				// the necklaceMapNode it should be. 
+				if(sPt.STUSPS !== targetStateAbbreviation) {
+					flow.setStartPt(necklaceMapNodes[sPt.STUSPS]);
+				}
+				if(ePt.STUSPS !== targetStateAbbreviation) {
+					flow.setEndPt(necklaceMapNodes[ePt.STUSPS]);
+				}
 			}
+			// Tell Flox it can layout flows now.
+			// console.log("running timeout");
+			// window.setTimeout(function(){
+				// console.log("continuing!");
+			//Flox.runLayoutWorker();
+			// }, 1000);
 			
-			if(ePt.STUSPS !== targetStateAbbreviation) {
-				flow.setEndPt(necklaceMapNodes[ePt.STUSPS]);
-			}
-		}
-		// Tell Flox it can layout flows now.
-		//Flox.layoutFlows(); // No need, Flox will do it.
+		});
 	}
 	
 	// PUBLIC ---------------------------------------------------------------------
