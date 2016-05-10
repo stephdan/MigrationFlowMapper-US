@@ -234,15 +234,7 @@ Flox.MapComponent_d3 = function() {
 			.attr("d", function(d) {
 				return buildSvgFlowPath(d, drawArrows);
 			})
-			.on("mouseover", function(d){
-				flowMouseover();
-			})
-			.on("mousemove", function(d){
-				flowMousemove(d);
-			})
-			.on("mouseout", function(d){
-				flowMouseout();
-			});
+			
 	
 	
 		// Draw arrowheads
@@ -258,33 +250,7 @@ Flox.MapComponent_d3 = function() {
 				.attr("stroke-width", 5)
 				.attr("d", function(d) {
 					return buildSvgArrowPath(d);
-				})
-				.on("mouseover", function(d){
-					flowMouseover();
-				})
-				.on("mousemove", function(d){
-					flowMousemove(d);
-				})
-				.on("mouseout", function(d){
-					flowMouseout();
-				});
-				
-		}
-
-		function flowMouseover(d){
-			tooltip.style("display", "inline");
-	    }
-
-		function flowMousemove(d) {
-			tooltip.html("Value: " + d.getValue() + "<br/>" + 
-			             "From: " + d.getStartPt().id + "<br/>" + 
-			             "To: " + d.getEndPt().id )
-			       .style("left", (d3.event.pageX + 1) + "px")
-			       .style("top", (d3.event.pageY - 34) + "px");
-		}
-
-		function flowMouseout(d) {
-			tooltip.style("display", "none");
+				})				
 		}
 
 		// Draw flow curves
@@ -300,12 +266,41 @@ Flox.MapComponent_d3 = function() {
 			})
 			.attr("d", function(d) {
 				return buildSvgFlowPath(d, drawArrows);
-			})
-			.attr("pointer-events", "none");
+			});
 		
-		
+		function flowMouseover(d){
+			tooltip.style("display", "inline");
+	    }
+
+		function flowMousemove(d) {
+			tooltip.html("Value: " + d.getValue() + "<br/>" + 
+			             "From: " + d.getStartPt().id + "<br/>" + 
+			             "To: " + d.getEndPt().id )
+			       .style("left", (d3.event.pageX + 1) + "px")
+			       .style("top", (d3.event.pageY - 34) + "px");
+		}
+
+		function flowMouseout(d) {
+			tooltip.style("display", "none");
+		}
          
-         
+        svgFlows.on("mouseover", function(d) {
+			tooltip.style("display", "inline");
+			d3.select(this).select(".curve").attr("stroke", "yellow");
+			d3.select(this).select(".arrow").attr("fill", "yellow");
+        })
+        .on("mousemove", function(d) {
+			tooltip.html("Value: " + d.getValue() + "<br/>" + 
+			             "From: " + d.getStartPt().id + "<br/>" + 
+			             "To: " + d.getEndPt().id )
+			       .style("left", (d3.event.pageX + 4) + "px")
+			       .style("top", (d3.event.pageY - 34) + "px");
+        })
+        .on("mouseout", function() {
+			tooltip.style("display", "none");
+			d3.select(this).select(".curve").attr("stroke", "black");
+			d3.select(this).select(".arrow").attr("fill", "black");
+        });
 	}
 
 	function drawPoints() {
