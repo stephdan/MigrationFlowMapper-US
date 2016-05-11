@@ -1,13 +1,10 @@
 
-(function($, L, d3, Flow, window, document, undefined) {
+var Flox = (function() {
 
 "use strict";
 // Define Flox as a global variable. This is how leaflet does it with L, and I 
 // thought it was cool and very clear. Other globals are defined with this app
 // that DON'T do this though, like Flow and FloxModel. TODO
-var Flox = {};
-window.Flox = Flox;
-
 var mapComponent,
 	model,
     drawRangeboxes = false,
@@ -17,7 +14,8 @@ var mapComponent,
     layoutWorker,
     skipEndPoints = false,
     flowGrid = null,
-	nodeGrid = null;
+	nodeGrid = null,
+	my = {};
     
 function refreshMap() {
 	var drawSettings = model.getDrawSettings();
@@ -165,8 +163,7 @@ function layoutFlows() {
 		model.applyLocks(initialLocks);
 		
 		
-        d3.select("#flowPointLayer").remove();
-		mapComponent.update();
+        refreshMap();
         return;
     }
 
@@ -196,8 +193,8 @@ function layoutFlows() {
 	// TODO this is called here rather than at the end of each iteration
 	// because it doesn't work at the end of each iteration. 
 	// Maybe because of asynchronous functions in D3?
-	d3.select("#flowPointLayer").remove();
-	mapComponent.update();
+	//d3.select("#flowPointLayer").remove();
+	refreshMap();
 	endTime = performance.now();
 	console.log("Layout time in milliseconds: " + Math.round(endTime - startTime));
 }
@@ -386,92 +383,92 @@ function importTelecomData() {
 
 // PUBLIC =====================================================================
 
-Flox.getStartClipRadius = function (startNode) {
+my.getStartClipRadius = function (startNode) {
 	return model.getStartClipRadius(startNode);
 };
 
-Flox.getEndClipRadius = function (endNode) {
+my.getEndClipRadius = function (endNode) {
 	return model.getEndClipRadius(endNode);
 };
 
-Flox.createLatLng = function(lat, lng) {
+my.createLatLng = function(lat, lng) {
 	return new L.LatLng(lat,lng);
 };
 
-Flox.update = function() {
+my.update = function() {
 	mapComponent.update();
 };
 
-Flox.getFlowDistanceFromStartPointPixel = function() {
+my.getFlowDistanceFromStartPointPixel = function() {
 	return model.getFlowDistanceFromStartPointPixel();
 };
 
-Flox.getFlowDistanceFromEndPointPixel = function() {
+my.getFlowDistanceFromEndPointPixel = function() {
 	return model.getFlowDistanceFromEndPointPixel();
 };
 
 
-Flox.angleDif = function(startToCtrlAngle, fStartToCtrlAngle) {
+my.angleDif = function(startToCtrlAngle, fStartToCtrlAngle) {
 	return Flox.GeomUtils.angleDif(startToCtrlAngle, fStartToCtrlAngle);
 };
 
-Flox.getMaxFlowPoints = function() {
+my.getMaxFlowPoints = function() {
 	return model.getMaxFlowPoints();
 };
 
-Flox.isEnforceRangebox = function() {
+my.isEnforceRangebox = function() {
 	return model.isEnforceRangebox();
 };
 
-Flox.getAngularDistributionWeight = function() {
+my.getAngularDistributionWeight = function() {
 	return model.getAngularDistributionWeight();
 };
 
-Flox.getPeripheralStiffnessFactor = function() {
+my.getPeripheralStiffnessFactor = function() {
 	return model.getPeripheralStiffnessFactor();
 };
 
-Flox.getNodeWeight = function() {
+my.getNodeWeight = function() {
 	return model.getNodeWeight();
 };
 
-Flox.getDistanceWeightExponent = function() {
+my.getDistanceWeightExponent = function() {
 	return model.getDistanceWeightExponent();
 };
 
-Flox.getMinFlowLengthSpringConstant = function() {
+my.getMinFlowLengthSpringConstant = function() {
 	return model.getMinFlowLengthSpringConstant();
 };
 
-Flox.getMaxFlowLengthSpringConstant = function() {
+my.getMaxFlowLengthSpringConstant = function() {
 	return model.getMaxFlowLengthSpringConstant();
 };
 
-Flox.getAntiTorsionWeight = function() {
+my.getAntiTorsionWeight = function() {
 	return model.getAntiTorsionWeight();
 };
 
-Flox.flowToBezier = function(x0, y0, x1, y1, x2, y2) {
+my.flowToBezier = function(x0, y0, x1, y1, x2, y2) {
 	return new Bezier(x0, y0, 
                       x1, y1,
                       x2, y2);
 };
 
-Flox.getNodeTolerancePx = function() {
+my.getNodeTolerancePx = function() {
 	return model.getNodeTolerancePx();
 };
 	
-Flox.getClippedFlow = function(flow, startClipRadius, endClipRadius) {
+my.getClippedFlow = function(flow, startClipRadius, endClipRadius) {
 	getClippedFlow(flow, startClipRadius, endClipRadius);
 };
 
 
 
-Flox.isShowLockedFlows = function() {
+my.isShowLockedFlows = function() {
 	return model.isShowLockedFlows();
 };
 
-Flox.getFlowStrokeWidth = function(flow) {
+my.getFlowStrokeWidth = function(flow) {
 	var maxFlowWidth = model.getMaxFlowWidth(),
 	    maxFlowValue = model.getMaxFlowValue(),
 	    strokeWidth =  (maxFlowWidth * flow.getValue()) / maxFlowValue;
@@ -484,18 +481,18 @@ Flox.getFlowStrokeWidth = function(flow) {
 	
 };
 
-Flox.getMaxFlowValue = function() {
+my.getMaxFlowValue = function() {
 	return model.getMaxFlowValue();
 };
 
-Flox.getMaxFlowWidth = function() {
+my.getMaxFlowWidth = function() {
 	return model.getMaxFlowWidth();
 };
 
 /**
  * Returns the radius of the node based on its value.
  */
-Flox.getNodeRadius = function(node) {
+my.getNodeRadius = function(node) {
 	return getNodeRadius(node);
 };
 
@@ -504,7 +501,7 @@ Flox.getNodeRadius = function(node) {
  * makes a Point, returns it.
  * lyrPt can be an array [x,y]
  */
-Flox.pointFromLayerPt = function(lyrPt) {
+my.pointFromLayerPt = function(lyrPt) {
 	var latLng = mapComponent.layerPtToLatLng(lyrPt);
 	return new Flox.Point(latLng.lng, latLng.lat);
 };
@@ -515,65 +512,65 @@ Flox.pointFromLayerPt = function(lyrPt) {
  * TODO Might not be optimal, since the default constructor
  * calculates a location for the cPt. 
  */
-Flox.createFlowWithCPt = function(sPt, cPt, ePt, val) {
+my.createFlowWithCPt = function(sPt, cPt, ePt, val) {
 	var newFlow = new Flow(sPt, ePt, val);
 	newFlow.setCtrlPt(cPt);
 	return newFlow;
 };
 
-Flox.enforceRangebox = function(flow) {
+my.enforceRangebox = function(flow) {
     return Flox.RangeboxEnforcer.enforceRangebox(flow);
 };
 
-Flox.layoutFlows = function() {
+my.layoutFlows = function() {
     layoutFlows();
 };
 
-Flox.getAllFlowPoints = function() {
+my.getAllFlowPoints = function() {
     return getAllFlowPoints();
 };
 
-Flox.importCSV = function(path) {
+my.importCSV = function(path) {
     importCSV(path);
 };
 
-Flox.getMap = function() {
+my.getMap = function() {
     return mapComponent.getMap();
 };
 
-Flox.refreshMap = function() {
+my.refreshMap = function() {
     // redraw the flows
     refreshMap();
 };
 
-Flox.getModel = function() {
+my.getModel = function() {
     return model;
 };
 
-Flox.getDistanceBetweenPoints = function(p1, p2) {
+my.getDistanceBetweenPoints = function(p1, p2) {
     var squaredDist = Flox.GeomUtils.squaredDistanceBetweenPoints(p1, p2);
     return Math.sqrt(squaredDist);
 };
 
-Flox.latLngToLayerPt = function(latLng) {
+my.latLngToLayerPt = function(latLng) {
     return mapComponent.latLngToLayerPt(latLng);
 };
 
-Flox.layerPtToLatLng = function(layerPt) {
+my.layerPtToLatLng = function(layerPt) {
     return mapComponent.layerPtToLatLng(layerPt);
 };
 
-Flox.layerPtToPoint = function(layerPt) {
+my.layerPtToPoint = function(layerPt) {
     var latLng = mapComponent.layerPtToLatLng(layerPt);
     return new Flox.Point(latLng.lng, latLng.lat);
 };
 
-Flox.getDistanceToQuadraticBezierCurve = function (p0x, p0y, p1x, p1y, p2x, p2y, xy) {
+my.getDistanceToQuadraticBezierCurve = function (p0x, p0y, p1x, p1y, p2x, p2y, xy) {
 	return Flox.GeomUtils.getDistanceToQuadraticBezierCurve(p0x, p0y, p1x, p1y, p2x, p2y, xy);
 };
 
 // FIXME this can be optimized to not iterate over all flows.
-Flox.getLongestFlowPxLength = function() {
+my.getLongestFlowPxLength = function() {
 
     // Get the flows the Model
     var flows = model.getFlows(),
@@ -599,7 +596,7 @@ Flox.getLongestFlowPxLength = function() {
 
 };
 
-Flox.getShortestFlowPxLength = function() {
+my.getShortestFlowPxLength = function() {
     
     // Get the flows the Model
     var flows = model.getFlows(),
@@ -626,55 +623,55 @@ Flox.getShortestFlowPxLength = function() {
 };
 
 // Returns [x,y] of the midpoint between two points
-Flox.midXYBetweenTwoPoints = function(p1, p2) {
+my.midXYBetweenTwoPoints = function(p1, p2) {
     return Flox.GeomUtils.midXYBetweenTwoPoints(p1, p2);
 };
 
 // Returns a leaflet layer point between two points
-Flox.midLayerPointBetweenTwoPoints = function(p1, p2) {
+my.midLayerPointBetweenTwoPoints = function(p1, p2) {
     var midPtCoords = Flox.GeomUtils.midXYBetweenTwoPoints(p1, p2);
     return L.point(midPtCoords[0], midPtCoords[1]);
 };
 
-Flox.straightenFlows = function() {
+my.straightenFlows = function() {
 	straightenFlows();
 };
 
-Flox.getFlowRangeboxHeight = function() {
+my.getFlowRangeboxHeight = function() {
     return model.getFlowRangeboxHeight();
 };
 
-Flox.linesIntersect = function(x1, y1, x2, y2, x3, y3, x4, y4) {
+my.linesIntersect = function(x1, y1, x2, y2, x3, y3, x4, y4) {
     return Flox.GeomUtils.linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4);
 };
 
-Flox.getLineLineIntersection = function(x1, y1, x2, y2, x3, y3, x4, y4) {
+my.getLineLineIntersection = function(x1, y1, x2, y2, x3, y3, x4, y4) {
     return Flox.GeomUtils.getLineLineIntersection(x1, y1, x2, y2, x3, y3, x4, y4);
 };
 
-Flox.computeRangebox = function(flow) {
+my.computeRangebox = function(flow) {
     return Flox.RangeboxEnforcer.computeRangebox(flow);
 };
 
 
-Flox.isDrawIntermediateFlowPoints = function() {
+my.isDrawIntermediateFlowPoints = function() {
 	return model.isDrawIntermediateFlowPoints();
 };
 
 
-Flox.isDrawRangeboxes = function() {
+my.isDrawRangeboxes = function() {
 	return drawRangeboxes;
 };
 
-Flox.runLayoutWorker = function() {
+my.runLayoutWorker = function() {
 	runLayoutWorker();
 };
 
-Flox.getCtrlPts = function() {
+my.getCtrlPts = function() {
 	return model.getCtrlPts();
 };
 
-Flox.addFlow = function(flow) {
+my.addFlow = function(flow) {
 	
 	// Give the control point a latLng
 	var cPt = flow.getCtrlPt(),
@@ -687,21 +684,21 @@ Flox.addFlow = function(flow) {
     model.addFlow(flow);
 };
 
-Flox.getPoints = function() {
+my.getPoints = function() {
 	return model.getPoints();
 };
 
-Flox.getFlows = function() {
+my.getFlows = function() {
 	return model.getFlows();
 };
 
-Flox.deleteAllFlows = function() {
+my.deleteAllFlows = function() {
 	model.deleteAllFlows();
 	refreshMap();
 };
 
 // FIXME there are often times more than one point at the same location.
-Flox.deleteSelectedFeatures = function() {
+my.deleteSelectedFeatures = function() {
 	// Loop through points, deleting the selected ones. Will cause problems.
 	var points = model.getPoints(),
 		i, j;
@@ -716,7 +713,7 @@ Flox.deleteSelectedFeatures = function() {
     refreshMap();
 };
 
-Flox.getFlowsIntersectingNodes = function() {
+my.getFlowsIntersectingNodes = function() {
 	var flows = model.getFlows(),
 		intersectingFlows = [],
 		i, j, flow;
@@ -731,11 +728,11 @@ Flox.getFlowsIntersectingNodes = function() {
 	return intersectingFlows;
 };
 
-Flox.flowIntersectsANode = function(flow) {
+my.flowIntersectsANode = function(flow) {
 	return Flox.GeomUtils.flowIntersectsANode(flow);
 };
 
-Flox.moveFlowIntersectingANode = function(flow) {
+my.moveFlowIntersectingANode = function(flow) {
 	Flox.GeomUtils.moveFlowIntersectingANode(flow);
 };
 
@@ -743,13 +740,13 @@ Flox.moveFlowIntersectingANode = function(flow) {
  * Convert a latLng object into a Point object
  * @param {Object} latLng {lat: latitude, lng: longitude}
  */
-Flox.latLngToPoint = function(latLng) {
+my.latLngToPoint = function(latLng) {
 	return new Flox.Point(latLng.lng, latLng.lat);
 };
 
 // A quick way of making a simple point object.
 // Defines latLng AND xy!
-Flox.Point = function(lat, lng, val, id) {
+my.Point = function(lat, lng, val, id) {
 	this.lat = lat;
 	this.lng = lng;
 	if(val){
@@ -769,36 +766,36 @@ Flox.Point = function(lat, lng, val, id) {
 	}
 };
 
-Flox.rotatePoint = function(pt, origin, angle) {
+my.rotatePoint = function(pt, origin, angle) {
 	return Flox.GeomUtils.rotatePoint(pt, origin, angle);
 };
 
-Flox.getFlowDistanceFromStartPointPixel = function() {
+my.getFlowDistanceFromStartPointPixel = function() {
 	return model.getFlowDistanceFromStartPointPixel();
 };
 
-Flox.setFlowDistanceFromStartPointPixel = function (d) {
+my.setFlowDistanceFromStartPointPixel = function (d) {
 	model.setFlowDistanceFromStartPointPixel(d);
 };
 
-Flox.getFlowDistanceFromEndPointPixel = function() {
+my.getFlowDistanceFromEndPointPixel = function() {
 	return model.getFlowDistanceFromEndPointPixel();
 };
 
-Flox.setFlowDistanceFromEndPointPixel = function (d) {
+my.setFlowDistanceFromEndPointPixel = function (d) {
 	model.setDistanceFromEndPointPixel(d);
 };
 
-Flox.isDrawArrows = function () {
+my.isDrawArrows = function () {
 	return model.isDrawArrows();
 };
 
-Flox.configureArrows = function () {
+my.configureArrows = function () {
 	model.configureArrows();
 };
 
 // Happens when a map zoom begins. 
-Flox.zoomstart = function() {
+my.zoomstart = function() {
 	
 	var progress = document.getElementById("layoutProgressBar");
 	
@@ -812,66 +809,66 @@ Flox.zoomstart = function() {
 	progress.style.visibility = "hidden";
 };
 
-Flox.getDrawSettings = function() {
+my.getDrawSettings = function() {
 	return model.getDrawSettings();
 };
 
-Flox.deselectAllFeatures = function() {
+my.deselectAllFeatures = function() {
 	console.log("deselecting all features");
 	model.deselectAllFeatures();
 	refreshMap();
 };
 
-Flox.isEditMode = function () {
+my.isEditMode = function () {
 	return editMode;
 };
 
-Flox.getFlowGrid = function () {
+my.getFlowGrid = function () {
 	return flowGrid;
 };
 
-Flox.getNodeGrid = function () {
+my.getNodeGrid = function () {
 	return nodeGrid;
 };
 
-Flox.runLayoutWorker = function () {
+my.runLayoutWorker = function () {
 	runLayoutWorker();
 };
 
-Flox.isSkipEndPoints = function () {
+my.isSkipEndPoints = function () {
 	return skipEndPoints;
 };
 
-Flox.importCensusData = function () {
+my.importCensusData = function () {
 	importCensusData();
 };
 
-Flox.setUseNetFlows = function (boo) {
+my.setUseNetFlows = function (boo) {
 	model.setUseNetFlows(boo);
 };
 
 
-Flox.loadTestFlows = function () {
+my.loadTestFlows = function () {
 	// make a few flows to test 
 	importCSV("data/testFlows.csv");
 };
 
 
-Flox.setFilteredFlows = function (n) {
+my.setFilteredFlows = function (n) {
 	model.setFilteredFlows(n);
 	model.updateCachedValues();
 };
 
-Flox.sortFlows = function (property) {
+my.sortFlows = function (property) {
 	model.sortFlows(property);
 };
 
-Flox.getNodeStrokeWidth = function() {
+my.getNodeStrokeWidth = function() {
 	return model.getNodeStrokeWidth();
 };
 
 
-Flox.importNetCountyFlowData = function(stateAbbreviation) {
+my.importNetCountyFlowData = function(stateAbbreviation) {
 	var nodePath = "data/geometry/centroids_counties_all.csv",
 		flowPath = "data/census/flows/" + stateAbbreviation + "_net.csv";
 	
@@ -890,32 +887,32 @@ Flox.importNetCountyFlowData = function(stateAbbreviation) {
 				
 		Flox.setFilteredFlows();
 		
-		mapComponent.configureNecklaceMap(stateAbbreviation);
-		Flox.layoutFlows();
-		Flox.refreshMap();
+		// mapComponent.configureNecklaceMap(stateAbbreviation);
+		// Flox.layoutFlows();
+		// Flox.refreshMap();
 		
-		//runLayoutWorker();
+		runLayoutWorker();
 	});
 };
 
-Flox.getMapScale = function () {
+my.getMapScale = function () {
 	return mapComponent.getMapScale();
 };
 
-Flox.setMapScaleInModel = function (scale) {
+my.setMapScaleInModel = function (scale) {
 	model.setMapScale(scale);
 };
 
-Flox.getStateMapScale = function(stateString) {
+my.getStateMapScale = function(stateString) {
 	return model.getStateMapScale(stateString);
 };
 
-Flox.rotateProjection = function(lat, lng, roll) {
+my.rotateProjection = function(lat, lng, roll) {
 	mapComponent.rotateProjection(lat, lng, roll);
 };
 
-Flox.initFlox = function() {
-	model = new FloxModel();
+my.initFlox = function() {
+	model = new Flox.Model();
 	mapComponent = new Flox.MapComponent_d3();
 	mapComponent.initMap();
 	//mapComponent.drawFeatures();
@@ -942,9 +939,8 @@ Flox.initFlox = function() {
 		// flow2 = new Flow(p3, p4, 10);
 	// model.addFlow(flow1);
 	// model.addFlow(flow2);
-	
-	
 };
 
+return my;
 
-}($, L, d3, Flow, window, document, undefined));
+}());

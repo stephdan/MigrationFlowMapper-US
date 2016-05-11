@@ -1,4 +1,3 @@
-
 Flox.FlowImporter = (function(d3) {
 	"use strict";
 	
@@ -46,7 +45,7 @@ Flox.FlowImporter = (function(d3) {
                 startPt = new Flox.Point(sLat, sLng, sVal);
                 endPt = new Flox.Point(eLat, eLng, eVal);
 
-                Flox.addFlow(new Flow(startPt, endPt, value));
+                Flox.addFlow(new Flox.Flow(startPt, endPt, value));
             }
 
             // Refresh the map. This will wait until the .csv is fully loaded. 
@@ -121,20 +120,19 @@ Flox.FlowImporter = (function(d3) {
 						if(netFlowAmt){ // It's in there!
 							// If it's positive, then B is start point.
 							if(netFlowAmt > 0) {
-								Flox.addFlow(new Flow(bPt, aPt, netFlowAmt));
+								Flox.addFlow(new Flox.Flow(bPt, aPt, netFlowAmt));
 							}
 							
-							if(netFlowAmt < 0) {
-								Flox.addFlow(new Flow(aPt, bPt,Math.abs(netFlowAmt)));
+							if(netFlowAmt < 0) { // A is start point
+								Flox.addFlow(new Flox.Flow(aPt, bPt,Math.abs(netFlowAmt)));
 							}
 						}
 					}
 				}
 
-				// Don't have to do this because I'm already loading net flows.
+				// Don't have to create net flows because they already are net flows.
 				//Flox.setUseNetFlows(true);
 				callback();
-				
 				
 			});
 			

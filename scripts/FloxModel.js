@@ -1,6 +1,6 @@
 // Stores the data and settings
 // Returns information about the data and settings.
-var FloxModel = function() {
+Flox.Model = function() {
 	
 	"use strict";
 	

@@ -1,4 +1,4 @@
-var Flow = function(sPt, ePt, val, newID) {
+Flox.Flow = function(sPt, ePt, val, newID) {
 	
 	"use strict";
 	
@@ -462,7 +462,7 @@ var Flow = function(sPt, ePt, val, newID) {
 	}
 	
 	function makeCopy() {
-		var copy = new Flow(startPt, endPt, value);
+		var copy = new Flox.Flow(startPt, endPt, value);
 		copy.setCtrlPt(ctrlPt);
 		return copy;
 	}
@@ -516,10 +516,10 @@ var Flow = function(sPt, ePt, val, newID) {
 		ctrl2 = {x: ctrlX2, y: ctrlY2};
 		end2 = {x: endX2, y: endY2};
 		
-		flow1 = new Flow(start1, end1, value);
+		flow1 = new Flox.Flow(start1, end1, value);
 		flow1.setCtrlPt(ctrl1);
 		
-		flow2 = new Flow(start2, end2, value);
+		flow2 = new Flox.Flow(start2, end2, value);
 		flow2.setCtrlPt(ctrl2);
 			
 		

@@ -3,7 +3,8 @@
 "use strict";
 
 // Import bezier.js for doing curve things
-importScripts("Flow.js",
+importScripts("Flox.js",
+			  "Flow.js",
 			  "FloxModel.js");
 
 var model, Force;
@@ -848,13 +849,13 @@ function buildModel(e){
 		sPt = flowData[i].startPt;
 		ePt = flowData[i].endPt;
 		cPt = flowData[i].cPt;
-		flow = new Flow(sPt, ePt, flowData[i].value);
+		flow = new Flox.Flow(sPt, ePt, flowData[i].value);
 		flow.setCtrlPt(cPt);
 		flows.push(flow);
 	}
 	
 	// Instantiate a model, update its settings, add flows
-	newModel = new FloxModel();	
+	newModel = new Flox.Model();	
 	newModel.addFlows(flows);
 	newModel.updateSettings(e.data.settings);
 	newModel.updateCachedValues(); // TODO These could be passed in as settings. 
