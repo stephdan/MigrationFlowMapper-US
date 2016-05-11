@@ -592,7 +592,7 @@ Flox.MapComponent_d3 = function() {
 		// Tell the importer which flows need loadin'
 		Flox.importNetCountyFlowData(statePolygon.properties.STUSPS);
 		
-		zoomToPolygon(statePolygon); // Zoom in!
+		//zoomToPolygon(statePolygon); // Zoom in!
 		// As soon as the layout operation begins, the zoom freezes. 
 		// Layout needs to occur in a webworker. 
 		

@@ -887,11 +887,11 @@ my.importNetCountyFlowData = function(stateAbbreviation) {
 				
 		Flox.setFilteredFlows();
 		
-		// mapComponent.configureNecklaceMap(stateAbbreviation);
-		// Flox.layoutFlows();
-		// Flox.refreshMap();
+		mapComponent.configureNecklaceMap(stateAbbreviation);
+		Flox.layoutFlows();
+		Flox.refreshMap();
 		
-		runLayoutWorker();
+		//runLayoutWorker();
 	});
 };
 

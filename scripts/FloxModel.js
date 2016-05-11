@@ -317,6 +317,28 @@ Flox.Model = function() {
         updateCachedValues();
     }
     
+	// Add multiple flows 
+	function addFlows (newFlows) {
+		var startPoint,
+			endPoint,
+			flow,
+			i, j;
+			
+		for( i= 0, j = newFlows.length; i < j; i += 1) {
+			flow = newFlows[i];
+			startPoint = findPoint(flow.getStartPt())[1];
+			endPoint = findPoint(flow.getEndPt())[1];
+			addPoint(startPoint);
+	        addPoint(endPoint);
+			flow.setStartPt(startPoint);
+			flow.setEndPt(endPoint);
+	        flows.push(flow);
+	        setFilteredFlows();		
+			// addFlow(newFlows[i]);
+		}
+	    updateCachedValues();
+    }
+    
 	function deletePoint(pt) {
 		// delete flows that are connected to pt
 		// First figure out which flows have pt in it
@@ -559,6 +581,43 @@ Flox.Model = function() {
 	}
 
 
+	/**
+	 * @param {Object} settings key: value pairs of Model parameters.
+	 */
+	 function updateSettings(settings) {
+		
+		// Layout Settings
+		maxFlowPoints = settings.maxFlowPoints;
+		distanceWeightExponent = settings.distanceWeightExponent;
+		peripheralStiffnessFactor = settings.peripheralStiffnessFactor;
+		maxFlowLengthSpringConstant = settings.maxFlowLengthSpringConstant;
+		minFlowLengthSpringConstant = settings.minFlowLengthSpringConstant;
+		enforceRangebox = settings.enforceRangebox;
+		flowRangeboxHeight = settings.flowRangeboxHeight;
+		antiTorsionWeight = settings.antiTorsionWeight;
+		angularDistributionWeight = settings.angularDistributionWeight;
+		nodeWeight = settings.nodeWeight;
+		nodeTolerancePx = settings.nodeTolerancePx;
+		moveFlowsIntersectingNodes = settings.moveFlowsIntersectingNodes;
+		multipleIterations = settings.multipleIterations;
+		NBR_ITERATIONS = settings.NBR_ITERATIONS;
+		showForceAnimation = settings.showForceAnimation;
+		FLOW_DISTANCE_THRESHOLD = settings.FLOW_DISTANCE_THRESHOLD;
+		checkFlowBoundingBoxes = settings.checkFlowBoundingBoxes;
+		maxFlows = settings.maxFlows;
+		mapScale = settings.mapScale;
+		
+		// Map Appearance Settings
+		maxFlowWidth = settings.maxFlowWidth;
+		maxNodeRadius = settings.maxNodeRadius;
+		isShowLockedFlows = settings.isShowLockedFlows;
+		flowDistanceFromStartPointPixel = settings.flowDistanceFromStartPointPixel;
+		flowDistanceFromEndPointPixel = settings.flowDistanceFromEndPointPixel;
+		NODE_STROKE_WIDTH = settings.NODE_STROKE_WIDTH;
+	}
+	
+	
+
 // PUBLIC ======================================================================
 	
 	
@@ -599,7 +658,6 @@ Flox.Model = function() {
 		
 		var JSON = {
 				flows: [],
-				nodes: []
 		    },
 
 			i, j, flow, node, sPt, ePt, cPt, val;
@@ -666,20 +724,18 @@ Flox.Model = function() {
 			);
 		}
 		
-		for (i = 0, j = nodes.length; i < j; i += 1) {
-			node = nodes[i];
-			JSON.nodes.push(
-				{
-					x: node.x,
-					y: node.y,
-					value: node.value
-				}
-			);
-		}
-		//console.log("Model.toJSON made this: ");
-		//console.log(JSON);
-		//console.log(JSON.flows);
-		//console.log(JSON.nodes);
+		// Add the nodes to the json. Commented out because, so far, there
+		// is no use for these. The node info is in the flows. 
+		// for (i = 0, j = nodes.length; i < j; i += 1) {
+			// node = nodes[i];
+			// JSON.nodes.push(
+				// {
+					// x: node.x,
+					// y: node.y,
+					// value: node.value
+				// }
+			// );
+		// }
 		return JSON;
 	};
 
@@ -895,11 +951,7 @@ Flox.Model = function() {
 
     // Add multiple flows 
     my.addFlows = function(newFlows) {
-        var i, j;
-	    for( i= 0, j = newFlows.length; i < j; i += 1) {
-	        addFlow(newFlows[i]);
-	    }
-	    updateCachedValues();
+        addFlows(newFlows);
     };
 
     // Get the filtered flows.
@@ -1343,40 +1395,33 @@ Flox.Model = function() {
  * e.g. maxFlowPoints: 20
 	 */
 	my.updateSettings = function(settings) {
-		
-		// Layout Settings
-		maxFlowPoints = settings.maxFlowPoints;
-		distanceWeightExponent = settings.distanceWeightExponent;
-		peripheralStiffnessFactor = settings.peripheralStiffnessFactor;
-		maxFlowLengthSpringConstant = settings.maxFlowLengthSpringConstant;
-		minFlowLengthSpringConstant = settings.minFlowLengthSpringConstant;
-		enforceRangebox = settings.enforceRangebox;
-		flowRangeboxHeight = settings.flowRangeboxHeight;
-		antiTorsionWeight = settings.antiTorsionWeight;
-		angularDistributionWeight = settings.angularDistributionWeight;
-		nodeWeight = settings.nodeWeight;
-		nodeTolerancePx = settings.nodeTolerancePx;
-		moveFlowsIntersectingNodes = settings.moveFlowsIntersectingNodes;
-		multipleIterations = settings.multipleIterations;
-		NBR_ITERATIONS = settings.NBR_ITERATIONS;
-		showForceAnimation = settings.showForceAnimation;
-		FLOW_DISTANCE_THRESHOLD = settings.FLOW_DISTANCE_THRESHOLD;
-		checkFlowBoundingBoxes = settings.checkFlowBoundingBoxes;
-		maxFlows = settings.maxFlows;
-		mapScale = settings.mapScale;
-		
-		// Map Appearance Settings
-		maxFlowWidth = settings.maxFlowWidth;
-		maxNodeRadius = settings.maxNodeRadius;
-		isShowLockedFlows = settings.isShowLockedFlows;
-		flowDistanceFromStartPointPixel = settings.flowDistanceFromStartPointPixel;
-		flowDistanceFromEndPointPixel = settings.flowDistanceFromEndPointPixel;
-		NODE_STROKE_WIDTH = settings.NODE_STROKE_WIDTH;
-
+		updateSettings(settings);
 	};
 
-	return my;
 
+	my.deserializeModelJSON = function(modelJSON) {
+		// What did we pass this thing again?
+		var flowData = modelJSON.flows,
+			newFlows = [],
+			flow, i, j, sPt, ePt, cPt;
+	
+		// Delete this models flows and nodes
+		//my.deleteAllFlows();
+	
+		// Build flows out of flowData
+		for(i = 0, j = flowData.length; i < j; i += 1) {
+			sPt = flowData[i].startPt;
+			ePt = flowData[i].endPt;
+			cPt = flowData[i].cPt;
+			flow = new Flox.Flow(sPt, ePt, flowData[i].value);
+			flow.setCtrlPt(cPt);
+			newFlows.push(flow);
+		}
+		addFlows(newFlows);
+		updateSettings(modelJSON.settings);
+	};
+	
+	return my;
 };
 
 

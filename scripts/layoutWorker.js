@@ -835,30 +835,26 @@ function moveFlowsIntersectingNodes(){
 function buildModel(e){
 		
 	// What did we pass this thing again?
-	var newModel,
-		flowData = e.data.flows,
-		nodeData = e.data.nodes,
-		flows = [], 
-		nodes = [], // Are these required? Nodes are created when flows are
-		// added to the model. This would only be needed if we want to allow
-		// nodes that have no flow. Which might be nice. 
-		flow, node, i, j, sPt, ePt, cPt;
-
-	// Build flows out of flowData
-	for(i = 0, j = flowData.length; i < j; i += 1) {
-		sPt = flowData[i].startPt;
-		ePt = flowData[i].endPt;
-		cPt = flowData[i].cPt;
-		flow = new Flox.Flow(sPt, ePt, flowData[i].value);
-		flow.setCtrlPt(cPt);
-		flows.push(flow);
-	}
+	var newModel = new Flox.Model();
 	
-	// Instantiate a model, update its settings, add flows
-	newModel = new Flox.Model();	
-	newModel.addFlows(flows);
-	newModel.updateSettings(e.data.settings);
-	newModel.updateCachedValues(); // TODO These could be passed in as settings. 
+	newModel.deserializeModelJSON(e.data);
+	
+	
+		// flowData = e.data.flows,
+		// flows = [], 
+		// flow, i, j, sPt, ePt, cPt;
+// 
+	// // Build flows out of flowData
+	// for(i = 0, j = flowData.length; i < j; i += 1) {
+		// sPt = flowData[i].startPt;
+		// ePt = flowData[i].endPt;
+		// cPt = flowData[i].cPt;
+		// flow = new Flox.Flow(sPt, ePt, flowData[i].value);
+		// flow.setCtrlPt(cPt);
+		// flows.push(flow);
+	// }
+	// newModel.addFlows(flows);
+	// newModel.updateSettings(e.data.settings);
 	
 	return newModel;
 }
