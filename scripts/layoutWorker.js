@@ -130,8 +130,6 @@ function getLongestAxisDistanceBetweenFlowBoundingBoxes(flow1, flow2) {
 	 * @param targetFlow Flow containing the targetPoint
 	 */
 	function computeForceOnPoint(targetPoint, targetFlow, flowSubset) {
-	   
-	   // var flows = model.getFlows(), // Get the flows
 	    
 	        // Get the distance weight exponent
 		var distWeightExponent = model.getDistanceWeightExponent(),
@@ -921,16 +919,6 @@ onmessage = function(e) {
 	var newControlPoints;
 	
 	model = buildModel(e);
-	var flows = model.getFlows();
-	
-	/*
-	for(var i = 0; i < flows.length; i++) {
-		console.log(flows[i].getStartPt());
-		console.log(flows[i].getEndPt());
-		console.log(flows[i].getCtrlPt());
-		console.log("-----------------");
-	}
-	*/
 	
 	// Get new control point coordinates.
 	newControlPoints = layoutFlows();

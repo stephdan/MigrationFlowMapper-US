@@ -562,7 +562,7 @@ Flox.MapComponent_d3 = function() {
 		    translate = [width / 2 - scale * x, height / 2 - scale * y];
 		    
 		svg.transition()
-		.duration(1000)
+		.duration(8000) // TODO long zoom for testing asynchronous stuff.
 		.call(zoom.translate(translate).scale(scale).event);
 	}
 
@@ -590,11 +590,10 @@ Flox.MapComponent_d3 = function() {
 		});
 		
 		// Tell the importer which flows need loadin'
-		Flox.importNetCountyFlowData(statePolygon.properties.STUSPS);
+		Flox.importTotalCountyFlowData(statePolygon.properties.STUSPS);
 		
-		//zoomToPolygon(statePolygon); // Zoom in!
-		// As soon as the layout operation begins, the zoom freezes. 
-		// Layout needs to occur in a webworker. 
+		zoomToPolygon(statePolygon); // Zoom in! FIXME Usually gets stuck though 
+		// due to UI freeze.
 		
 		// Hide county boundaries
 		hideAllCountyBorders();

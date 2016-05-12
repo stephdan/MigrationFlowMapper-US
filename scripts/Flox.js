@@ -23,7 +23,7 @@ function refreshMap() {
     mapComponent.drawFeatures(drawSettings);
 }
 
-function initLayoutWorker() {
+function initLayoutWorker(modelCopy, callback) {
 	
 	var flows,
 		ctrlPts,
@@ -51,7 +51,7 @@ function initLayoutWorker() {
 			// }
 			
 			ctrlPts = e.data[0];			
-			flows = model.getFlows();
+			flows = modelCopy.getFlows();
 			
 			if(ctrlPts) {
 				
@@ -66,16 +66,16 @@ function initLayoutWorker() {
 					flowCPt.lat = latLng.lat;
 					flowCPt.lng = latLng.lng;
 				}
-				refreshMap();
+				callback();
 			}
 		};	
 	}
 }
 
-function runLayoutWorker() {
-	initLayoutWorker();
+function runLayoutWorker(modelCopy, callback) {
+	initLayoutWorker(modelCopy, callback);
 	console.log("running layoutWorker");
-	var modelJSON = model.toJSON();
+	var modelJSON = modelCopy.toJSON();
 	layoutWorker.postMessage(modelJSON);
 }
 
@@ -878,13 +878,16 @@ my.importNetCountyFlowData = function(stateAbbreviation) {
 	// Set the mapScale in the model to the appropriate scale for this map.
 	// This scale is used by the layouter!
 	// Could it also be used by the renderer?
+	// FIXME this is goofy
 	model.setStateMapScale(stateAbbreviation);
 	
-	Flox.FlowImporter.importNetCountyFlowData(nodePath, flowPath, function(){
+	Flox.FlowImporter.importNetCountyFlowData(nodePath, flowPath, function(flows){
+		
+		// flows are the imported flows!
+		model.addFlows(flows);
 		console.log("data imported");
 		
 		Flox.sortFlows();
-				
 		Flox.setFilteredFlows();
 		
 		mapComponent.configureNecklaceMap(stateAbbreviation);
@@ -894,6 +897,39 @@ my.importNetCountyFlowData = function(stateAbbreviation) {
 		//runLayoutWorker();
 	});
 };
+
+my.importTotalCountyFlowData = function(stateAbbreviation) {
+	var nodePath = "data/geometry/centroids_counties_all.csv",
+		flowPath = "data/census/flows/" + stateAbbreviation + "_net.csv";
+		
+	// erase all flows from the model.
+	model.deleteAllFlows();
+	
+	// Set the mapScale in the model to the appropriate scale for this map.
+	// This scale is used by the layouter!
+	// Could it also be used by the renderer?
+	// FIXME this is goofy
+	model.setStateMapScale(stateAbbreviation);
+	
+	Flox.FlowImporter.importTotalCountyFlowData(nodePath, flowPath, function(flows){
+		
+		// flows are the imported flows!
+		model.addFlows(flows);
+		console.log("data imported");
+		
+		//Flox.sortFlows();
+		Flox.setFilteredFlows();
+		
+		mapComponent.configureNecklaceMap(stateAbbreviation);
+		// Flox.layoutFlows();
+		// Flox.refreshMap();
+		
+		runLayoutWorker(model, function() {
+			refreshMap();
+		});
+	});
+};
+
 
 my.getMapScale = function () {
 	return mapComponent.getMapScale();
@@ -909,6 +945,19 @@ my.getStateMapScale = function(stateString) {
 
 my.rotateProjection = function(lat, lng, roll) {
 	mapComponent.rotateProjection(lat, lng, roll);
+};
+
+my.showNetFlows = function() {
+	var netFlowsModel,
+		modelJSON;
+	
+	// Get netFlowsModel	
+	netFlowsModel = new Flox.ModelFilter(model).getNetFlowsModel();
+	
+	modelJSON = netFlowsModel.toJSON();
+
+	
+
 };
 
 my.initFlox = function() {

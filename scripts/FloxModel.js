@@ -228,8 +228,14 @@ Flox.Model = function() {
 		updateCachedValues();
     }
     
-    // Sort flows by value in descending order, unless true is passed in.
+    // FIXME this is usually sorting a lot of flows. It needs to not block 
+    // the UI!
+    /**
+     * Sort flows by value in descending order, unless ascending === true.
+     */
     function sortFlows(ascending) {
+    	
+    	console.log("sorting flows...");
 		var i;
 		
 		if(ascending === true) {
@@ -241,6 +247,7 @@ Flox.Model = function() {
 				return b.getValue() - a.getValue();
 			});
 		}
+		console.log("done sorting flows");
     }
     
     function sortTheseFlows(theseFlows) {
@@ -317,7 +324,7 @@ Flox.Model = function() {
         updateCachedValues();
     }
     
-	// Add multiple flows 
+	// Add multiple flows to the existing flows.
 	function addFlows (newFlows) {
 		var startPoint,
 			endPoint,
@@ -333,9 +340,12 @@ Flox.Model = function() {
 			flow.setStartPt(startPoint);
 			flow.setEndPt(endPoint);
 	        flows.push(flow);
-	        setFilteredFlows();		
+	        	
 			// addFlow(newFlows[i]);
 		}
+		
+		sortFlows();
+		setFilteredFlows();	
 	    updateCachedValues();
     }
     
@@ -499,7 +509,7 @@ Flox.Model = function() {
 		
 		// Reset netFlows and netNodes to empty
 		netFlows = [];
-		netFlows = [];
+		netNodes = [];
 		
 		// Loop backwards through flows
 		for (i = flowset.length - 1; i >= 0; i -= 1) {
@@ -523,11 +533,11 @@ Flox.Model = function() {
 							diff = f1.getValue() - f2.getValue();
 							
 							if (diff > 0) { // f1 is bigger
-								netFlows.push(new Flow(f1.getStartPt(), f1.getEndPt(), diff));
+								netFlows.push(new Flox.Flow(f1.getStartPt(), f1.getEndPt(), diff));
 							}
 							
 							if (diff < 0) { // f2 is bigger
-								netFlows.push(new Flow(f2.getStartPt(), f2.getEndPt(), Math.abs(diff)));
+								netFlows.push(new Flox.Flow(f2.getStartPt(), f2.getEndPt(), Math.abs(diff)));
 							}
 							
 							if (diff === 0) {
@@ -646,6 +656,8 @@ Flox.Model = function() {
         }
 	};
 
+
+	// FIXME only cashes maxFlows bounding boxes
 	my.cacheAllFlowBoundingBoxes = function() {
 		// console.log("caching flow bounding boxes!");
 		var flow, i, j;
@@ -962,6 +974,58 @@ Flox.Model = function() {
 		setFilteredFlows();
 		return filteredFlows;
     };
+
+	/**
+	 * Returns the top n flows, where n is the value of the maxFlows setting.
+	 * FIXME this could be a job for the ModelFilter? It would be nice if the 
+	 * layoutWorker didn't neet to import that as well. But maybe not a big
+	 * deal. 
+	 */
+	my.getMaxFlows = function() {
+		var flowSet, i, j, flow;
+		
+		if (useNetFlows) {
+			flowSet = netFlows;
+		} else {
+			flowSet = flows;
+		}
+	
+		if(!n) {
+			n = maxFlows;
+		}
+	
+		if (n > flowSet.length) {
+			n = flowSet.length;
+		}
+	
+		// Reset filtered flows and filtered nodes to empty.
+		filteredFlows = [];
+		filteredNodes = [];
+
+		filteredFlows = flowSet.slice(0, n);
+		
+		// Now filter the nodes. 
+		for (i = 0, j = filteredFlows.length; i < j; i += 1) {
+			flow = filteredFlows[i];
+			
+			if(!containsObject(flow.getStartPt(), filteredNodes)) {
+				filteredNodes.push(flow.getStartPt());
+			}
+			
+			if(!containsObject(flow.getEndPt(), filteredNodes)) {
+				filteredNodes.push(flow.getEndPt());
+			}
+		}
+	};
+
+
+	/**
+	 * Returns the nodes in the top n flows, where n is the value of the 
+	 * maxFlows setting.
+	 */
+	my.getMaxNodes = function() {
+		
+	};
 
 	// Return all unfiltered flows
 	my.getAllFlows = function() {
@@ -1315,14 +1379,6 @@ Flox.Model = function() {
 		setMaxFlows(d);
 	};
 
-	my.cacheNetFlows = function () {
-		cacheNetFlows();
-	};
-
-	my.getDifferenceFlows = function() {
-		return netFlows;
-	};
-
 	my.getSelectedFlows = function () {
 		// should only look in filtered flows, because these are the only 
 		// flows that might have a select state. 
@@ -1348,18 +1404,6 @@ Flox.Model = function() {
 			}
 		}
 		return selectedNodes;
-	};
-	
-	my.setUseNetFlows = function (boo) {
-		
-		useNetFlows = boo;
-		
-		if(boo) {
-			cacheNetFlows();
-		} 
-		
-		setFilteredFlows();
-		updateCachedValues();
 	};
 	
 	my.getDrawSettings = function () {
