@@ -5,7 +5,8 @@
 // Import bezier.js for doing curve things
 importScripts("Flox.js",
 			  "Flow.js",
-			  "FloxModel.js");
+			  "FloxModel.js",
+			  "ModelFilter.js");
 
 var model, Force;
 
@@ -853,7 +854,7 @@ function buildModel(e){
 	// }
 	// newModel.addFlows(flows);
 	// newModel.updateSettings(e.data.settings);
-	
+	console.log(newModel.getAllFlows());
 	return newModel;
 }
 

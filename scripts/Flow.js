@@ -1157,5 +1157,23 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 		return false;
 	};
 	
+	/**
+	 * Add d to the value of this flow
+ * @param {Number} d - Value to add.
+ * @return {Number} total value of this flow
+	 */
+	my.addValue = function(d) {
+		value += d;
+		return value;
+	};
+	
+	
+	
+	my.reverseFlow = function() {
+        var temp = startPt;
+        startPt = endPt;
+        endPt = temp;
+	};
+	
 	return my;
 };

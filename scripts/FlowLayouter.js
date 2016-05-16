@@ -414,7 +414,7 @@ Flox.FlowLayouter = function (model) {
         // Compute spring force of targetFlow
         flowSpringConstant = computeSpringConstant(flowBaseLength, 
 			maxFlowLength); 
-        //FIXME Don't ask the model for stuff. Have Flox get it. 
+
         flowSpringConstant *= forceRatio * forceRatio 
                            * model.getPeripheralStiffnessFactor() + 1;
         

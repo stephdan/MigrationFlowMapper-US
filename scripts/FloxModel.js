@@ -7,10 +7,6 @@ Flox.Model = function() {
 		// Points and flows
 	var nodes = [],
 		flows = [],
-		filteredNodes = [],
-		filteredFlows = [],
-		netFlows = [],
-		netNodes = [],
 	
 		// Layout Settings
 		maxFlowPoints = 20,
@@ -22,15 +18,15 @@ Flox.Model = function() {
 		flowRangeboxHeight = 0.3,
 		antiTorsionWeight = 0.8,
 		angularDistributionWeight = 0.5,
-		nodeWeight = 0.1,
+		nodeWeight = 0.0,
 		nodeTolerancePx = 5,
-		moveFlowsIntersectingNodes = false,
+		moveFlowsIntersectingNodes = true,
 		multipleIterations = true,
 		NBR_ITERATIONS = 100,
 		showForceAnimation = false,
 		FLOW_DISTANCE_THRESHOLD = 0.00000001, // TODO what should this be??
 		checkFlowBoundingBoxes = true,
-		maxFlows = 75,
+		maxFlows = 50,
 		useNetFlows = false,
 		mapScale = 0.5,
 		
@@ -70,15 +66,18 @@ Flox.Model = function() {
 		drawControlPoints = false,
 		drawIntermediateFlowPoints = false,
 		drawRangeboxes = false,
+				
+		datasetName = null,
 
+		// A list of appropriate scales for different US states. 
+		// FIXME this is problematic, and very hard-coded. There is probably
+		// a way to handle this more responsively. 
 		// Not really a setting. Doesn't get passed in to the layoutWorker. 
-		// ...Why doesn't it get passed into the layout worker? Is it used for
-		// anything in the layout?
+		// TODO The layouter might care about the scale in order to help
+		// determine an appropriate distance flows should be moved off nodes. 
 		stateScales = {
 			"wv" : 0.5
 		},
-
-		
 		
 		// Public object		
 		my = {};
@@ -121,11 +120,11 @@ Flox.Model = function() {
 	// shown.
 	function updateCachedValues() {
 		
-		if (filteredFlows.length < 1) {
+		if (flows.length < 1) {
 			minFlowValue = 0;
 			maxFlowValue = 0;
 		} else {
-			minFlowValue = maxFlowValue = filteredFlows[0].getValue();
+			minFlowValue = maxFlowValue = flows[0].getValue();
 		}
 
 		var flowSum = 0,
@@ -137,8 +136,8 @@ Flox.Model = function() {
 		minFlowLength = Infinity;
 		maxFlowLength = 0;
 
-		for(i = 0, j = filteredFlows.length; i < j; i += 1) {
-			flow = filteredFlows[i];
+		for(i = 0, j = flows.length; i < j; i += 1) {
+			flow = flows[i];
 			v = flow.getValue();
 			if (v < minFlowValue) {
 			    minFlowValue = v;
@@ -209,7 +208,6 @@ Flox.Model = function() {
 	}
     
     function addPoint(pt) {
-		
 		var xy, foundPt;
 		
 		// Does the point have an xy and latLng?
@@ -218,7 +216,6 @@ Flox.Model = function() {
 			pt.x = xy.x;
 			pt.y = xy.y;
 		}
-
 		// Make sure it isn't a duplicate point
 		foundPt = findPoint(pt);
 		// Add the point to the _points array
@@ -229,13 +226,13 @@ Flox.Model = function() {
     }
     
     // FIXME this is usually sorting a lot of flows. It needs to not block 
-    // the UI!
+    // the UI! There are ways of doing this. Maybe pass to worker. 
     /**
      * Sort flows by value in descending order, unless ascending === true.
      */
     function sortFlows(ascending) {
-    	
-    	console.log("sorting flows...");
+		
+		console.log("sorting flows...");
 		var i;
 		
 		if(ascending === true) {
@@ -250,66 +247,6 @@ Flox.Model = function() {
 		console.log("done sorting flows");
     }
     
-    function sortTheseFlows(theseFlows) {
-		var i;
-		theseFlows.sort(function(a,b) {
-			return b.getValue() - a.getValue();
-		});
-	}
-    
-    function containsObject(obj, list) {
-	    var i;
-	    for (i = 0; i < list.length; i += 1) {
-	        if (list[i] === obj) {
-	        	//console.log("it's already in there!")
-	            return true;
-	        }
-	    }
-	    //console.log("It's not in there!")
-	    return false;
-	}
-    
-    // Creates a subset of flows of length maxFlows
-    // TODO Flows should be sorted first. Maybe they should be sorted here?
-    function setFilteredFlows(n) {
-		//console.log("setFilteredFlows called!");
-		
-		var flowSet, i, j, flow;
-		
-		if (useNetFlows) {
-			flowSet = netFlows;
-		} else {
-			flowSet = flows;
-		}
-	
-		if(!n) {
-			n = maxFlows;
-		}
-	
-		if (n > flowSet.length) {
-			n = flowSet.length;
-		}
-	
-		// Reset filtered flows and filtered nodes to empty.
-		filteredFlows = [];
-		filteredNodes = [];
-
-		filteredFlows = flowSet.slice(0, n);
-		
-		// Now filter the nodes. 
-		for (i = 0, j = filteredFlows.length; i < j; i += 1) {
-			flow = filteredFlows[i];
-			
-			if(!containsObject(flow.getStartPt(), filteredNodes)) {
-				filteredNodes.push(flow.getStartPt());
-			}
-			
-			if(!containsObject(flow.getEndPt(), filteredNodes)) {
-				filteredNodes.push(flow.getEndPt());
-			}
-		}
-	}
-    
 	function addFlow(flow){
 		// Check to see if the points exist already.
 		var startPoint = findPoint(flow.getStartPt())[1],
@@ -320,7 +257,6 @@ Flox.Model = function() {
 		flow.setStartPt(startPoint);
 		flow.setEndPt(endPoint);
         flows.push(flow);
-        setFilteredFlows();
         updateCachedValues();
     }
     
@@ -340,28 +276,29 @@ Flox.Model = function() {
 			flow.setStartPt(startPoint);
 			flow.setEndPt(endPoint);
 	        flows.push(flow);
-	        	
-			// addFlow(newFlows[i]);
 		}
-		
 		sortFlows();
-		setFilteredFlows();	
 	    updateCachedValues();
     }
     
 	function deletePoint(pt) {
 		// delete flows that are connected to pt
-		// First figure out which flows have pt in it
-		var filteredFlows = [],
+		// First figure out which flows don't have pt in it
+		var flowsNotContainingPt = [],
 			i, j, index;
 		for (i = 0, j = flows.length; i < j; i += 1) {
 			if(flows[i].getStartPt()!==pt && flows[i].getEndPt()!==pt) {
-				filteredFlows.push(flows[i]);
+				flowsNotContainingPt.push(flows[i]);
 			}
 		}
-		flows = filteredFlows;
+		
+		// Set flows to the array of flows not containing pt. 
+		flows = flowsNotContainingPt;
 		
 		// FIXME There is still more than one of each point sometimes.
+		// TODO is there a polyfill for indexOf()?
+		
+		// Remove pt from the nodes array.
 		index = nodes.indexOf(pt);
 		if (index > -1) {
 			nodes.splice(index, 1);
@@ -381,6 +318,7 @@ Flox.Model = function() {
     function getFlowPointGap() {
         // Get longest and shortest flow baseline lengths
         
+        // FIXME this is all goofy, needs updated to worked with cashed values
         var flowLengthMinMax = getMinMaxFlowLength(),
 			longestFlowLength = flowLengthMinMax.max,
 			shortestFlowLength = flowLengthMinMax.min,
@@ -429,17 +367,11 @@ Flox.Model = function() {
 	function getFlowStrokeWidth(flow) {
 		var strokeWidth =  (maxFlowWidth * flow.getValue()) / maxFlowValue;
 		    
-		//if (strokeWidth >= 1.5) { // FIXME hardcoded value. Min stroke width?
-			return strokeWidth;
-		//}
-		//return 1.5; // FIXME hardcoded value
+		return strokeWidth;
 	}
 
 
-	
-
-	
-	// configure the arrows of filtered flows. 
+	// configure arrows for flows 
 	function configureArrows() {
 		var i, j, flow, flowWidth,	
 			minFlowWidth = (maxFlowWidth * minFlowValue / maxFlowValue),
@@ -447,14 +379,9 @@ Flox.Model = function() {
 			
 			//minFlowWidth = minFlowWidth > 1.5 ? minFlowWidth : 1.5;
 			// FIXME again with the hard-coded minimum flow width. Stop doing this!
-		
-		// if flows haven't been filtered, filter them;
-		if(!filteredFlows[0]) {
-			setFilteredFlows();
-		}
-		
-		for(i = 0, j = filteredFlows.length; i < j; i += 1) {
-			flow = filteredFlows[i];
+				
+		for(i = 0, j = flows.length; i < j; i += 1) {
+			flow = flows[i];
 			flowWidth = getFlowStrokeWidth(flow);	
 			
 			endPt = flow.getEndPt();
@@ -485,111 +412,11 @@ Flox.Model = function() {
 		for (i = 0, j = flows.length; i < j; i += 1) {
 			flows[i].setSelected(false);
 		}
-		
 		for (i = 0, j = nodes.length; i < j; i += 1) {
 			nodes[i].selected = false;
 		}
-		
 		Flox.updateTextBoxes();
 	}
-
-	function setMaxFlows(d) {
-		maxFlows = d;
-		
-		// need to do all the things.	
-		setFilteredFlows();
-		updateCachedValues();
-	}
-	
-
-	function cacheNetFlows() {
-
-		var flowset = flows.slice(),
-			i, j, f1, f2, diff, hasOpposingFlow, flow;
-		
-		// Reset netFlows and netNodes to empty
-		netFlows = [];
-		netNodes = [];
-		
-		// Loop backwards through flows
-		for (i = flowset.length - 1; i >= 0; i -= 1) {
-			
-			hasOpposingFlow = false;
-			
-			f1 = flowset[i];
-			
-			if(f1) {
-				// Loop forwards through flows, stopping at flows[i - 1];
-				for (j = 0; j < i; j += 1) {
-					
-					if(flowset[j]) {
-						f2 = flowset[j];
-						if(f1.getStartPt() === f2.getEndPt() && f1.getEndPt() === f2.getStartPt()) {
-							// These are two way flows!
-							hasOpposingFlow = true;
-							
-							console.log("found opposing flow!");
-							
-							diff = f1.getValue() - f2.getValue();
-							
-							if (diff > 0) { // f1 is bigger
-								netFlows.push(new Flox.Flow(f1.getStartPt(), f1.getEndPt(), diff));
-							}
-							
-							if (diff < 0) { // f2 is bigger
-								netFlows.push(new Flox.Flow(f2.getStartPt(), f2.getEndPt(), Math.abs(diff)));
-							}
-							
-							if (diff === 0) {
-								console.log("Hurray! Opposing flows have equal values!");
-							}
-							
-							flowset[j] = false; // so f2 isn't added when encountered again
-							// in the reverse loop.
-						}		
-						
-					}
-					
-						
-				}
-				
-				if(!hasOpposingFlow) {
-					netFlows.push(flows[i]);
-				}
-			}
-		}
-		
-		sortTheseFlows(netFlows);
-		
-		// Need to set up netNodes
-		for (i = 0, j = netFlows.length; i < j; i += 1) {
-			flow = netFlows[i];
-			
-			if(!containsObject(flow.getStartPt(), netFlows)) {
-				netNodes.push(flow.getStartPt());
-			}
-			
-			if(!containsObject(flow.getEndPt(), netFlows)) {
-				netNodes.push(flow.getEndPt());
-			}
-		}
-	}
-
-	// set filteredFlows to the flows between minValue and maxValue. The flows
-	// should already be sorted. 
-	function filterFlows(minValue, maxValue) {
-		var i, j, flow;
-		
-		filteredFlows = [];
-		
-		for (i = 0, j = flows.length; i < j; i += 1) {
-			flow = flows[i];
-			if (flow.getValue() >= minValue && flow.getValue() <= maxValue) {
-				filteredFlows.push(flow);
-			}
-		}
-	}
-
 
 	/**
 	 * @param {Object} settings key: value pairs of Model parameters.
@@ -624,6 +451,7 @@ Flox.Model = function() {
 		flowDistanceFromStartPointPixel = settings.flowDistanceFromStartPointPixel;
 		flowDistanceFromEndPointPixel = settings.flowDistanceFromEndPointPixel;
 		NODE_STROKE_WIDTH = settings.NODE_STROKE_WIDTH;
+		datasetName = settings.datasetName;
 	}
 	
 	
@@ -648,8 +476,8 @@ Flox.Model = function() {
 			rs, re,
 			i, j;
 		
-        for(i = 0, j = filteredFlows.length; i < j; i += 1) {
-			flow = filteredFlows[i];
+        for(i = 0, j = flows.length; i < j; i += 1) {
+			flow = flows[i];
 			rs = flowDistanceFromStartPointPixel > 0 ? getStartClipRadius(flow.getStartPt()) : 0;
 			re = flowDistanceFromEndPointPixel > 0 ? getEndClipRadius(flow.getEndPt()) : 0;
 			flow.cacheClippedLineSegments(rs, re, gap);
@@ -661,15 +489,15 @@ Flox.Model = function() {
 	my.cacheAllFlowBoundingBoxes = function() {
 		// console.log("caching flow bounding boxes!");
 		var flow, i, j;
-		for(i = 0, j = filteredFlows.length; i < j; i += 1) {
-			filteredFlows[i].cacheBoundingBox();
+		for(i = 0, j = flows.length; i < j; i += 1) {
+			flows[i].cacheBoundingBox();
 		}
 	};
 
 	my.toJSON = function(){
 		
 		var JSON = {
-				flows: [],
+				flows: []
 		    },
 
 			i, j, flow, node, sPt, ePt, cPt, val;
@@ -699,7 +527,8 @@ Flox.Model = function() {
 			flowDistanceFromEndPointPixel : flowDistanceFromEndPointPixel,
 			checkFlowBoundingBoxes: checkFlowBoundingBoxes,
 			maxFlows : maxFlows,
-			mapScale: mapScale
+			mapScale: mapScale,
+			datasetName: datasetName
 		};
 		
 		for(i = 0, j = flows.length; i < j; i += 1) {
@@ -716,7 +545,10 @@ Flox.Model = function() {
 							y: sPt.y,
 							value: sPt.value,
 							lat: sPt.lat,
-							lng: sPt.lng
+							lng: sPt.lng,
+							id: sPt.id,
+							STUSPS: sPt.STUSPS,
+							name: sPt.name
 						},
 					endPt: 
 						{
@@ -724,7 +556,10 @@ Flox.Model = function() {
 							y: ePt.y,
 							value: ePt.value,
 							lat: ePt.lat,
-							lng: ePt.lng
+							lng: ePt.lng,
+							id: ePt.id,
+							STUSPS: ePt.STUSPS,
+							name: ePt.name
 						},
 					cPt:
 						{
@@ -879,17 +714,17 @@ Flox.Model = function() {
 	my.getLocks = function() {
 		var locks = [],
 			i, j;
-		for(i=0, j = filteredFlows.length; i < j; i += 1) {
-			locks.push(filteredFlows[i].isLocked());
+		for(i=0, j = flows.length; i < j; i += 1) {
+			locks.push(flows[i].isLocked());
 		}
 		return locks;
 	};
 	
 	my.applyLocks = function(locks) {
 		var i, j;
-		if(filteredFlows.length === locks.length) {
+		if(flows.length === locks.length) {
 			for(i = 0, j = locks.length; i < j; i += 1) {
-				filteredFlows[i].setLocked(locks[i]);
+				flows[i].setLocked(locks[i]);
 			}
 		} else {
 			console.log("Flows and locks have different lengths");
@@ -949,12 +784,12 @@ Flox.Model = function() {
         addPoint(pt);
     };
 
-	my.getAllPoints = function() {
+	my.getAllNodes = function() {
 		return nodes;
 	};
 
     my.getPoints = function() {
-        return filteredNodes; 
+        return nodes; 
     };
 
     my.addFlow = function(flow) {
@@ -966,88 +801,22 @@ Flox.Model = function() {
         addFlows(newFlows);
     };
 
-    // Get the filtered flows.
+    // return all flows
     my.getFlows = function() {
-        if(filteredFlows[0]!==undefined) {
-			return filteredFlows;
-		}
-		setFilteredFlows();
-		return filteredFlows;
+        return flows;
     };
 
-	/**
-	 * Returns the top n flows, where n is the value of the maxFlows setting.
-	 * FIXME this could be a job for the ModelFilter? It would be nice if the 
-	 * layoutWorker didn't neet to import that as well. But maybe not a big
-	 * deal. 
-	 */
-	my.getMaxFlows = function() {
-		var flowSet, i, j, flow;
-		
-		if (useNetFlows) {
-			flowSet = netFlows;
-		} else {
-			flowSet = flows;
-		}
-	
-		if(!n) {
-			n = maxFlows;
-		}
-	
-		if (n > flowSet.length) {
-			n = flowSet.length;
-		}
-	
-		// Reset filtered flows and filtered nodes to empty.
-		filteredFlows = [];
-		filteredNodes = [];
-
-		filteredFlows = flowSet.slice(0, n);
-		
-		// Now filter the nodes. 
-		for (i = 0, j = filteredFlows.length; i < j; i += 1) {
-			flow = filteredFlows[i];
-			
-			if(!containsObject(flow.getStartPt(), filteredNodes)) {
-				filteredNodes.push(flow.getStartPt());
-			}
-			
-			if(!containsObject(flow.getEndPt(), filteredNodes)) {
-				filteredNodes.push(flow.getEndPt());
-			}
-		}
-	};
-
-
-	/**
-	 * Returns the nodes in the top n flows, where n is the value of the 
-	 * maxFlows setting.
-	 */
-	my.getMaxNodes = function() {
-		
-	};
-
-	// Return all unfiltered flows
+	// Return all flows
 	my.getAllFlows = function() {
 		return flows;
-	};
-
-	// Returns all unfiltered control points
-	my.getAllCtrlPts = function() {
-		var ctrlPts = [],
-			i, j;
-        for(i=0, j = flows.length; i < j; i += 1) {
-            ctrlPts.push(flows[i].getCtrlPt());
-        }
-        return ctrlPts;
 	};
 
     // Get the control points of all filtered flows
     my.getCtrlPts = function() {
         var ctrlPts = [],
 			i, j;
-        for(i=0, j = filteredFlows.length; i < j; i += 1) {
-            ctrlPts.push(filteredFlows[i].getCtrlPt());
+        for(i=0, j = flows.length; i < j; i += 1) {
+            ctrlPts.push(flows[i].getCtrlPt());
         }
         return ctrlPts;
     };
@@ -1056,8 +825,6 @@ Flox.Model = function() {
     my.deleteAllFlows = function() {
         flows = [];
         nodes = [];
-        filteredFlows = [];
-        filteredNodes = [];
         updateCachedValues();
     };
 
@@ -1358,14 +1125,6 @@ Flox.Model = function() {
 		return checkFlowBoundingBoxes;
 	};
 
-	my.setFilteredFlows = function(n) {
-		setFilteredFlows(n);
-	};
-
-	my.filterFlows = function(minValue, maxValue) {
-		filterFlows(minValue, maxValue);
-	};
-
 	// Sort flows by value in descending order, unless otherwise specified.
 	my.sortFlows = function (ascending) {
 		sortFlows(ascending);
@@ -1380,16 +1139,11 @@ Flox.Model = function() {
 	};
 
 	my.getSelectedFlows = function () {
-		// should only look in filtered flows, because these are the only 
-		// flows that might have a select state. 
-		// ...Unless a selected flow is filtered out before being deselected.
-		// If that's the case then we don't want that one anyway! But it should
-		// get deselected I think. Anyway,
 		var i, j, selectedFlows = [];
 		
-		for(i = 0, j = filteredFlows.length; i < j; i += 1) {
-			if (filteredFlows[i].isSelected()) {
-				selectedFlows.push(filteredFlows[i]); 
+		for(i = 0, j = flows.length; i < j; i += 1) {
+			if (flows[i].isSelected()) {
+				selectedFlows.push(flows[i]); 
 			}
 		}
 		return selectedFlows;
@@ -1398,9 +1152,9 @@ Flox.Model = function() {
 	my.getSelectedNodes = function () {
 		var i, j, selectedNodes = [];
 		
-		for(i = 0, j = filteredNodes.length; i < j; i += 1) {
-			if (filteredNodes[i].selected) {
-				selectedNodes.push(filteredNodes[i]); 
+		for(i = 0, j = nodes.length; i < j; i += 1) {
+			if (nodes[i].selected) {
+				selectedNodes.push(nodes[i]); 
 			}
 		}
 		return selectedNodes;
@@ -1442,6 +1196,21 @@ Flox.Model = function() {
 		updateSettings(settings);
 	};
 
+	my.setDatasetName = function(nameString) {
+		datasetName = nameString;
+	};
+
+	my.getDatasetName = function() {
+		return datasetName;
+	};
+
+	/**
+	 * Return the node with the matching id.
+	 * Return null if no such node exists.
+	 */
+	my.findNodeByID = function(id) {
+		
+	};
 
 	my.deserializeModelJSON = function(modelJSON) {
 		// What did we pass this thing again?

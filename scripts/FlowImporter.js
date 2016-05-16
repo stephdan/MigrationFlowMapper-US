@@ -5,8 +5,7 @@ Flox.FlowImporter = ( function(d3) {
 
 	function findNodeID(nodes, id) {
 
-		var i,
-		    j;
+		var i, j;
 
 		// Loop through the nodes.
 		// If node.id matches id, return the node!
@@ -21,52 +20,6 @@ Flox.FlowImporter = ( function(d3) {
 		// It's not in there!
 	}
 
-	
-
-
-	function importNetCountyFlowData(flowPath, countyNodes, callback) {
-		
-		d3.csv(flowPath, function(flowData) {
-			
-			var aFIPS,
-			    bFIPS,
-			    flow,
-			    flows = [],
-			    i, j,
-			    aPt,
-			    bPt,
-			    netFlowAmt;
-
-			// For each row in the table...
-			for ( i = 0, j = flowData.length; i < j; i += 1) {
-
-				aFIPS = flowData[i].placeA_FIPS;
-				bFIPS = flowData[i].placeB_FIPS;
-
-				aPt = findNodeID(countyNodes, aFIPS);
-				bPt = findNodeID(countyNodes, bFIPS);
-
-				if (aPt && bPt) { // both points exist in nodes!
-					netFlowAmt = Number(flowData[i].BtoA_net);
-
-					if (netFlowAmt) {// It's in there!
-						// If it's positive, then B is start point.
-						if (netFlowAmt > 0) {
-							//Flox.addFlow(new Flox.Flow(bPt, aPt, netFlowAmt));
-							flows.push(new Flox.Flow(bPt, aPt, netFlowAmt));
-						}
-
-						if (netFlowAmt < 0) {// A is start point
-							//Flox.addFlow(new Flox.Flow(aPt, bPt, Math.abs(netFlowAmt)));
-							flows.push(new Flox.Flow(aPt, bPt, Math.abs(netFlowAmt)));
-						}
-					}
-				}
-			}
-			callback(flows);
-		});
-	}
-
 	function importTotalCountyFlowData(flowPath, countyNodes, callback) {
 		d3.csv(flowPath, function(flowData) {
 			
@@ -78,7 +31,9 @@ Flox.FlowImporter = ( function(d3) {
 			    aPt,
 			    bPt,
 			    BtoA,
-			    AtoB;
+			    AtoB,
+			    flowAB,
+			    flowBA;
 
 			// For each row in the table...
 			for ( i = 0, j = flowData.length; i < j; i += 1) {
@@ -89,15 +44,25 @@ Flox.FlowImporter = ( function(d3) {
 				bPt = findNodeID(countyNodes, bFIPS);
 				
 				if (aPt && bPt) { // both points exist in nodes!
-					BtoA = Number(flowData[i].BtoA);
-					AtoB = Number(flowData[i].AtoB);
+					BtoA = Number(flowData[i].BtoA); // could be zero
+					AtoB = Number(flowData[i].AtoB); // could be zero
+					flowBA = new Flox.Flow(bPt, aPt, BtoA);
+					flowAB = new Flox.Flow(aPt, bPt, AtoB);
+					
+					
 					
 					if(BtoA > 0) {
-						flows.push(new Flox.Flow(bPt, aPt, BtoA));
+						flowBA.oppositeFlow = flowAB;
+						aPt.incomingFlows.push(flowBA);
+						bPt.outgoingFlows.push(flowBA);
+						flows.push(flowBA);
 					}
 					
 					if(AtoB > 0) {
-						flows.push(new Flox.Flow(aPt, bPt, AtoB));
+						flowAB.oppositeFlow = flowBA;
+						aPt.outgoingFlows.push(flowAB);
+						bPt.incomingFlows.push(flowAB);
+						flows.push(flowAB);
 					}
 				}
 			}
@@ -158,7 +123,7 @@ Flox.FlowImporter = ( function(d3) {
 
 			Flox.layoutFlows();
 
-			Flox.refreshMap();
+			Flox.refreshMap(); // FIXME this should happen in a callback.
 		});
 	};
 
@@ -193,6 +158,7 @@ Flox.FlowImporter = ( function(d3) {
 				newPt = new Flox.Point(Number(nodeData[i].latitude), Number(nodeData[i].longitude), 1, nodeData[i].FIPS);
 
 				newPt.STUSPS = nodeData[i].STUSPS;
+				newPt.name = nodeData[i].NAME;
 
 				// new point migth not have an xy if the latLng is outside the
 				// d3 projection boundary, which causes errors. Don't add it to 
@@ -226,16 +192,7 @@ Flox.FlowImporter = ( function(d3) {
 		});
 	};
 
-	my.importNetCountyFlowData = function(nodePath, flowPath, callback) {
-		// Import nodes for all counties
-		my.importUSCensusCountyNodes(nodePath, function(countyNodes) {
-			// countyNodes is the imported nodes!
-			importNetCountyFlowData(flowPath, countyNodes, function(flows) {
-				// flows are the imported flows!
-				callback(flows);
-			});
-		});
-	};
+
 
 	my.importStateMigrationData = function(nodePath, flowPath) {
 		// Arrays to store the stuff
@@ -306,7 +263,7 @@ Flox.FlowImporter = ( function(d3) {
 
 				Flox.layoutFlows();
 
-				Flox.refreshMap();
+				Flox.refreshMap(); // FIXME this should happen in a callback.
 				//console.log(flows);
 				//return flows;
 

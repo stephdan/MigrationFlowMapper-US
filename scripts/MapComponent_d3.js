@@ -2,6 +2,7 @@ Flox.MapComponent_d3 = function() {
 	"use strict";
 
 	var svg,
+		model_copy,
 	    selectedColor = "#59A4FF",
 	    defaultColor = "black",
 	    active = d3.select(null),
@@ -104,12 +105,39 @@ Flox.MapComponent_d3 = function() {
 		});
 		// end d3.json
 
-		
-		
-		
-		// end d3.json
-
 	}// End initMap();
+
+
+
+	function removeAllFlows() {
+		d3.select("#flowsLayer").selectAll("g").remove();
+	}
+
+	function removeAllCircles() {
+		// Select and remove the circles layer?
+		var circlesLayer = d3.select("#circlesLayer").remove();
+	}
+
+
+	function getNodeRadius(node) {
+		return model_copy.getNodeRadius(node);
+	}
+
+	function endClipRadius(endNode) {
+		// distance between end of flow and end point
+		var gapDistanceToEndNode = model_copy.getFlowDistanceFromEndPointPixel(),
+		    endNodeRadius = model_copy.getNodeStrokeWidth() / 2 + getNodeRadius(endNode);
+		return gapDistanceToEndNode + endNodeRadius;
+	}
+	
+	function startClipRadius(startNode) {
+		// distance between end of flow and end point
+		var gapDistanceToStartNode = model_copy.getFlowDistanceFromStartPointPixel(),
+		    startNodeRadius = model_copy.getNodeStrokeWidth() / 2 + getNodeRadius(startNode);
+		return gapDistanceToStartNode + startNodeRadius;
+	}
+
+
 
 	// takes a flow object, builts an SVG curve out of the 3 points, translating
 	// the LatLng coordinates to screen coordinates. Also handles flow clipping.
@@ -131,12 +159,12 @@ Flox.MapComponent_d3 = function() {
 			// The place where this curve is clipped will depend on whether or
 			// not arrows are drawn.
 			flow = f.getArrow()[6];
-			rs = Flox.getFlowDistanceFromStartPointPixel() > 0 ? Flox.getStartClipRadius(f.getStartPt()) : 0;
+			rs = model_copy.getFlowDistanceFromStartPointPixel() > 0 ? startClipRadius(f.getStartPt()) : 0;
 			flow = flow.getClippedFlow(rs, 1);
 			// clip the start bit off the arrowed flow
 		} else {
-			rs = Flox.getFlowDistanceFromStartPointPixel() > 0 ? Flox.getStartClipRadius(f.getStartPt()) : 0;
-			re = Flox.getFlowDistanceFromEndPointPixel() > 0 ? Flox.getEndClipRadius(f.getEndPt()) : 0;
+			rs = model_copy.getFlowDistanceFromStartPointPixel() > 0 ? startClipRadius(f.getStartPt()) : 0;
+			re = model_copy.getFlowDistanceFromEndPointPixel() > 0 ? endClipRadius(f.getEndPt()) : 0;
 			flow = f.getClippedFlow(rs, re);
 		}
 
@@ -174,7 +202,7 @@ Flox.MapComponent_d3 = function() {
 		if (flow.isSelected()) {
 			return selectedColor;
 		}
-		if (flow.isLocked() && Flox.isShowLockedFlows()) {
+		if (flow.isLocked() && model_copy.isShowLockedFlows()) {
 			return lockedColor;
 		}
 		return defaultColor;
@@ -182,11 +210,11 @@ Flox.MapComponent_d3 = function() {
 
 	function drawFlows(drawArrows) {
 
-		Flox.configureArrows();
+		model_copy.configureArrows();
 
-		var maxFlowWidth = Flox.getMaxFlowWidth(),
-		    maxFlowValue = Flox.getMaxFlowValue(),
-		    flows = Flox.getFlows(),
+		var maxFlowWidth = model_copy.getMaxFlowWidth(),
+		    maxFlowValue = model_copy.getMaxFlowValue(),
+		    flows = model_copy.getFlows(),
 		    clippedFlows = [],
 		    i,
 		    j,
@@ -229,7 +257,7 @@ Flox.MapComponent_d3 = function() {
 			.style("cursor", "default")
 			.attr("fill", "none")
 			.attr("stroke-width", function(d) {
-				return Flox.getFlowStrokeWidth(d) + 2;
+				return model_copy.getFlowStrokeWidth(d) + 2;
 			})
 			.attr("d", function(d) {
 				return buildSvgFlowPath(d, drawArrows);
@@ -262,7 +290,7 @@ Flox.MapComponent_d3 = function() {
 			.style("cursor", "default")
 			.attr("fill", "none")
 			.attr("stroke-width", function(d) {
-				return Flox.getFlowStrokeWidth(d);
+				return model_copy.getFlowStrokeWidth(d);
 			})
 			.attr("d", function(d) {
 				return buildSvgFlowPath(d, drawArrows);
@@ -274,8 +302,8 @@ Flox.MapComponent_d3 = function() {
 
 		function flowMousemove(d) {
 			tooltip.html("Value: " + d.getValue() + "<br/>" + 
-			             "From: " + d.getStartPt().id + "<br/>" + 
-			             "To: " + d.getEndPt().id )
+			             "From: " + d.getStartPt().name + "<br/>" + 
+			             "To: " + d.getEndPt().name )
 			       .style("left", (d3.event.pageX + 1) + "px")
 			       .style("top", (d3.event.pageY - 34) + "px");
 		}
@@ -291,8 +319,8 @@ Flox.MapComponent_d3 = function() {
         })
         .on("mousemove", function(d) {
 			tooltip.html("Value: " + d.getValue() + "<br/>" + 
-			             "From: " + d.getStartPt().id + "<br/>" + 
-			             "To: " + d.getEndPt().id )
+			             "From: " + d.getStartPt().name + "<br/>" + 
+			             "To: " + d.getEndPt().name )
 			       .style("left", (d3.event.pageX + 4) + "px")
 			       .style("top", (d3.event.pageY - 34) + "px");
         })
@@ -304,19 +332,19 @@ Flox.MapComponent_d3 = function() {
 	}
 
 	function drawPoints() {
-		var points = Flox.getPoints(),
+		var points = model_copy.getPoints(),
 		    circles = d3.select("#mapFeaturesLayer").append("g").attr("id", "pointsLayer").selectAll("circle").data(points).enter().append("circle");
 
 		// Add some attributes to the points
 		circles.style("stroke", "black").style("stroke-width", function(d) {
-			return Flox.getNodeStrokeWidth();
+			return model_copy.getNodeStrokeWidth();
 		}).style("fill", "white").style("stroke", function(d) {// adjust the color
 			if (d.selected) {
 				return "#59A4FF";
 			}
 			return "black";
 		}).style("cursor", "default").attr("r", function(d) {
-			return Flox.getNodeRadius(d);
+			return model_copy.getNodeRadius(d);
 		}).attr("cx", function(d) {
 			return d.x;
 		}).attr("cy", function(d) {
@@ -324,15 +352,27 @@ Flox.MapComponent_d3 = function() {
 		});
 	}
 
-	function drawFeatures(settings) {
+	/**
+	 * @param m : A copy of the model.
+	 */
+	function drawFeatures(m) {
+	
+		removeAllFlows();
+	
+		if(!m) {
+			throw new Error("drawFeatures needs to be passed a copy of the model");
+		}
 
-		var drawArrows = settings.drawArrows;
+		// Store m in model_copy
+		model_copy = m;
 
-		if (settings.drawFlows) {
+		var drawArrows = model_copy.isDrawArrows;
+
+		if (model_copy.isDrawFlows()) {
 			drawFlows(drawArrows);
 		}
 
-		if (settings.drawNodes) {
+		if (model_copy.isDrawNodes()) {
 			drawPoints();
 		}
 	}
@@ -421,11 +461,7 @@ Flox.MapComponent_d3 = function() {
 		return [leftTop, leftBottom, rightTop, rightBottom];
 	}
 
-	function removeAllCircles() {
-		// Select and remove the circles layer?
-		var circlesLayer = d3.select("#circlesLayer").remove();
-	}
-
+	
 	/**
 	 * Gets the center point of a d3-style bounding box, where:
 	 * [[left, top][right, bottom]]
@@ -536,6 +572,7 @@ Flox.MapComponent_d3 = function() {
 			pt = getProjectedPointOnCircle(centroid, outerCircle);
 
 			pt.STUSPS = statePolygons[i].properties.STUSPS;
+			pt.name = statePolygons[i].properties.STUSPS;
 			pt.necklaceMapNode = true;
 			
 			// set the radius now. How do you do this later?
@@ -581,7 +618,7 @@ Flox.MapComponent_d3 = function() {
 		    stateCircles;
 		
 		// Clear out all flows and necklace maps.
-		d3.select("#flowsLayer").selectAll("g").remove();
+		removeAllFlows();
 		d3.select("#necklaceMapLayer").remove(); 
 		
 		// get the statePolygon, yes?
@@ -592,7 +629,7 @@ Flox.MapComponent_d3 = function() {
 		// Tell the importer which flows need loadin'
 		Flox.importTotalCountyFlowData(statePolygon.properties.STUSPS);
 		
-		zoomToPolygon(statePolygon); // Zoom in! FIXME Usually gets stuck though 
+		zoomToPolygon(statePolygon); // Zoom in! FIXME Usually gets stuck 
 		// due to UI freeze.
 		
 		// Hide county boundaries
@@ -601,28 +638,6 @@ Flox.MapComponent_d3 = function() {
 
 		// Show just the county boundaries for the selected state
 		showCountyBordersWithinState(statePolygon.properties.STATEFP);
-		
-		// Necklace map stuff all needs to happen after the flows are loaded
-		// and the model has processed them. In other words, not here. 
-		
-		// // Get circle around the state bounding box
-		// stateBoundingBox = path.bounds(statePolygon);
-		// outerCircle = getCircleAroundBoundingBox(stateBoundingBox);
-// 
-		// console.log("State: " + statePolygon.properties.STUSPS + ", FIPS: " + statePolygon.properties.STATEFP);
-// 
-		// // Figure out which states besides the selected one have flows
-		// // what need showin'
-		// testStates = ["WA", "FL", "ME", "TX", "CA", "WV", "CO"];
-// 		
-		// stateCircles = getStateCircles(outerCircle, testStates);
-		// //console.log(stateCircles);
-		// //drawCircles([outerCircle]);
-		// drawCircles(stateCircles);
-// 			
-		// addNecklaceMap(outerCircle, stateCircles);
-		// //console.log(path.centroid(d));
-		
 	}
 
 
@@ -654,7 +669,7 @@ Flox.MapComponent_d3 = function() {
 
 		d3.selectAll(".county").classed("hidden", true);
 		removeAllCircles();
-		d3.select("#flowsLayer").selectAll("g").remove();
+		removeAllFlows();
 		
 		// Also remove all necklace maps.
 		d3.select("#necklaceMapLayer").remove(); 
@@ -664,18 +679,8 @@ Flox.MapComponent_d3 = function() {
 
 	function zoomed() {
 		var g = svg.select("#mapFeaturesLayer");
-		//flows = d3.select("#flowsLayer").selectAll(".curve"),
-		//arrows = d3.select("#flowsLayer").selectAll(".arrow");
 
-		// // Flows maintain stoke width at all zooms.
-		// flows.attr("stroke-width", function(d) {
-		// var width = Flox.getFlowStrokeWidth(d);
-		// return width/d3.event.scale + "px";
-		// });
 		mapScale = d3.event.scale;
-
-		//console.log(mapScale);
-		//Flox.setMapScaleInModel(mapScale);
 
 		g.style("stroke-width", 1 / mapScale + "px");
 		g.attr("transform", "translate(" + d3.event.translate + ")scale(" + mapScale + ")");
@@ -774,10 +779,10 @@ Flox.MapComponent_d3 = function() {
 		callback(necklaceMapNodes);
 	}
 
-	function configureNecklaceMap(targetStateAbbreviation) {
+	function configureNecklaceMap(model, callback) {
 		
 		// Figure out which states need necklace map nodes.
-		var flows = Flox.getFlows(),
+		var flows = model.getFlows(),
 			outerStates = [],
 			flow,
 			targetStatePolygon,
@@ -785,10 +790,11 @@ Flox.MapComponent_d3 = function() {
 			outerCircle,
 			stateCircles,
 			i, j, sPt, ePt,
-			necklaceMapNodes;
-		
+			necklaceMapNodes,
+			datasetName = model.getDatasetName();
+			
 		// get the statePolygon, yes?
-		d3.select("#" + targetStateAbbreviation).each(function(d) {
+		d3.select("#" + datasetName).each(function(d) {
 			targetStatePolygon = d; // Yes!
 		});
 		
@@ -798,12 +804,12 @@ Flox.MapComponent_d3 = function() {
 			sPt = flow.getStartPt();
 			ePt = flow.getEndPt();
 			
-			if(sPt.STUSPS !== targetStateAbbreviation && (outerStates.indexOf(sPt.STUSPS) < 0)) {
+			if(sPt.STUSPS !== datasetName && (outerStates.indexOf(sPt.STUSPS) < 0)) {
 				//console.log("found an outer state");
 				outerStates.push(sPt.STUSPS);
 			}
 			
-			if(ePt.STUSPS !== targetStateAbbreviation && (outerStates.indexOf(ePt.STUSPS) < 0)) {
+			if(ePt.STUSPS !== datasetName && (outerStates.indexOf(ePt.STUSPS) < 0)) {
 				//console.log("found an outer state");
 				outerStates.push(ePt.STUSPS);
 			}
@@ -826,22 +832,18 @@ Flox.MapComponent_d3 = function() {
 				
 				// if the SPUSPS in sPt/ePt isn't the target, replace it with
 				// the necklaceMapNode it should be. 
-				if(sPt.STUSPS !== targetStateAbbreviation) {
+				if(sPt.STUSPS !== datasetName) {
 					flow.setStartPt(necklaceMapNodes[sPt.STUSPS]);
 				}
-				if(ePt.STUSPS !== targetStateAbbreviation) {
+				if(ePt.STUSPS !== datasetName) {
 					flow.setEndPt(necklaceMapNodes[ePt.STUSPS]);
 				}
 			}
-			// Tell Flox it can layout flows now.
-			// console.log("running timeout");
-			// window.setTimeout(function(){
-				// console.log("continuing!");
-			//Flox.runLayoutWorker();
-			// }, 1000);
-			
+			callback();
 		});
 	}
+	
+	
 	
 	// PUBLIC ---------------------------------------------------------------------
 
@@ -853,14 +855,14 @@ Flox.MapComponent_d3 = function() {
 		drawCircles(circlesArray);
 	};
 
-	my.configureNecklaceMap = function (stateAbbreviation) {
-		configureNecklaceMap(stateAbbreviation);
+	my.configureNecklaceMap = function (stateAbbreviation, model_copy, callback) {
+		configureNecklaceMap(stateAbbreviation, model_copy, callback);
 	};
 
 	// end MapComponent_d3 only-------------------------------------------------
 
-	my.drawFeatures = function(settings) {
-		drawFeatures(settings);
+	my.drawFeatures = function(m) {
+		drawFeatures(m);
 	};
 
 	my.initMap = function() {
@@ -879,9 +881,8 @@ Flox.MapComponent_d3 = function() {
 
 	};
 
-	my.clearAll = function() {
-		// Just clear the flows, ok?
-		d3.select("#flowsLayer").selectAll("g").remove();
+	my.removeAllFlows = function() {
+		removeAllFlows();
 	};
 
 	my.resizeFlows = function() {
