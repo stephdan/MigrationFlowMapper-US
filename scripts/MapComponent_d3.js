@@ -823,24 +823,31 @@ Flox.MapComponent_d3 = function() {
 		
 		stateCircles = getStateCircles(outerCircle, outerStates);
 		
-		addNecklaceMap(outerCircle, stateCircles, function(necklaceMapNodes) {
-			// Swap out the offending node in each flow with the necklace map node.
-			for(i = 0, j = flows.length; i < j; i += 1) {
-				flow = flows[i];
-				sPt = flow.getStartPt();
-				ePt = flow.getEndPt();
-				
-				// if the SPUSPS in sPt/ePt isn't the target, replace it with
-				// the necklaceMapNode it should be. 
-				if(sPt.STUSPS !== datasetName) {
-					flow.setStartPt(necklaceMapNodes[sPt.STUSPS]);
+		if(stateCircles.length > 0) {
+			addNecklaceMap(outerCircle, stateCircles, function(necklaceMapNodes) {
+				// Swap out the offending node in each flow with the necklace map node.
+				if(stateCircles.length > 0) {
+					for(i = 0, j = flows.length; i < j; i += 1) {
+						flow = flows[i];
+						sPt = flow.getStartPt();
+						ePt = flow.getEndPt();
+						
+						// if the SPUSPS in sPt/ePt isn't the target, replace it with
+						// the necklaceMapNode it should be. 
+						if(sPt.STUSPS !== datasetName) {
+							flow.setStartPt(necklaceMapNodes[sPt.STUSPS]);
+						}
+						if(ePt.STUSPS !== datasetName) {
+							flow.setEndPt(necklaceMapNodes[ePt.STUSPS]);
+						}
+					}	
 				}
-				if(ePt.STUSPS !== datasetName) {
-					flow.setEndPt(necklaceMapNodes[ePt.STUSPS]);
-				}
-			}
+				callback();
+			});
+		} else {
+			console.log("No out of state nodes?");
 			callback();
-		});
+		}
 	}
 	
 	

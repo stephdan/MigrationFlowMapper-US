@@ -15,7 +15,9 @@ var mapComponent,
 	nodeGrid = null,
 	
 	filterSettings = {
-		netFlows : true
+		netFlows : false,
+		inStateFlows: false,
+		outerStateFlows: true
 	},
 	
 	my = {};
@@ -390,12 +392,15 @@ my.rotateProjection = function(lat, lng, roll) {
 my.showNetFlows = function() {
 	var netFlowsModel;
 	
+	filterSettings.netFlows = true;
+	
 	// Get netFlowsModel	
-	netFlowsModel = new Flox.ModelFilter(model_master).getNetFlowsModel();
+	netFlowsModel = new Flox.ModelFilter(model_master).filterBySettings(filterSettings);
 	
 	mapComponent.configureNecklaceMap(netFlowsModel, function() {
 			
-			layoutFlows(netFlowsModel);			
+			layoutFlows(netFlowsModel);	
+			refreshMap(netFlowsModel);		
 			// runLayoutWorker(netFlowsModel, function() {
 				// refreshMap(netFlowsModel);
 			// });
@@ -404,9 +409,15 @@ my.showNetFlows = function() {
 
 my.showTotalFlows = function() {
 	
-	mapComponent.configureNecklaceMap(model_master, function() {
+	var totalFlowsModel;
+	filterSettings.netFlows = false;
+	
+	totalFlowsModel = new Flox.ModelFilter(model_master).filterBySettings(filterSettings);
+	
+	mapComponent.configureNecklaceMap(totalFlowsModel, function() {
 			
-			layoutFlows(model_master);		
+			layoutFlows(totalFlowsModel);	
+			refreshMap(totalFlowsModel);		
 			
 				
 			// runLayoutWorker(model_master, function() {

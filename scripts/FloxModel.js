@@ -49,10 +49,10 @@ Flox.Model = function() {
 		arrowCornerPosition = 0.0,
 		pointArrowTowardsEndpoint = true,
 		
-		// cached values. Does the layouter need these? I think these are set
+		// cached values cached by updateCachedValues()
 		minFlowValue,
 		maxFlowValue,
-		meanFlowValue,
+		meanFlowValue, // used for anything? Adding flows during editing?
 		minFlowLength,
 		maxFlowLength,
 		minNodeValue,
@@ -115,7 +115,7 @@ Flox.Model = function() {
     }
 
 	
-	// Updates the cached values using only the filtered flows. These values
+	// Updates the cached values. These values
 	// are used for drawing and layouts, which only care about the flows being
 	// shown.
 	function updateCachedValues() {
@@ -229,7 +229,7 @@ Flox.Model = function() {
 		if(foundPt[0]===false) {
 			nodes.push(foundPt[1]);
 		}
-		updateCachedValues();
+		//updateCachedValues();
     }
     
     // FIXME this is usually sorting a lot of flows. It needs to not block 
@@ -314,7 +314,7 @@ Flox.Model = function() {
         startPoint.outgoingFlows.push(flow);
         endPoint.incomingFlows.push(flow);
         
-        updateCachedValues();
+        //updateCachedValues();
     }
     
     
@@ -354,8 +354,7 @@ Flox.Model = function() {
 	        endPoint.incomingFlows.push(flow);
 	        assignOppositeFlow(flow);
 		}
-		sortFlows();
-	    updateCachedValues();
+	    //updateCachedValues();
     }
     
 	function deletePoint(pt) {

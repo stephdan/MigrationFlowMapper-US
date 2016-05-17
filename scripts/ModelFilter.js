@@ -293,18 +293,20 @@ Flox.ModelFilter = function(m) {
 		model_copy.deleteAllFlows();
 		model_copy.addFlows(netFlows);
 
-		Flox.logFlows(model_copy);
+		//Flox.logFlows(model_copy);
 		return model_copy;
 	};
 	
 	/**
-	 * Return a model containing only the flows that will be displayed.
+	 * Return a model containing the n largest flows, where n is the value of 
+	 * maxFlows in the model.
 	 */
 	my.getMaxFlowsModel = function() {
 		var maxFlows, i, j, n, allFlows;
 	
 		n = model_copy.getMaxFlows();
 		
+		model_copy.sortFlows();
 		allFlows = model_copy.getAllFlows();
 		
 		maxFlows = allFlows.slice(0, n);
@@ -313,7 +315,50 @@ Flox.ModelFilter = function(m) {
 		
 		model_copy.addFlows(maxFlows);
 		
+		model_copy.updateCachedValues();
+		
 		return model_copy;
+	};
+	
+	/**
+	 * Return a model containing only flows with start and end points
+	 * within the selected state. 
+	 */
+	my.getInStateFlowsModel = function (){
+		var selectedState = model_copy.getDatasetName(),
+			flows = model_copy.getFlows(), 
+			f, i, j;
+		
+		for(i = flows.length - 1;  i >= 0; i -= 1) {
+			// Slice out flows that have a node outside the state?
+			f = flows[i];
+			if(f.getStartPt().STUSPS !== selectedState || 
+			     f.getEndPt().STUSPS !== selectedState) {
+				flows.splice(i, 1);
+			}
+		}
+		
+		model_copy.deleteAllFlows();
+		model_copy.addFlows(flows);
+		
+	};
+	
+	my.getOuterStateFlowsModel = function() {
+		var selectedState = model_copy.getDatasetName(),
+			flows = model_copy.getFlows(), 
+			f, i, j;
+			
+		for(i = flows.length - 1;  i >= 0; i -= 1) {
+			// Slice out flows that have a node outside the state?
+			f = flows[i];
+			if(f.getStartPt().STUSPS === selectedState && 
+			     f.getEndPt().STUSPS === selectedState) {
+				flows.splice(i, 1);
+			}
+		}
+		
+		model_copy.deleteAllFlows();
+		model_copy.addFlows(flows);
 	};
 	
 	/**
@@ -330,25 +375,18 @@ Flox.ModelFilter = function(m) {
 			mergeOutOfStateTotalFlows();
 		}
 		
-		// if(settings.inStateFlows) {
-			// // filter out all flows connected to other states
-		// } else if (settings.outStateFlows) {
-			// // filter out all within-state flows
-		// } else if (settings.inAndOutStateFlows) {
-			// // Don't filter anything!
-		// } else {
-			// // default to filtering out all flows connectd to other states.
-		// }
-		
+		if(settings.inStateFlows) {
+			// filter out all flows connected to other states
+			my.getInStateFlowsModel();
+		} else if (settings.outerStateFlows) {
+			my.getOuterStateFlowsModel();
+		}
 		
 		// Filter out all but the biggest flows.
 		my.getMaxFlowsModel();		
 		
 		return model_copy;
-		
 	};
-	
-	
 	
 	return my;
 };
