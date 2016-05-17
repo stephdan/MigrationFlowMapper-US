@@ -260,9 +260,9 @@ Flox.ModelFilter = function(m) {
 	my.getNetFlowsModel = function() {
 		// Get the flows from the original model
 		var flows = model_copy.getAllFlows(),
-
-		// VARS
 		    netFlows = [],
+		    unopposedFlows = [],
+		    
 		// TODO is Map available in all recent browsers?
 		    map = new Map(),
 		    i,
@@ -270,6 +270,8 @@ Flox.ModelFilter = function(m) {
 		    id1,
 		    id2;
 
+		// FIXME If the flow doesn't have an opposing flow, it is deleted. It
+		// should not be deleted. 
 		for ( i = 0; i < flows.length; i += 1) {
 			flow = flows[i];
 			if ( typeof (flow.oppositeFlow) !== "undefined") {
@@ -280,16 +282,18 @@ Flox.ModelFilter = function(m) {
 					id2 = Number(flow.getEndPt().id);
 					map.set(Math.min(id1, id2) + "_" + Math.max(id1, id2), flow);
 				}
+			} else { // flow doesn't have an opposite flow, and should be kept.
+				unopposedFlows.push(flow);
 			}
 		}
 
 		// TODO polyfill for Array.from
 		netFlows = Array.from(map.values());
-
+		netFlows.concat(unopposedFlows);
 		model_copy.deleteAllFlows();
 		model_copy.addFlows(netFlows);
 
-		//Flox.logFlows(modelCopy);
+		Flox.logFlows(model_copy);
 		return model_copy;
 	};
 	

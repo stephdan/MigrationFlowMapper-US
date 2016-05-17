@@ -37,31 +37,27 @@ Flox.FlowImporter = ( function(d3) {
 
 			// For each row in the table...
 			for ( i = 0, j = flowData.length; i < j; i += 1) {
-				aFIPS = flowData[i].placeA_FIPS;
-				bFIPS = flowData[i].placeB_FIPS;
-
-				aPt = findNodeID(countyNodes, aFIPS);
-				bPt = findNodeID(countyNodes, bFIPS);
 				
-				if (aPt && bPt) { // both points exist in nodes!
-					BtoA = Number(flowData[i].BtoA); // could be zero
-					AtoB = Number(flowData[i].AtoB); // could be zero
-					flowBA = new Flox.Flow(bPt, aPt, BtoA);
-					flowAB = new Flox.Flow(aPt, bPt, AtoB);
+				aFIPS = flowData[i].placeA_FIPS; // FIPS of A node
+				bFIPS = flowData[i].placeB_FIPS; // FIPS of B node
+
+				aPt = findNodeID(countyNodes, aFIPS); // Get node A from countyNodes
+				bPt = findNodeID(countyNodes, bFIPS); // Get node B from countyNodes
+				
+				if (aPt && bPt) { // If both points exist in county nodes...
+					BtoA = Number(flowData[i].BtoA); // Get the value of BtoA flow
+					AtoB = Number(flowData[i].AtoB); // Get the value of AtoB flow
+					flowBA = new Flox.Flow(bPt, aPt, BtoA); // Make the BtoA flow
+					flowAB = new Flox.Flow(aPt, bPt, AtoB); // make the AtoB flow
 					
-					
-					
+					// If the value of BA is bigger than 0...
 					if(BtoA > 0) {
-						flowBA.oppositeFlow = flowAB;
-						aPt.incomingFlows.push(flowBA);
-						bPt.outgoingFlows.push(flowBA);
+						//flowBA.oppositeFlow = flowAB; // Assign AB as opposite. But it could be 0!
 						flows.push(flowBA);
 					}
 					
 					if(AtoB > 0) {
-						flowAB.oppositeFlow = flowBA;
-						aPt.outgoingFlows.push(flowAB);
-						bPt.incomingFlows.push(flowAB);
+						//flowAB.oppositeFlow = flowBA;
 						flows.push(flowAB);
 					}
 				}

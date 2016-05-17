@@ -191,11 +191,15 @@ Flox.Model = function() {
 		meanNodeValue = nodeSum / nodeCounter;
     }
     
+    
+    /**
+     * If the target node exists in nodes already, return the existing node.
+     * Otherwise, return the target node.
+     */
     function findPoint(target) {
 
 		var i, j, pt;
-		
-		// Loop through the _points. If the coordinates match the current point, 
+		// Loop through the existing nodes. If the coordinates match the current point, 
 		// return the existing point.
 		// If they don't match any of them, return the provided point.
 		for (i = 0, j = nodes.length; i < j; i += 1) {
@@ -207,10 +211,13 @@ Flox.Model = function() {
 		return [false,target];
 	}
     
+    /**
+     * 
+     */
     function addPoint(pt) {
 		var xy, foundPt;
 		
-		// Does the point have an xy and latLng?
+		// Add xy coords if pt doesn't have them
 		if(!pt.x || !pt.y){
 			xy = Flox.latLngToLayerPt([pt.lat, pt.lng]);
 			pt.x = xy.x;
@@ -247,6 +254,37 @@ Flox.Model = function() {
 		console.log("done sorting flows");
     }
     
+    
+	/**
+	 * Finds opposing flow in the model if there is one.
+	 * Assigns it as a property of flow, and assigns flow as a property
+	 * off the opposing flow.
+	 * TODO Assumes there could only be one opposing flow in the model.
+	 * Also, this might be dumb and bad. 
+	 */
+	function assignOppositeFlow(flow) {
+		var candidates, i, j;
+		
+		// Make sure this flow doesn't already have an opposingFlow.
+		if(!flow.hasOwnProperty("oppositeFlow")) {
+			// Look at the outgoing flows of the endpoint.
+			candidates = flow.getEndPt().outgoingFlows;
+			
+			for(i = 0, j = candidates.length; i < j; i += 1) {
+				// Make sure candidate doesn't already have an opposing flow
+				if(!candidates[i].hasOwnProperty("opposingFlow")) {
+					// If the end point of candidate is same as start point
+					// of flow
+					if((candidates[i].getEndPt()) === (flow.getStartPt())) {
+						// this candidate is an opposing flow.
+						flow.oppositeFlow = candidates[i];
+						candidates[i].oppositeFlow = flow;
+					}
+				}
+			}
+		}
+    }
+    
 	function addFlow(flow){
 		// Check to see if the points exist already.
 		var startPoint = findPoint(flow.getStartPt())[1],
@@ -257,8 +295,29 @@ Flox.Model = function() {
 		flow.setStartPt(startPoint);
 		flow.setEndPt(endPoint);
         flows.push(flow);
+        
+        // If the start and end points don't have incomingFlows and 
+		// outgoingFlows as properties, add them here. 
+		// TODO repeated again in addFlows
+		if(!startPoint.hasOwnProperty("outgoingFlows")) {
+			startPoint.outgoingFlows = [];
+		}
+		if(!startPoint.hasOwnProperty("incomingFlows")) {
+			startPoint.incomingFlows = [];
+		}
+		if(!endPoint.hasOwnProperty("outgoingFlows")) {
+			endPoint.outgoingFlows = [];
+		}
+		if(!endPoint.hasOwnProperty("incomingFlows")) {
+			endPoint.incomingFlows = [];
+		}
+        startPoint.outgoingFlows.push(flow);
+        endPoint.incomingFlows.push(flow);
+        
         updateCachedValues();
     }
+    
+    
     
 	// Add multiple flows to the existing flows.
 	function addFlows (newFlows) {
@@ -271,11 +330,29 @@ Flox.Model = function() {
 			flow = newFlows[i];
 			startPoint = findPoint(flow.getStartPt())[1];
 			endPoint = findPoint(flow.getEndPt())[1];
-			addPoint(startPoint);
-	        addPoint(endPoint);
+			addPoint(startPoint); // startPoint is assigned xy coords here.
+	        addPoint(endPoint); // endPoint is assigned xy coords here.
 			flow.setStartPt(startPoint);
 			flow.setEndPt(endPoint);
 	        flows.push(flow);
+	        
+			// If the start and end points don't have incomingFlows and 
+			// outgoingFlows as properties, add them here. 
+			if(!startPoint.hasOwnProperty("outgoingFlows")) {
+				startPoint.outgoingFlows = [];
+			}
+			if(!startPoint.hasOwnProperty("incomingFlows")) {
+				startPoint.incomingFlows = [];
+			}
+			if(!endPoint.hasOwnProperty("outgoingFlows")) {
+				endPoint.outgoingFlows = [];
+			}
+			if(!endPoint.hasOwnProperty("incomingFlows")) {
+				endPoint.incomingFlows = [];
+			}
+	        startPoint.outgoingFlows.push(flow);
+	        endPoint.incomingFlows.push(flow);
+	        assignOppositeFlow(flow);
 		}
 		sortFlows();
 	    updateCachedValues();

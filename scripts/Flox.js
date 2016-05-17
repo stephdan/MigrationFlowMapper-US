@@ -15,7 +15,7 @@ var mapComponent,
 	nodeGrid = null,
 	
 	filterSettings = {
-		netFlows : false
+		netFlows : true
 	},
 	
 	my = {};
@@ -345,20 +345,6 @@ my.importTotalCountyFlowData = function(stateAbbreviation) {
 		model_master.addFlows(flows);
 		model_master.setDatasetName(stateAbbreviation);
 		console.log("data imported");
-		
-		// MERGE out of state flows here.		
-		// ...Of a copy or of the master?
-		// The master. You don't need those tiny out of state flows!
-		// Could also make a function called getMergedMaxModel() that makes
-		// a copy and does both.
-		// But what about net flows?
-		// THINK ON THAT
-		//filteredModel = new Flox.ModelFilter(model_master).mergeOutOfStateTotalFlows();
-		//my.logFlows(filteredModel);
-		
-		// Create a MAXFLOWSMODEL here.
-		//filteredModel = new Flox.ModelFilter(filteredModel).getMaxFlowsModel();
-		//my.logFlows(filteredModel);
 		
 		filteredModel = new Flox.ModelFilter(model_master).filterBySettings(filterSettings);
 		
