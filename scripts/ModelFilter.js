@@ -44,16 +44,17 @@ Flox.ModelFilter = function(m) {
 			sPt = f.getStartPt();
 			ePt = f.getEndPt();
 			// If the start or end point are not inside the selected state
-			if(sPt.STATEFP !== selectedStateFIPS || ePt.STATEFP !== selectedStateFIPS) {
+			if("FIPS" + sPt.STATEFP !== selectedStateFIPS || 
+			   "FIPS" + ePt.STATEFP !== selectedStateFIPS) {
 				// Add the county of the node that is in state to outOfStateFlows
 				// Is it the start or end point that is out of state?
-				if (sPt.STATEFP === selectedStateFIPS) {
+				if ("FIPS" + sPt.STATEFP === selectedStateFIPS) {
 					countyFIPS = sPt.id;
 					outerStateFIPS = ePt.STATEFP;
 					ePt.name = outerStateFIPS;
 					direction = -1; 
 				} else {
-					countyFIPS = String(ePt.id);
+					countyFIPS = ePt.id;
 					outerStateFIPS = sPt.STATEFP;
 					sPt.name = outerStateFIPS;
 					direction = 1;
@@ -270,8 +271,6 @@ Flox.ModelFilter = function(m) {
 		    id1,
 		    id2;
 
-		// FIXME If the flow doesn't have an opposing flow, it is deleted. It
-		// should not be deleted. 
 		for ( i = 0; i < flows.length; i += 1) {
 			flow = flows[i];
 			if ( typeof (flow.oppositeFlow) !== "undefined") {
@@ -289,7 +288,7 @@ Flox.ModelFilter = function(m) {
 
 		// TODO polyfill for Array.from
 		netFlows = Array.from(map.values());
-		netFlows.concat(unopposedFlows);
+		netFlows = netFlows.concat(unopposedFlows);
 		model_copy.deleteAllFlows();
 		model_copy.addFlows(netFlows);
 

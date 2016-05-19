@@ -888,7 +888,7 @@ Flox.MapComponent_d3 = function() {
 		
 		smallerOuterCircle = getSmallestCircleAroundPolygon(targetStatePolygon);
 		
-		stateCircles = getStateCircles(outerCircle, outerStates);
+		stateCircles = getStateCircles(smallerOuterCircle, outerStates);
 		
 		if(stateCircles.length > 0) {
 			addNecklaceMap(smallerOuterCircle, stateCircles, function(necklaceMapNodes) {

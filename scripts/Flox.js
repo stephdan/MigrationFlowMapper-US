@@ -15,8 +15,8 @@ var mapComponent,
 	nodeGrid = null,
 	
 	filterSettings = {
-		netFlows : false,
-		inStateFlows: false,
+		netFlows : true,
+		inStateFlows: true,
 		outerStateFlows: false
 	},
 	
