@@ -17,19 +17,15 @@ var mapComponent,
 	filterSettings = {
 		netFlows : false,
 		inStateFlows: false,
-		outerStateFlows: true
+		outerStateFlows: false
 	},
 	
 	my = {};
     
 function refreshMap(model_copy) {
-	
 	if(!model_copy) {
 		throw new Error("refreshMap needs a model passed in");
 	}
-	
-	// 
-	
     mapComponent.drawFeatures(model_copy);
 }
 
@@ -327,9 +323,9 @@ my.loadTestFlows = function () {
 	importCSV("data/testFlows.csv");
 };
 
-my.importTotalCountyFlowData = function(stateAbbreviation) {
+my.importTotalCountyFlowData = function(stateFIPS) {
 	var nodePath = "data/geometry/centroids_counties_all.csv",
-		flowPath = "data/census/flows/" + stateAbbreviation + "_net.csv",
+		flowPath = "data/census/flows/" + stateFIPS + "_net.csv",
 		maxFlowsModel, mergedModel, filteredModel;
 		
 	// erase all flows from the model.
@@ -339,18 +335,19 @@ my.importTotalCountyFlowData = function(stateAbbreviation) {
 	// This scale is used by the layouter!
 	// Could it also be used by the renderer?
 	// FIXME this is goofy
-	model_master.setStateMapScale(stateAbbreviation);
+	model_master.setStateMapScale(stateFIPS);
 	
-	Flox.FlowImporter.importTotalCountyFlowData(nodePath, flowPath, function(flows){
+	Flox.FlowImporter.importTotalCountyFlowData(stateFIPS, function(flows, countyNodes){
 		
 		// flows are the imported flows!
+		model_master.initNodes(countyNodes);
 		model_master.addFlows(flows);
-		model_master.setDatasetName(stateAbbreviation);
+		model_master.setDatasetName("FIPS" + stateFIPS);
 		console.log("data imported");
 		
 		filteredModel = new Flox.ModelFilter(model_master).filterBySettings(filterSettings);
 		
-		mapComponent.configureNecklaceMap(filteredModel, function() {
+		mapComponent.configureNecklaceMap(stateFIPS, filteredModel, function() {
 			
 			//my.logFlows(maxFlowsModel);
 			

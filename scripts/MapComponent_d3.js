@@ -10,6 +10,7 @@ Flox.MapComponent_d3 = function() {
 	    width = $(window).width(),
 	    height = $(window).height(),
 	   
+	   
 	    mapScale = 1,
 	    
 	    background,
@@ -42,12 +43,12 @@ Flox.MapComponent_d3 = function() {
 
 		// MAP LAYERS ------------------------------------
 		// Add a background layer for detecting pointer events
-		
-		
 		background = svg.append("rect").attr("class", "background").attr("width", width).attr("height", height).on("click", reset);
 		var mapFeaturesLayer = svg.append("g").attr("id", "mapFeaturesLayer"),
 			statesLayer = mapFeaturesLayer.append("g").attr("id", "statesLayer"),
-			countiesLayer = mapFeaturesLayer.append("g").attr("id", "countieslayer");
+			countiesLayer = mapFeaturesLayer.append("g").attr("id", "countieslayer"),
+			countyTooltip,
+			stateTooltip;
 		
 		mapFeaturesLayer.append("g").attr("id", "flowsLayer");
 		
@@ -65,6 +66,15 @@ Flox.MapComponent_d3 = function() {
 		svg.call(zoom)// delete this line to disable free zooming
 		.call(zoom.event);
 
+		// Custom tool tips
+		countyTooltip = d3.select("body").append("div")
+						  .attr("class", "tooltip-county")
+						  .style("display", "none");
+
+		stateTooltip = d3.select("body").append("div")
+						  .attr("class", "tooltip-state")
+						  .style("display", "none");
+
 		d3.json("data/geometry/states_census_2015.json", function(error, us) {
 			if (error) {
 				throw error;
@@ -74,17 +84,17 @@ Flox.MapComponent_d3 = function() {
 				.features).enter().append("path")
 				.attr("d", path)
 				.attr("id", function(d) {
-					return d.properties.STUSPS;
+					return "FIPS" + d.properties.STATEFP;
 				})
 				.attr("class", "feature state")
 				.attr("stroke", "white")
+				.attr("fill", "#ccc")
 				.on("click", stateClicked);
 			// g.append("path")
 			// .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
 			// .attr("class", "mesh")
 			// .attr("id", "basemapMesh")
 			// .attr("d", path);
-			
 			
 			// Load the new county polygons
 			d3.json("data/geometry/countyBoundaries/counties_all.json", function(error, us) {
@@ -94,17 +104,35 @@ Flox.MapComponent_d3 = function() {
 				countiesLayer.selectAll("path")
 					.data(topojson.feature(us, us.objects.counties).features)
 					.enter().append("path").attr("d", path)
-				//.attr("stroke", "white")
-				.attr("class", function(d) {
-					return "feature county hidden FIPS" + d.properties.STATEFP;
-				});
-				
-				
+					.attr("class", function(d) {
+						return "feature county hidden FIPS" + d.properties.STATEFP;
+					})
+					.attr("fill", "#ccc")
+					.on("mouseover", function(d) {
+						countyTooltip.style("display", "inline");
+						d3.select(this).attr("fill", "yellow");
+					})
+					.on("mousemove", function(d) {
+						var node, outgoingFlow, incomingFlow;
+						d3.select(".node.FIPS" + d.properties.STATEFP + d.properties.COUNTYFP)
+						  .each(function(b) {
+					  	outgoingFlow = b.totalOutgoingFlow;
+					  	incomingFlow = b.totalIncomingFlow;
+						  });
+						countyTooltip.html("Name: " + d.properties.NAME + "<br/>" + 
+										   "Total Outflow: " + outgoingFlow + "<br/>" +
+										   "Total Inflow: " + incomingFlow)
+								.style("left", (d3.event.pageX + 4) + "px")
+								.style("top", (d3.event.pageY - 34) + "px");
+						
+					})
+					.on("mouseout", function() {
+						countyTooltip.style("display", "none");
+						d3.select(this).attr("fill", "#ccc");
+					});
 			});
-			
 		});
 		// end d3.json
-
 	}// End initMap();
 
 
@@ -261,10 +289,8 @@ Flox.MapComponent_d3 = function() {
 			})
 			.attr("d", function(d) {
 				return buildSvgFlowPath(d, drawArrows);
-			})
+			});
 			
-	
-	
 		// Draw arrowheads
 		if (drawArrows) {
 			svgFlows.append("path")// add a new path. This is the arrowhead!
@@ -278,7 +304,7 @@ Flox.MapComponent_d3 = function() {
 				.attr("stroke-width", 5)
 				.attr("d", function(d) {
 					return buildSvgArrowPath(d);
-				})				
+				});
 		}
 
 		// Draw flow curves
@@ -296,21 +322,6 @@ Flox.MapComponent_d3 = function() {
 				return buildSvgFlowPath(d, drawArrows);
 			});
 		
-		function flowMouseover(d){
-			tooltip.style("display", "inline");
-	    }
-
-		function flowMousemove(d) {
-			tooltip.html("Value: " + d.getValue() + "<br/>" + 
-			             "From: " + d.getStartPt().name + "<br/>" + 
-			             "To: " + d.getEndPt().name )
-			       .style("left", (d3.event.pageX + 1) + "px")
-			       .style("top", (d3.event.pageY - 34) + "px");
-		}
-
-		function flowMouseout(d) {
-			tooltip.style("display", "none");
-		}
          
         svgFlows.on("mouseover", function(d) {
 			tooltip.style("display", "inline");
@@ -338,16 +349,23 @@ Flox.MapComponent_d3 = function() {
 		// Add some attributes to the points
 		circles.style("stroke", "black").style("stroke-width", function(d) {
 			return model_copy.getNodeStrokeWidth();
-		}).style("fill", "white").style("stroke", function(d) {// adjust the color
+		})
+		.attr("class", function(d) {
+			return "node FIPS" + d.id; // FIXME id is really FIPS
+		})
+		.style("fill", "white").style("stroke", function(d) {// adjust the color
 			if (d.selected) {
 				return "#59A4FF";
 			}
 			return "black";
-		}).style("cursor", "default").attr("r", function(d) {
+		})
+		.style("cursor", "default").attr("r", function(d) {
 			return model_copy.getNodeRadius(d);
-		}).attr("cx", function(d) {
+		})
+		.attr("cx", function(d) {
 			return d.x;
-		}).attr("cy", function(d) {
+		})
+		.attr("cy", function(d) {
 			return d.y;
 		});
 	}
@@ -377,8 +395,8 @@ Flox.MapComponent_d3 = function() {
 		}
 	}
 
-	function showCountyBordersWithinState(stateString) {
-		d3.selectAll(".FIPS" + stateString).classed("hidden", false);
+	function showCountyBordersWithinState(stateFIPS) {
+		d3.selectAll(".FIPS" + stateFIPS).classed("hidden", false);
 	}
 
 	function hideAllCountyBorders() {
@@ -551,7 +569,7 @@ Flox.MapComponent_d3 = function() {
 
 		// Get the state polygons in an array
 		d3.selectAll("#statesLayer").selectAll(".feature.state").each(function(d) {
-			if (states.indexOf(d.properties.STUSPS) > -1) {// Is this state in states?
+			if (states.indexOf(d.properties.STATEFP) > -1) {// Is this state in states?
 				statePolygons.push(d);
 			}
 		});
@@ -572,6 +590,8 @@ Flox.MapComponent_d3 = function() {
 			pt = getProjectedPointOnCircle(centroid, outerCircle);
 
 			pt.STUSPS = statePolygons[i].properties.STUSPS;
+			pt.FIPS = statePolygons[i].properties.STATEFP;
+			pt.id = statePolygons[i].properties.STATEFP;
 			pt.name = statePolygons[i].properties.STUSPS;
 			pt.necklaceMapNode = true;
 			
@@ -599,7 +619,7 @@ Flox.MapComponent_d3 = function() {
 		    translate = [width / 2 - scale * x, height / 2 - scale * y];
 		    
 		svg.transition()
-		.duration(8000) // TODO long zoom for testing asynchronous stuff.
+		.duration(750) // TODO long zoom for testing asynchronous stuff.
 		.call(zoom.translate(translate).scale(scale).event);
 	}
 
@@ -609,7 +629,7 @@ Flox.MapComponent_d3 = function() {
 	 * @param {object} Object containing the geometry and properties of the 
 	 * selected state. 
 	 */
-	function selectState(stateAbbreviation) {
+	function selectState(stateFIPS) {
 		
 		var statePolygon, 
 			stateBoundingBox,
@@ -622,12 +642,12 @@ Flox.MapComponent_d3 = function() {
 		d3.select("#necklaceMapLayer").remove(); 
 		
 		// get the statePolygon, yes?
-		d3.select("#" + stateAbbreviation).each(function(d) {
+		d3.select("#" + "FIPS" + stateFIPS).each(function(d) {
 			statePolygon = d; // Yes!
 		});
 		
 		// Tell the importer which flows need loadin'
-		Flox.importTotalCountyFlowData(statePolygon.properties.STUSPS);
+		Flox.importTotalCountyFlowData(statePolygon.properties.STATEFP);
 		
 		zoomToPolygon(statePolygon); // Zoom in! FIXME Usually gets stuck 
 		// due to UI freeze.
@@ -655,7 +675,7 @@ Flox.MapComponent_d3 = function() {
 		active.classed("active", false);
 		active = d3.select(this).classed("active", true);
 		// Select the state
-		selectState(d.properties.STUSPS);
+		selectState(d.properties.STATEFP);
 
 		
 	}
@@ -773,13 +793,13 @@ Flox.MapComponent_d3 = function() {
 		
 		// For each node, add it's STUSPS and itself to an object?
 		for(i = 0; i < stateNodes.length; i += 1) {
-			var STUSPS = stateNodes[i].STUSPS;
-			necklaceMapNodes[STUSPS] = stateNodes[i];
+			var FIPS = stateNodes[i].FIPS;
+			necklaceMapNodes[FIPS] = stateNodes[i];
 		}
 		callback(necklaceMapNodes);
 	}
 
-	function configureNecklaceMap(model, callback) {
+	function configureNecklaceMap(stateFIPS, model, callback) {
 		
 		// Figure out which states need necklace map nodes.
 		var flows = model.getFlows(),
@@ -804,14 +824,14 @@ Flox.MapComponent_d3 = function() {
 			sPt = flow.getStartPt();
 			ePt = flow.getEndPt();
 			
-			if(sPt.STUSPS !== datasetName && (outerStates.indexOf(sPt.STUSPS) < 0)) {
+			if("FIPS" + sPt.STATEFP !== datasetName && (outerStates.indexOf(sPt.STATEFP) < 0)) {
 				//console.log("found an outer state");
-				outerStates.push(sPt.STUSPS);
+				outerStates.push(sPt.STATEFP);
 			}
 			
-			if(ePt.STUSPS !== datasetName && (outerStates.indexOf(ePt.STUSPS) < 0)) {
+			if("FIPS" + ePt.STATEFP !== datasetName && (outerStates.indexOf(ePt.STATEFP) < 0)) {
 				//console.log("found an outer state");
-				outerStates.push(ePt.STUSPS);
+				outerStates.push(ePt.STATEFP);
 			}
 		}
 
@@ -834,11 +854,11 @@ Flox.MapComponent_d3 = function() {
 						
 						// if the SPUSPS in sPt/ePt isn't the target, replace it with
 						// the necklaceMapNode it should be. 
-						if(sPt.STUSPS !== datasetName) {
-							flow.setStartPt(necklaceMapNodes[sPt.STUSPS]);
+						if("FIPS" + sPt.STATEFP !== datasetName) {
+							flow.setStartPt(necklaceMapNodes[sPt.STATEFP]);
 						}
-						if(ePt.STUSPS !== datasetName) {
-							flow.setEndPt(necklaceMapNodes[ePt.STUSPS]);
+						if("FIPS" + ePt.STATEFP !== datasetName) {
+							flow.setEndPt(necklaceMapNodes[ePt.STATEFP]);
 						}
 					}	
 				}
@@ -862,8 +882,8 @@ Flox.MapComponent_d3 = function() {
 		drawCircles(circlesArray);
 	};
 
-	my.configureNecklaceMap = function (stateAbbreviation, model_copy, callback) {
-		configureNecklaceMap(stateAbbreviation, model_copy, callback);
+	my.configureNecklaceMap = function (stateFIPS, model_copy, callback) {
+		configureNecklaceMap(stateFIPS, model_copy, callback);
 	};
 
 	// end MapComponent_d3 only-------------------------------------------------

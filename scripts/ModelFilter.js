@@ -33,9 +33,9 @@ Flox.ModelFilter = function(m) {
 		var flows = model_copy.getAllFlows(),
 		i, j,
 		outOfStateFlows = {},
-		selectedStateSTUSPS = model_copy.getDatasetName(),
+		selectedStateFIPS = model_copy.getDatasetName(),
 		countyFIPS,
-		outerStateSTUSPS,
+		outerStateFIPS,
 		ePt, sPt, f, direction, newFlow, flow, val;
 		
 		// loop backwards through flows
@@ -44,18 +44,18 @@ Flox.ModelFilter = function(m) {
 			sPt = f.getStartPt();
 			ePt = f.getEndPt();
 			// If the start or end point are not inside the selected state
-			if(sPt.STUSPS !== selectedStateSTUSPS || ePt.STUSPS !== selectedStateSTUSPS) {
+			if(sPt.STATEFP !== selectedStateFIPS || ePt.STATEFP !== selectedStateFIPS) {
 				// Add the county of the node that is in state to outOfStateFlows
 				// Is it the start or end point that is out of state?
-				if (sPt.STUSPS === selectedStateSTUSPS) {
+				if (sPt.STATEFP === selectedStateFIPS) {
 					countyFIPS = sPt.id;
-					outerStateSTUSPS = ePt.STUSPS;
-					ePt.name = outerStateSTUSPS;
+					outerStateFIPS = ePt.STATEFP;
+					ePt.name = outerStateFIPS;
 					direction = -1; 
 				} else {
 					countyFIPS = String(ePt.id);
-					outerStateSTUSPS = sPt.STUSPS;
-					sPt.name = outerStateSTUSPS;
+					outerStateFIPS = sPt.STATEFP;
+					sPt.name = outerStateFIPS;
 					direction = 1;
 				}
 				// If it's not there already, add the in-state county fips of 
@@ -67,12 +67,12 @@ Flox.ModelFilter = function(m) {
 				// add the state of the flow as a property of the county in 
 				// outOfStateFlows, and set it's value to f, and change f's 
 				// value to 0.
-				if(!outOfStateFlows[countyFIPS].hasOwnProperty(outerStateSTUSPS)) {
+				if(!outOfStateFlows[countyFIPS].hasOwnProperty(outerStateFIPS)) {
 					f.setValue(f.getValue() * direction);
-					outOfStateFlows[countyFIPS][outerStateSTUSPS] = f;
+					outOfStateFlows[countyFIPS][outerStateFIPS] = f;
 				} else {
 					// Add the total flow to that state for that county
-					outOfStateFlows[countyFIPS][outerStateSTUSPS].addValue(f.getValue() * direction);
+					outOfStateFlows[countyFIPS][outerStateFIPS].addValue(f.getValue() * direction);
 				}
 				
 				// DELETE this flow from flows
@@ -82,10 +82,10 @@ Flox.ModelFilter = function(m) {
 		
 		// TODO add polyfill for Object.keys
 		// Loop through the properties of outOfStateFlows, which are are county
-		// names
+		// FIPS
 		Object.keys(outOfStateFlows).forEach(function(county, i) {
 			// Loop through the properties of each county, which are state
-			// abbreviations. Each state has a flow. Get that flow!
+			// FIPS. Each state has a flow. Get that flow!
 		    Object.keys(outOfStateFlows[county]).forEach(function(state, j) {
 				flow = outOfStateFlows[county][state];
 				val = flow.getValue();
@@ -125,9 +125,9 @@ Flox.ModelFilter = function(m) {
 		var flows = model_copy.getAllFlows(),
 		i, j,
 		outOfStateFlows = {},
-		selectedStateSTUSPS = model_copy.getDatasetName(),
+		selectedStateFIPS = model_copy.getDatasetName(),
 		countyFIPS,
-		outerStateSTUSPS,
+		outerStateFIPS,
 		ePt, sPt, f, direction, newFlow, flow, val;
 		
 		// loop backwards through flows
@@ -136,12 +136,12 @@ Flox.ModelFilter = function(m) {
 			sPt = f.getStartPt();
 			ePt = f.getEndPt();
 			// If the start or end point are not inside the selected state
-			if(sPt.STUSPS !== selectedStateSTUSPS || ePt.STUSPS !== selectedStateSTUSPS) {
+			if("FIPS" + sPt.STATEFP !== selectedStateFIPS || "FIPS" + ePt.STATEFP !== selectedStateFIPS) {
 				// Is it the start or end point that is out of state?
-				if (sPt.STUSPS === selectedStateSTUSPS) { // end point is out of state.
+				if ("FIPS" + sPt.STATEFP === selectedStateFIPS) { // end point is out of state.
 					countyFIPS = sPt.id;
-					outerStateSTUSPS = ePt.STUSPS;
-					ePt.name = outerStateSTUSPS; 
+					outerStateFIPS = ePt.STATEFP;
+					ePt.name = outerStateFIPS; 
 					
 					// If it's not there already, add the in-state county fips of 
 					// this flow as a property of outOfStateFlows
@@ -151,23 +151,23 @@ Flox.ModelFilter = function(m) {
 					
 					// If it's not there already, add the outer state as a
 					// property of this county in outOfStateFlows
-					if(!outOfStateFlows[countyFIPS].hasOwnProperty(outerStateSTUSPS)) {
-						outOfStateFlows[countyFIPS][outerStateSTUSPS] = {};
+					if(!outOfStateFlows[countyFIPS].hasOwnProperty(outerStateFIPS)) {
+						outOfStateFlows[countyFIPS][outerStateFIPS] = {};
 					}
 					
 					// Iff'n ain't thur, add outgoing as a property
 					// of the outer state of the county of outOfStateFlows,
 					// and make f the value.
-					if(!outOfStateFlows[countyFIPS][outerStateSTUSPS].hasOwnProperty("outgoing")) {
-						outOfStateFlows[countyFIPS][outerStateSTUSPS].outgoing = f;
+					if(!outOfStateFlows[countyFIPS][outerStateFIPS].hasOwnProperty("outgoing")) {
+						outOfStateFlows[countyFIPS][outerStateFIPS].outgoing = f;
 					} else { // Add the value of f to the appropriate outgoing flow
-						outOfStateFlows[countyFIPS][outerStateSTUSPS].outgoing.addValue(f.getValue());
+						outOfStateFlows[countyFIPS][outerStateFIPS].outgoing.addValue(f.getValue());
 					}
 					
 				} else { // start point is out of state.
 					countyFIPS = String(ePt.id);
-					outerStateSTUSPS = sPt.STUSPS;
-					sPt.name = outerStateSTUSPS;
+					outerStateFIPS = sPt.STATEFP;
+					sPt.name = outerStateFIPS;
 					
 					// If it's not there already, add the in-state county fips of 
 					// this flow as a property of outOfStateFlows
@@ -177,17 +177,17 @@ Flox.ModelFilter = function(m) {
 					
 					// If it's not there already, add the outer state as a
 					// property of this county in outOfStateFlows
-					if(!outOfStateFlows[countyFIPS].hasOwnProperty(outerStateSTUSPS)) {
-						outOfStateFlows[countyFIPS][outerStateSTUSPS] = {};
+					if(!outOfStateFlows[countyFIPS].hasOwnProperty(outerStateFIPS)) {
+						outOfStateFlows[countyFIPS][outerStateFIPS] = {};
 					}
 					
 					// Iff'n ain't thur, add incoming as a property
 					// of the outer state of the county of outOfStateFlows,
 					// and make f the value.
-					if(!outOfStateFlows[countyFIPS][outerStateSTUSPS].hasOwnProperty("incoming")) {
-						outOfStateFlows[countyFIPS][outerStateSTUSPS].incoming = f;
+					if(!outOfStateFlows[countyFIPS][outerStateFIPS].hasOwnProperty("incoming")) {
+						outOfStateFlows[countyFIPS][outerStateFIPS].incoming = f;
 					} else { // Add the value of f to the appropriate outgoing flow
-						outOfStateFlows[countyFIPS][outerStateSTUSPS].incoming.addValue(f.getValue());
+						outOfStateFlows[countyFIPS][outerStateFIPS].incoming.addValue(f.getValue());
 					}
 				}
 
@@ -200,10 +200,10 @@ Flox.ModelFilter = function(m) {
 		
 		// TODO add polyfill for Object.keys
 		// Loop through the properties of outOfStateFlows, which are are county
-		// names
+		// FIPS
 		Object.keys(outOfStateFlows).forEach(function(county, i) {
 			// Loop through the properties of each county, which are state
-			// abbreviations.
+			// FIPS.
 		    Object.keys(outOfStateFlows[county]).forEach(function(state, j) {
 				// loop through the properties of each state which are incoming
 				// or outgoing. Each contains a flows. Get that flow!
@@ -302,17 +302,20 @@ Flox.ModelFilter = function(m) {
 	 * maxFlows in the model.
 	 */
 	my.getMaxFlowsModel = function() {
-		var maxFlows, i, j, n, allFlows;
+		var maxFlows, i, j, n, allFlows, allNodes;
 	
 		n = model_copy.getMaxFlows();
 		
 		model_copy.sortFlows();
+		
 		allFlows = model_copy.getAllFlows();
+		allNodes = model_copy.getPoints();
 		
 		maxFlows = allFlows.slice(0, n);
 		
 		model_copy.deleteAllFlows();
 		
+		model_copy.initNodes(allNodes);
 		model_copy.addFlows(maxFlows);
 		
 		model_copy.updateCachedValues();
@@ -332,8 +335,8 @@ Flox.ModelFilter = function(m) {
 		for(i = flows.length - 1;  i >= 0; i -= 1) {
 			// Slice out flows that have a node outside the state?
 			f = flows[i];
-			if(f.getStartPt().STUSPS !== selectedState || 
-			     f.getEndPt().STUSPS !== selectedState) {
+			if("FIPS" + f.getStartPt().STATEFP !== selectedState || 
+			     "FIPS" + f.getEndPt().STATEFP !== selectedState) {
 				flows.splice(i, 1);
 			}
 		}
@@ -379,6 +382,7 @@ Flox.ModelFilter = function(m) {
 			// filter out all flows connected to other states
 			my.getInStateFlowsModel();
 		} else if (settings.outerStateFlows) {
+			// Filter out all flows that are entirely in-state
 			my.getOuterStateFlowsModel();
 		}
 		

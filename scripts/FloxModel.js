@@ -32,7 +32,7 @@ Flox.Model = function() {
 		
 		// Map Appearance Settings
 		maxFlowWidth = 30,
-		maxNodeRadius = 5,
+		maxNodeRadius = 10,
 		isShowLockedFlows = true,
 		flowDistanceFromStartPointPixel = 5,
 		flowDistanceFromEndPointPixel = 5,
@@ -61,7 +61,7 @@ Flox.Model = function() {
 		
 		// Draw Settings
 		drawFlows = true,
-		drawNodes = false,
+		drawNodes = true,
 		drawArrows = true,
 		drawControlPoints = false,
 		drawIntermediateFlowPoints = false,
@@ -76,7 +76,7 @@ Flox.Model = function() {
 		// TODO The layouter might care about the scale in order to help
 		// determine an appropriate distance flows should be moved off nodes. 
 		stateScales = {
-			"wv" : 0.5
+			"FIPS54" : 0.5
 		},
 		
 		// Public object		
@@ -204,31 +204,40 @@ Flox.Model = function() {
 		// If they don't match any of them, return the provided point.
 		for (i = 0, j = nodes.length; i < j; i += 1) {
 			pt = nodes[i];
+			
+			// If both points have an id, use that.
+			if(target.hasOwnProperty("id") && pt.hasOwnProperty("id")) {
+				if(pt.id === target.id)	{
+					return [true,pt];
+				}
+			}
+			
+			// No id? Use latLng.
 			if (pt.lat === target.lat && pt.lng === target.lng) {
 				return [true,pt];
 			}
 		}
-		return [false,target];
+		
+		return [false,target]; // No match! Return target.
 	}
     
     /**
      * 
      */
-    function addPoint(pt) {
+    function addNode(node) {
 		var xy, foundPt;
 		
 		// Add xy coords if pt doesn't have them
-		if(!pt.x || !pt.y){
-			xy = Flox.latLngToLayerPt([pt.lat, pt.lng]);
-			pt.x = xy.x;
-			pt.y = xy.y;
+		if(!node.x || !node.y){
+			xy = Flox.latLngToLayerPt([node.lat, node.lng]);
+			node.x = xy.x;
+			node.y = xy.y;
 		}
-		// Make sure it isn't a duplicate point
-		foundPt = findPoint(pt);
-		// Add the point to the _points array
-		if(foundPt[0]===false) {
-			nodes.push(foundPt[1]);
+
+		if(findPoint(node)[0]===false) {
+			nodes.push(node);
 		}
+		
 		//updateCachedValues();
     }
     
@@ -290,8 +299,8 @@ Flox.Model = function() {
 		var startPoint = findPoint(flow.getStartPt())[1],
 			endPoint = findPoint(flow.getEndPt())[1];
 		// If they do, have the flows refer to THOSE instead of their duplicates.
-		addPoint(startPoint);
-        addPoint(endPoint);
+		addNode(startPoint);
+        addNode(endPoint);
 		flow.setStartPt(startPoint);
 		flow.setEndPt(endPoint);
         flows.push(flow);
@@ -330,8 +339,8 @@ Flox.Model = function() {
 			flow = newFlows[i];
 			startPoint = findPoint(flow.getStartPt())[1];
 			endPoint = findPoint(flow.getEndPt())[1];
-			addPoint(startPoint); // startPoint is assigned xy coords here.
-	        addPoint(endPoint); // endPoint is assigned xy coords here.
+			addNode(startPoint); // startPoint is assigned xy coords here.
+	        addNode(endPoint); // endPoint is assigned xy coords here.
 			flow.setStartPt(startPoint);
 			flow.setEndPt(endPoint);
 	        flows.push(flow);
@@ -573,10 +582,11 @@ Flox.Model = function() {
 	my.toJSON = function(){
 		
 		var JSON = {
-				flows: []
+				flows: [],
+				nodes: []
 		    },
 
-			i, j, flow, node, sPt, ePt, cPt, val;
+			i, j, flow, node, sPt, ePt, cPt, val, nodeCopy, prop;
 		
 		JSON.settings = {
 			maxFlowPoints : maxFlowPoints,
@@ -607,6 +617,22 @@ Flox.Model = function() {
 			datasetName: datasetName
 		};
 		
+		for(i = 0, j = nodes.length; i < j; i += 1) {
+			node = nodes[i];
+			nodeCopy = {};
+			
+			for (prop in node) {
+			    if (node.hasOwnProperty(prop)
+			        && prop !== "incomingFlows"
+			        && prop !== "outgoingFlows") {
+			        nodeCopy[prop] = node[prop];
+			    }
+			}
+			
+			
+			JSON.nodes.push(nodeCopy);
+		}
+		
 		for(i = 0, j = flows.length; i < j; i += 1) {
 			flow = flows[i];
 			sPt = flow.getStartPt();
@@ -619,23 +645,18 @@ Flox.Model = function() {
 						{
 							x: sPt.x,
 							y: sPt.y,
-							value: sPt.value,
 							lat: sPt.lat,
 							lng: sPt.lng,
 							id: sPt.id,
-							STUSPS: sPt.STUSPS,
-							name: sPt.name
+							
 						},
 					endPt: 
 						{
 							x: ePt.x, 
 							y: ePt.y,
-							value: ePt.value,
 							lat: ePt.lat,
 							lng: ePt.lng,
 							id: ePt.id,
-							STUSPS: ePt.STUSPS,
-							name: ePt.name
 						},
 					cPt:
 						{
@@ -854,10 +875,6 @@ Flox.Model = function() {
 
     my.setMaxFlowWidth = function (maxWidth) {
         maxFlowWidth = maxWidth;
-    };
-
-    my.addPoint = function(pt) {
-        addPoint(pt);
     };
 
 	my.getAllNodes = function() {
@@ -1255,7 +1272,8 @@ Flox.Model = function() {
 		mapScale = d;
 	};
 	
-	my.setStateMapScale = function(stateString) {
+	my.setStateMapScale = function(stateFIPS) {
+		var stateString = "FIPS" + stateFIPS;
 		mapScale = stateScales[stateString];
 	};
 	
@@ -1288,15 +1306,39 @@ Flox.Model = function() {
 		
 	};
 
+	/**
+	 * Add multiple nodes to the model
+ * @param {Array} nodes - The nodes to add. 
+	 */
+	my.addNodes = function(newNodes) {
+		// If the node isn't already in the model, add it.
+		var i, j;
+		
+		for(i = 0, j = newNodes.length; i < j; i += 1) {
+			addNode(newNodes[i]);
+		}
+	};
+
+	/**
+	 * Deletes existing nodes and flows, sets nodes to newNodes.
+ * @param {Array} newNodes - Nodes to add. 
+	 */
+	my.initNodes = function(newNodes) {
+		flows = [];
+		nodes = newNodes;
+	};
+
+
 	my.deserializeModelJSON = function(modelJSON) {
 		// What did we pass this thing again?
 		var flowData = modelJSON.flows,
 			newFlows = [],
 			flow, i, j, sPt, ePt, cPt;
-	
-		// Delete this models flows and nodes
-		//my.deleteAllFlows();
-	
+			
+		nodes = modelJSON.nodes;
+		// Delete this model's flows and nodes
+		//my.deleteAllFlows();		
+		
 		// Build flows out of flowData
 		for(i = 0, j = flowData.length; i < j; i += 1) {
 			sPt = flowData[i].startPt;

@@ -3,14 +3,23 @@ Flox.FlowImporter = ( function(d3) {
 
 	var my = {};
 
-	function findNodeID(nodes, id) {
 
+	function findStateNode(nodes, stateFIPS) {
+		var i, j;
+		
+		for ( i = 0, j = nodes.length; i < j; i += 1) {
+			if (Number(nodes[i].STATEFP) === Number(stateFIPS)) {
+				return nodes[i];
+			}
+		}
+	}
+
+	function findNodeID(nodes, id) {
 		var i, j;
 
 		// Loop through the nodes.
 		// If node.id matches id, return the node!
-		for ( i = 0,
-		j = nodes.length; i < j; i += 1) {
+		for ( i = 0, j = nodes.length; i < j; i += 1) {
 			if (nodes[i].id === id) {
 				return nodes[i];
 			}
@@ -20,7 +29,7 @@ Flox.FlowImporter = ( function(d3) {
 		// It's not in there!
 	}
 
-	function importTotalCountyFlowData(flowPath, countyNodes, callback) {
+	function importTotalCountyFlowData(flowPath, stateFIPS, countyNodes, callback) {
 		d3.csv(flowPath, function(flowData) {
 			
 			var aFIPS,
@@ -33,20 +42,35 @@ Flox.FlowImporter = ( function(d3) {
 			    BtoA,
 			    AtoB,
 			    flowAB,
-			    flowBA;
+			    flowBA,
+			    row;
 
 			// For each row in the table...
 			for ( i = 0, j = flowData.length; i < j; i += 1) {
-				
-				aFIPS = flowData[i].placeA_FIPS; // FIPS of A node
-				bFIPS = flowData[i].placeB_FIPS; // FIPS of B node
+				row = flowData[i];
 
-				aPt = findNodeID(countyNodes, aFIPS); // Get node A from countyNodes
-				bPt = findNodeID(countyNodes, bFIPS); // Get node B from countyNodes
+				// First check if see if this flow has out of state nodes.
+				// How to determine this? We don't have STUSPS in row.
+				// There is State FIPS.
+				if(Number(row.placeA_STATEFP) !== Number(stateFIPS)) {
+					// Place A is out of state.
+					// Get the state node for place A.
+					aPt = findStateNode(countyNodes, row.placeA_STATEFP);
+				} else { // Not out of state. Use the full fips.
+					aPt = findNodeID(countyNodes, row.placeA_FIPS);
+				}
+				
+				if(Number(row.placeB_STATEFP) !== Number(stateFIPS)) {
+					// Place A is out of state.
+					// Get the state node for place A.
+					bPt = findStateNode(countyNodes, row.placeB_STATEFP);
+				} else { // Not out of state. Use the full fips.
+					bPt = findNodeID(countyNodes, row.placeB_FIPS);
+				}
 				
 				if (aPt && bPt) { // If both points exist in county nodes...
-					BtoA = Number(flowData[i].BtoA); // Get the value of BtoA flow
-					AtoB = Number(flowData[i].AtoB); // Get the value of AtoB flow
+					BtoA = Number(row.BtoA); // Get the value of BtoA flow
+					AtoB = Number(row.AtoB); // Get the value of AtoB flow
 					flowBA = new Flox.Flow(bPt, aPt, BtoA); // Make the BtoA flow
 					flowAB = new Flox.Flow(aPt, bPt, AtoB); // make the AtoB flow
 					
@@ -54,15 +78,25 @@ Flox.FlowImporter = ( function(d3) {
 					if(BtoA > 0) {
 						//flowBA.oppositeFlow = flowAB; // Assign AB as opposite. But it could be 0!
 						flows.push(flowBA);
+						aPt.totalIncomingFlow += BtoA;
+						aPt.netFlow += BtoA;
+						
+						bPt.totalOutgoingFlow += BtoA;
+						bPt.netFlow -= BtoA;
 					}
 					
 					if(AtoB > 0) {
 						//flowAB.oppositeFlow = flowBA;
 						flows.push(flowAB);
+						aPt.totalOutgoingFlow += AtoB;
+						aPt.netFlow -= AtoB;
+						
+						bPt.totalIncomingFlow += AtoB;
+						bPt.netFlow += AtoB;
 					}
 				}
 			}
-			callback(flows);
+			callback(flows, countyNodes);
 		});
 	}
 
@@ -130,44 +164,67 @@ Flox.FlowImporter = ( function(d3) {
  * @param {Object} callback : Called after CSV is fully imported, with the 
  * imported nodes as an argument.
 	 */
-	my.importUSCensusCountyNodes = function(nodePath, callback) {
-		d3.csv(nodePath, function(nodeData) {
+	my.importUSCensusCountyNodes = function(nodePath, stateFIPS, callback) {
+		
+		// import state nodes here.
+		var stateNodePath = "data/census/state_latLng.csv",
+			nodes = [],
+			newStNode,
+			stateNodeData,
+			row;
+		
+		d3.csv(stateNodePath, function(stateNodesData) {
 			
-			var i,
-			    lat,
-			    lng,
-			    id,
-			    val,
-			    propt,
-			    startPt,
-			    endPt,
-			    newPt,
-			    nodes = [];
-
-			for ( i = 0; i < nodeData.length; i += 1) {
-				if (!nodeData[i].value) {
-					val = 1;
-				} else {
-					val = nodeData[i].val;
-				}
-
-				newPt = new Flox.Point(Number(nodeData[i].latitude), Number(nodeData[i].longitude), 1, nodeData[i].FIPS);
-
-				newPt.STUSPS = nodeData[i].STUSPS;
-				newPt.name = nodeData[i].NAME;
-
-				// new point migth not have an xy if the latLng is outside the
-				// d3 projection boundary, which causes errors. Don't add it to 
-				// nodes if so. Flows with these point's won't be added to the 
-				// model.
-				// FIXME Use a projection that enables showing everything.
-				if (newPt.x && newPt.y) {
-					nodes.push(newPt);
-				} else {
-					//console.log("Node " + newPt.id + " was omitted from the map");
+			var newStateNode, i;
+			
+			for (i = 0; i < stateNodesData.length; i += 1) {
+				row = stateNodesData[i];
+				
+				// Add it to the state nodes if it's not the current state.
+				if(Number(row.FIPS) !== Number(stateFIPS)) {
+					newStNode = new Flox.Point(Number(row.latitude), Number(row.longitude), 1, row.FIPS);
+					if (newStNode.x && newStNode.y) {
+						newStNode.STUSPS = row.id;
+						newStNode.FIPS = row.FIPS;
+						newStNode.STATEFP = row.FIPS;
+						newStNode.totalIncomingFlow = 0;
+						newStNode.totalOutgoingFlow = 0;
+						newStNode.netFlow = 0;
+						nodes.push(newStNode);
+					} 
 				}
 			}
-			callback(nodes);
+			
+			d3.csv(nodePath, function(nodeData) {
+				var newPt;
+				
+				for ( i = 0; i < nodeData.length; i += 1) {
+				    row = nodeData[i];
+				    
+					// Is the node in-state?
+					// If so, add it. 
+					if(Number(row.STATEFP) === Number(stateFIPS)) {
+						// It's in-state, or there isn't a state node for it.
+						newPt = new Flox.Point(Number(row.latitude), Number(row.longitude), 1, row.FIPS);
+
+						// new point migth not have an xy if the latLng is outside the
+						// d3 projection boundary, which causes errors. Don't add it to 
+						// nodes if so. Flows with these point's won't be added to the 
+						// model.
+						// FIXME Use a projection that enables showing everything?
+						if (newPt.x && newPt.y) {
+							newPt.STUSPS = row.STUSPS;
+							newPt.STATEFP = row.STATEFP;
+							newPt.name = row.NAME;
+							newPt.totalIncomingFlow = 0;
+							newPt.totalOutgoingFlow = 0;
+							newPt.netFlow = 0;
+							nodes.push(newPt);
+						}	
+					}
+				}				
+				callback(nodes);
+			});
 		});
 	};
 
@@ -177,13 +234,16 @@ Flox.FlowImporter = ( function(d3) {
  * @param {Object} flowPath : Path to Census flow data for a state.
  * @param {Object} callback : Called after all CSVs are loaded.
 	 */
-	my.importTotalCountyFlowData = function(nodePath, flowPath, callback) {		
+	my.importTotalCountyFlowData = function(stateFIPS, callback) {	
+		var nodePath = "data/geometry/centroids_counties_all.csv",
+			flowPath = "data/census/flows/" + stateFIPS + "_net.csv";
+			
 		// Import nodes for all counties
-		my.importUSCensusCountyNodes(nodePath, function(countyNodes) {
+		my.importUSCensusCountyNodes(nodePath, stateFIPS, function(countyNodes) {
 			// countyNodes is the imported nodes!
-			importTotalCountyFlowData(flowPath, countyNodes, function(flows) {
+			importTotalCountyFlowData(flowPath, stateFIPS, countyNodes, function(flows) {
 				// flows are the imported flows!
-				callback(flows);
+				callback(flows, countyNodes);
 			});
 		});
 	};

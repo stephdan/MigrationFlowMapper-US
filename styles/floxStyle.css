@@ -20,6 +20,28 @@ html, body {
 	background: #ddd;
 	pointer-events: none;
 }
+.tooltip-county {
+	position: absolute;
+	text-align: left;
+	width: 100px;
+	height: 40px;
+	padding: 3px;
+	margin-top: -10px;
+	font: 10px sans-serif;
+	background: #ddd;
+	pointer-events: none;
+}
+.tooltip-state {
+	position: absolute;
+	text-align: left;
+	width: 100px;
+	height: 40px;
+	padding: 3px;
+	margin-top: -10px;
+	font: 10px sans-serif;
+	background: #ddd;
+	pointer-events: none;
+}
 
 .background {
   fill: none;
@@ -27,12 +49,10 @@ html, body {
 }
 
 .feature {
-  fill: #ccc;
   cursor: pointer;
 }
 
 .feature.county {
-  fill: none;
   stroke: #fff;
   cursor: pointer;
 }
