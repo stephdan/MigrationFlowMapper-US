@@ -799,9 +799,47 @@ Flox.MapComponent_d3 = function() {
 		callback(necklaceMapNodes);
 	}
 
+	function getSmallestCircleAroundPolygon(targetStatePolygon) {
+		// Get the points from the polygon somehow?
+		var points = (targetStatePolygon.geometry.coordinates[0]),
+			formattedPoints = [],
+			i, j, pt, xy, circle, formattedCircle;
+		
+		// convert the points to be compatible with smallest circle algorithm
+		// FIXME this is dumb
+		for(i = 0, j = points.length; i < j; i += 1) {
+			pt = points[i];
+			
+			// convert latLng to pixel coords.
+			xy = projection(pt);
+			// turn the array of xy into an object of xy.
+			// Push the new object into formattedPoints
+			formattedPoints.push({x: xy[0], y: xy[1]});
+		}
+		
+		circle = Flox.GeomUtils.makeCircle(formattedPoints);
+		
+		formattedCircle = {
+			cx: circle.x,
+			cy: circle.y,
+			r: circle.r
+		};
+		return formattedCircle;
+		
+	}
+
+	/**
+	 * Create a necklace map for the selected state. Flows entering or leaving
+	 * the selected state will have outer-state nodes replaced with necklace
+	 * map nodes. Only makes necklace map nodes for states that have displayed
+	 * flows (maxFlows only).
+	 * Uses d3 force layout to arrange nodes. 
+ * @param {Number} stateFIPS - US state FIPS code
+ * @param {Object} model - FloxModel containing flows
+ * @param {Function} callback - Called when finished.
+	 */
 	function configureNecklaceMap(stateFIPS, model, callback) {
 		
-		// Figure out which states need necklace map nodes.
 		var flows = model.getFlows(),
 			outerStates = [],
 			flow,
@@ -811,40 +849,49 @@ Flox.MapComponent_d3 = function() {
 			stateCircles,
 			i, j, sPt, ePt,
 			necklaceMapNodes,
-			datasetName = model.getDatasetName();
-			
-		// get the statePolygon, yes?
+			smallerOuterCircle,
+			datasetName = model.getDatasetName(); // FIPS code of selected state
+			// in the format "FIPS00"
+		
+		// Get the polygon of the currently selected state, which contains 
+		// various needed parameters. 	
 		d3.select("#" + datasetName).each(function(d) {
-			targetStatePolygon = d; // Yes!
+			targetStatePolygon = d;
 		});
 		
+		// Loop through the flows in the model
 		for(i = 0, j = flows.length; i < j; i += 1) {
 			flow = flows[i];
 			
+			// Start point and end point
 			sPt = flow.getStartPt();
 			ePt = flow.getEndPt();
 			
-			if("FIPS" + sPt.STATEFP !== datasetName && (outerStates.indexOf(sPt.STATEFP) < 0)) {
-				//console.log("found an outer state");
+			// If the state FIPS codes of the start or end point don't match
+			// the FIPS code of the selected state, add that FIPS code to an 
+			// array that tracks which states have out of state flows.
+			if("FIPS" + sPt.STATEFP !== datasetName 
+			   && (outerStates.indexOf(sPt.STATEFP) < 0)) {
 				outerStates.push(sPt.STATEFP);
 			}
-			
-			if("FIPS" + ePt.STATEFP !== datasetName && (outerStates.indexOf(ePt.STATEFP) < 0)) {
-				//console.log("found an outer state");
+			if("FIPS" + ePt.STATEFP !== datasetName 
+			   && (outerStates.indexOf(ePt.STATEFP) < 0)) {
 				outerStates.push(ePt.STATEFP);
 			}
 		}
 
-		// get the necklace for the target state.
+		// Get the bounding box for the selected state polygon.
 		stateBoundingBox = path.bounds(targetStatePolygon);
-		outerCircle = getCircleAroundBoundingBox(stateBoundingBox);
-		// get necklace map locations for each outerState, go ahead and add
-		// them to the map using existing function
+		
+		// Get a circle that completely encloses the bounding box of the state.
+		//outerCircle = getCircleAroundBoundingBox(stateBoundingBox);
+		
+		smallerOuterCircle = getSmallestCircleAroundPolygon(targetStatePolygon);
 		
 		stateCircles = getStateCircles(outerCircle, outerStates);
 		
 		if(stateCircles.length > 0) {
-			addNecklaceMap(outerCircle, stateCircles, function(necklaceMapNodes) {
+			addNecklaceMap(smallerOuterCircle, stateCircles, function(necklaceMapNodes) {
 				// Swap out the offending node in each flow with the necklace map node.
 				if(stateCircles.length > 0) {
 					for(i = 0, j = flows.length; i < j; i += 1) {
