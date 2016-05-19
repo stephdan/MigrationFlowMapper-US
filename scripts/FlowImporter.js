@@ -166,7 +166,8 @@ Flox.FlowImporter = ( function(d3) {
 	 */
 	my.importUSCensusCountyNodes = function(nodePath, stateFIPS, callback) {
 		
-		// import state nodes here.
+		// import state nodes. Will be used to replace nodes outside of the
+		// target state (stateFIPS).
 		var stateNodePath = "data/census/state_latLng.csv",
 			nodes = [],
 			newStNode,
@@ -187,6 +188,7 @@ Flox.FlowImporter = ( function(d3) {
 						newStNode.STUSPS = row.id;
 						newStNode.FIPS = row.FIPS;
 						newStNode.STATEFP = row.FIPS;
+						newStNode.name = row.name;
 						newStNode.totalIncomingFlow = 0;
 						newStNode.totalOutgoingFlow = 0;
 						newStNode.netFlow = 0;
@@ -195,6 +197,7 @@ Flox.FlowImporter = ( function(d3) {
 				}
 			}
 			
+			// Import county nodes.
 			d3.csv(nodePath, function(nodeData) {
 				var newPt;
 				

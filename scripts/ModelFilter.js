@@ -51,12 +51,10 @@ Flox.ModelFilter = function(m) {
 				if ("FIPS" + sPt.STATEFP === selectedStateFIPS) {
 					countyFIPS = sPt.id;
 					outerStateFIPS = ePt.STATEFP;
-					ePt.name = outerStateFIPS;
 					direction = -1; 
 				} else {
 					countyFIPS = ePt.id;
 					outerStateFIPS = sPt.STATEFP;
-					sPt.name = outerStateFIPS;
 					direction = 1;
 				}
 				// If it's not there already, add the in-state county fips of 
@@ -228,6 +226,36 @@ Flox.ModelFilter = function(m) {
 		return model_copy;
 	}
 
+	function getSelectedCountyModel(countyFIPS, settings) {
+		// Find the node that has the countyFIPS.
+		// Maybe can use jquery or d3 to do this?
+		// Though that would only work if the county node was currently loaded.
+		// Which it is not, because everything is deleted now.
+		var incomingFlows = [], 
+			outgoingFlows = [], 
+			countyFlows,
+			nodes, node, i, j;
+		
+		// Loop through the nodes, find the one with a matching FIPS.
+		nodes = model_copy.getPoints();
+		
+		for(i = 0, j = nodes.length; i < j; i += 1) {
+			node = nodes[i];
+			if(node.id === countyFIPS) {
+				if(settings.countyIncoming) {
+					incomingFlows = node.incomingFlows;
+				}
+				if(settings.countyOutgoing) {
+					outgoingFlows = node.outgoingFlows;
+				}
+			}
+		}
+		
+		countyFlows = incomingFlows.concat(outgoingFlows);
+		model_copy.deleteAllFlows();
+		model_copy.addFlows(countyFlows);
+	}
+
 
 	// PUBLIC ---------------------------------------------------------------------
 
@@ -388,6 +416,17 @@ Flox.ModelFilter = function(m) {
 		// Filter out all but the biggest flows.
 		my.getMaxFlowsModel();		
 		
+		return model_copy;
+	};
+	
+	
+	my.getSelectedCountyModel = function(countyFIPS, settings) {
+		var maxFlowValue = model_copy.getMaxFlowValue();
+		
+		getSelectedCountyModel(countyFIPS, settings);
+		my.filterBySettings(settings);
+		
+		//model_copy.setMaxFlowValue(maxFlowValue);
 		return model_copy;
 	};
 	

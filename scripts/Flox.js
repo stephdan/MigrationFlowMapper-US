@@ -17,7 +17,9 @@ var mapComponent,
 	filterSettings = {
 		netFlows : true,
 		inStateFlows: true,
-		outerStateFlows: false
+		outerStateFlows: false,
+		countyIncoming: true,
+		countyOutgoing: true
 	},
 	
 	my = {};
@@ -423,6 +425,23 @@ my.showTotalFlows = function() {
 	});
 };
 
+my.showSelectedCountyFlows = function(countyFIPS) {
+	// Filter out all flows except for the ones going to and from the selected
+	// county.
+	var selectedCountyModel, stateFIPS;
+	
+	selectedCountyModel = new Flox.ModelFilter(model_master)
+								  .getSelectedCountyModel(countyFIPS, filterSettings);
+	
+	
+	stateFIPS = selectedCountyModel.getDatasetName();
+	
+	
+	mapComponent.configureNecklaceMap(stateFIPS, selectedCountyModel, function() {
+		new Flox.FlowLayouter(selectedCountyModel).straightenFlows();
+		refreshMap(selectedCountyModel);
+	});	
+};
 
 my.initFlox = function() {
 	model_master = new Flox.Model();

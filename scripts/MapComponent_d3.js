@@ -51,7 +51,7 @@ Flox.MapComponent_d3 = function() {
 			stateTooltip;
 		
 		mapFeaturesLayer.append("g").attr("id", "flowsLayer");
-		
+		mapFeaturesLayer.append("g").attr("id", "pointsLayer");
 		
 		$(window).resize(function() {
 			width = this.innerWidth;
@@ -129,6 +129,10 @@ Flox.MapComponent_d3 = function() {
 					.on("mouseout", function() {
 						countyTooltip.style("display", "none");
 						d3.select(this).attr("fill", "#ccc");
+					})
+					.on("click", function(d) {
+						console.log("county clicked!");
+						countyClicked(d);
 					});
 			});
 		});
@@ -139,6 +143,7 @@ Flox.MapComponent_d3 = function() {
 
 	function removeAllFlows() {
 		d3.select("#flowsLayer").selectAll("g").remove();
+		d3.select("#pointsLayer").selectAll("circle").remove();
 	}
 
 	function removeAllCircles() {
@@ -344,7 +349,7 @@ Flox.MapComponent_d3 = function() {
 
 	function drawPoints() {
 		var points = model_copy.getPoints(),
-		    circles = d3.select("#mapFeaturesLayer").append("g").attr("id", "pointsLayer").selectAll("circle").data(points).enter().append("circle");
+		    circles = d3.select("#pointsLayer").selectAll("circle").data(points).enter().append("circle");
 
 		// Add some attributes to the points
 		circles.style("stroke", "black").style("stroke-width", function(d) {
@@ -506,14 +511,11 @@ Flox.MapComponent_d3 = function() {
 	}
 
 	/**
-	 * Find the intersection on a circle between a line from the center of
-	 * the circle to a point.
-	 * If the point is inside the circle, return the point.
-	 *
-	 * @param {x, y} pt The point to be projected
-	 * @param {cx, cy, r} circle The circle to find the projected point on
+	 * Change the coordinates of pt so that it lies on 
+	 * the intersection between the circle and a line drawn between pt and 
+	 * the circle center.
 	 */
-	function getProjectedPointOnCircle(pt, circle) {
+	function projectPointOnCircle(pt, circle) {
 		var d,
 		    dx,
 		    dy,
@@ -525,83 +527,45 @@ Flox.MapComponent_d3 = function() {
 		dy = pt.y - circle.cy;
 		d = Math.sqrt(dx * dx + dy * dy);
 
+		// Pt is the center of circle. Return Pt.
+		// TODO could return some point on the outside of circle
 		if (d === 0) {
-			//console.log("pt is the center of the circle");
-			return {
-				x : circle.cx,
-				y : circle.cy
-			};
+			return pt;
 		}
 
+		// Point is inside the circle. Return Pt. 
 		if (d <= circle.r) {
 			//console.log("pt is inside the circle");
-			return {
-				x : pt.x,
-				y : pt.y
-			};
+			return pt;
 		}
 
-		x = circle.cx + (dx * circle.r / d);
-		y = circle.cy + (dy * circle.r / d);
+		pt.x = circle.cx + (dx * circle.r / d);
+		pt.y = circle.cy + (dy * circle.r / d);
 
-		return {
-			x : x,
-			y : y
-		};
+		return pt; 
 	}
 
 	/**
 	 * Places circles on outerCircle that correspond to the states array.
 	 *
-	 * @param {cx, cy, r} outerCircle Circle around central state.
-	 * @param {[states]} states Array of state abbreviations to make circles for.
+	 * @param {Object} outerCircle - Circle around central state polygon
+	 * @param {Array} states - Array of state abbreviations to make circles for.
 	 */
-	function getStateCircles(outerCircle, states) {
+	function getStateCircles(outerCircle, states, outerStatesNodes) {
 
-		var statePolygons = [],
-		    stateCircles = [],
+		var stateCircles = [],
 		    i,
 		    j,
-		    bbCenter,
-		    bb,
-		    pt,
-		    centroid;
+		    pt;
 
-		// Get the state polygons in an array
-		d3.selectAll("#statesLayer").selectAll(".feature.state").each(function(d) {
-			if (states.indexOf(d.properties.STATEFP) > -1) {// Is this state in states?
-				statePolygons.push(d);
-			}
-		});
-
-		// Loop over the polygons
-		for ( i = 0, j = statePolygons.length; i < j; i += 1) {
-
-			centroid = path.centroid(statePolygons[i]);
-
-			// Change the format of the centroid point. Annoying.
-			// I should just make getProjectedPointOnCircle use the d3 array
-			// the way it comes out.
-			centroid = {
-				x : centroid[0],
-				y : centroid[1]
-			};
-
-			pt = getProjectedPointOnCircle(centroid, outerCircle);
-
-			pt.STUSPS = statePolygons[i].properties.STUSPS;
-			pt.FIPS = statePolygons[i].properties.STATEFP;
-			pt.id = statePolygons[i].properties.STATEFP;
-			pt.name = statePolygons[i].properties.STUSPS;
+		for ( i = 0, j = outerStatesNodes.length; i < j; i += 1) {
+			pt = outerStatesNodes[i];
+			projectPointOnCircle(pt, outerCircle);
 			pt.necklaceMapNode = true;
-			
-			// set the radius now. How do you do this later?
 			pt.r = outerCircle.r * 0.1;
 			pt.strokeWidth = pt.r * 0.15;
-			
 			stateCircles.push(pt);
 		}
-
 		return stateCircles;
 	}
 
@@ -654,16 +618,19 @@ Flox.MapComponent_d3 = function() {
 		
 		// Hide county boundaries
 		hideAllCountyBorders();
-		removeAllCircles();
 
 		// Show just the county boundaries for the selected state
 		showCountyBordersWithinState(statePolygon.properties.STATEFP);
 	}
 
+	function selectCounty(countyFIPS) {
+		removeAllFlows();
+		d3.select("#necklaceMapLayer").remove();
+		Flox.showSelectedCountyFlows(countyFIPS);
+	}
 
 	// Selects the state. 
 	function stateClicked(d) {
-
 		// If the currently active state was clicked, reset.
 		// TODO this should happen in selectState somehow.
 		// "this" is the SVG path object that was clicked. I think.
@@ -676,7 +643,19 @@ Flox.MapComponent_d3 = function() {
 		active = d3.select(this).classed("active", true);
 		// Select the state
 		selectState(d.properties.STATEFP);
+	}
 
+	function countyClicked(d) {
+		
+		var FIPS = d.properties.STATEFP + d.properties.COUNTYFP;
+		
+		// If the county was already selected, deselect it. 
+		
+		// Change style stuff here?
+		
+		// Select this county
+		
+		selectCounty(FIPS);
 		
 	}
 
@@ -727,27 +706,28 @@ Flox.MapComponent_d3 = function() {
 		// center of circle the points must stay outside of.
 			cx = outerCircle.cx, // center x of circle nodes stay out of
 		    cy = outerCircle.cy, // center y of circle nodes stay out of
-		    r = outerCircle.r + nodeRadius,
-		    necklaceMapNodes = {}; // radius of the circle the necklace
+		    r = outerCircle.r + nodeRadius, // radius of the circle the necklace
 		    // nodes are arranged around. Radius of the nodes is added to keep
 		    // them from overlapping outer counties. 
-				
+			force, necklaceMap, nodes, i,
+			necklaceNodeTooltip;	
+			
 		// delete the previous necklace map
 		d3.select("#necklaceMapLayer").remove(); 
 	
 		// Initialize the force layout settings
 		// 0 gravity has great results! Otherwize nodes arrange themselves lopsided. 
-		var force = d3.layout.force().gravity(0.0).charge(-r * 0.28).size([w, h]).nodes(stateNodes);
+		force = d3.layout.force().gravity(0.0).charge(-r * 0.28).size([w, h]).nodes(stateNodes);
 
 		// Add an SVG group to hold the necklace map.
-		var necklaceMap = d3.select("#mapFeaturesLayer").append("g").attr("id", "necklaceMapLayer");
+		necklaceMap = d3.select("#mapFeaturesLayer").append("g").attr("id", "necklaceMapLayer");
 
 		// Load the data.
-		var node = necklaceMap.selectAll("circle")
+		nodes = necklaceMap.selectAll("circle")
 					  .data(stateNodes)
 					  .enter().append("circle")
 					  .attr("r", function(d) {
-					  	return nodeRadius;
+					  	return d.r;
 					  })
 					  .style("fill", "#D6F5FF")
 					  .style("stroke", "black")
@@ -756,21 +736,51 @@ Flox.MapComponent_d3 = function() {
 					  })
 					  //.call(force.drag)
 					  .on("mousedown", function() {
-					  	d3.event.stopPropagation();
+					  	//d3.event.stopPropagation();
 					  });
-	
+
+		necklaceNodeTooltip = d3.select("body").append("div")
+								.attr("class", "tooltip-necklaceMapNode")
+								.style("display", "none");
+
+		// Add some mouse interactions to the nodes, like tooltips.
+		nodes.on("mouseover", function(d) {
+			necklaceNodeTooltip.style("display", "inline");
+			//d3.select(this).select(".curve").attr("stroke", "yellow");
+			//d3.select(this).select(".arrow").attr("fill", "yellow");
+        })
+        .on("mousemove", function(d) {
+			necklaceNodeTooltip.html(d.name + "<br/>" + 
+			             "Outgoing Flow: " + d.totalOutgoingFlow + "<br/>" + 
+			             "Incoming Flow: " + d.totalIncomingFlow )
+			       .style("left", (d3.event.pageX + 4) + "px")
+			       .style("top", (d3.event.pageY - 34) + "px");
+        })
+        .on("mouseout", function() {
+			necklaceNodeTooltip.style("display", "none");
+			//d3.select(this).select(".curve").attr("stroke", "black");
+			//d3.select(this).select(".arrow").attr("fill", "black");
+        })
+        .on("click", function(d) {
+        	necklaceNodeTooltip.style("display", "none");
+			selectState(d.STATEFP);
+        });
+		
+
+
 		function tick () {
-			node.attr("cx", function(d) {
-				var dx = d.x - cx;
-				var dy = d.y - cy;
-				var dist = Math.sqrt(dx * dx + dy * dy);
+			var dx, dy, dist;
+			nodes.attr("cx", function(d) {
+				dx = d.x - cx;
+				dy = d.y - cy;
+				dist = Math.sqrt(dx * dx + dy * dy);
 				d.x = dx * r / dist + cx;
 				return d.x;
 			});
-			node.attr("cy", function(d) {
-				var dx = d.x - cx;
-				var dy = d.y - cy;
-				var dist = Math.sqrt(dx * dx + dy * dy);
+			nodes.attr("cy", function(d) {
+				dx = d.x - cx;
+				dy = d.y - cy;
+				dist = Math.sqrt(dx * dx + dy * dy);
 				d.y = dy * r / dist + cy;
 				return d.y;
 			});
@@ -778,27 +788,34 @@ Flox.MapComponent_d3 = function() {
 
 		// On each tick of the force layout,
 		force.on("tick", tick);
-		
-		var i; // More nodes? More ticks
-		
-		// Start the force layout, run 
+				
+		// Start the force layout.
+		// Number of ticks increases with number of nodes.
+		// FIXME this is not optimal. Sometimes it's not enough ticks,
+		// sometimes too many. 
 		force.start();
 		for (i = stateNodes.length * 10; i > 0; i -= 1) {
 			force.tick();
 		}
 		force.stop();
 		
-		// TODO return a convenient object for getting nodes by STUSPS keys.
-		//return force.nodes(); // This is not that.
-		
 		// For each node, add it's STUSPS and itself to an object?
-		for(i = 0; i < stateNodes.length; i += 1) {
-			var FIPS = stateNodes[i].FIPS;
-			necklaceMapNodes[FIPS] = stateNodes[i];
-		}
-		callback(necklaceMapNodes);
+		// This is not needed now.
+		// for(i = 0; i < stateNodes.length; i += 1) {
+			// var FIPS = stateNodes[i].FIPS;
+			// necklaceMapNodes[FIPS] = stateNodes[i];
+		// }
+		//callback(necklaceMapNodes);
+		callback();
 	}
 
+	/**
+	 * Gets the smallest circle that encloses targetStatepolygon. 
+	 * Uses code copied from https://www.nayuki.io/page/smallest-enclosing-circle
+	 * targetStatePolygon is a d3.feature. Points from that feature are
+	 * converted from [x,y] tp {x: value, y: value} to be compatible
+	 * with the copied code, which kinda sucks.
+	 */
 	function getSmallestCircleAroundPolygon(targetStatePolygon) {
 		// Get the points from the polygon somehow?
 		var points = (targetStatePolygon.geometry.coordinates[0]),
@@ -842,6 +859,7 @@ Flox.MapComponent_d3 = function() {
 		
 		var flows = model.getFlows(),
 			outerStates = [],
+			outerStatesNodes = [],
 			flow,
 			targetStatePolygon,
 			stateBoundingBox,
@@ -873,42 +891,32 @@ Flox.MapComponent_d3 = function() {
 			if("FIPS" + sPt.STATEFP !== datasetName 
 			   && (outerStates.indexOf(sPt.STATEFP) < 0)) {
 				outerStates.push(sPt.STATEFP);
+				outerStatesNodes.push(sPt);
 			}
 			if("FIPS" + ePt.STATEFP !== datasetName 
 			   && (outerStates.indexOf(ePt.STATEFP) < 0)) {
 				outerStates.push(ePt.STATEFP);
+				outerStatesNodes.push(ePt);
 			}
 		}
 
 		// Get the bounding box for the selected state polygon.
-		stateBoundingBox = path.bounds(targetStatePolygon);
-		
-		// Get a circle that completely encloses the bounding box of the state.
+		// Then, get a circle that encloses the bounding box of the state.
+		//stateBoundingBox = path.bounds(targetStatePolygon);
 		//outerCircle = getCircleAroundBoundingBox(stateBoundingBox);
 		
+		// Get the smallest circle that encloses the targetStatePolygon
 		smallerOuterCircle = getSmallestCircleAroundPolygon(targetStatePolygon);
 		
-		stateCircles = getStateCircles(smallerOuterCircle, outerStates);
+		// Get a circle for each outerState.
+		// Actually moves the offending flow nodes and adds attributes r, 
+		// necklaceMapNode = true, and strokeWidth. I think that's it.
+		stateCircles = getStateCircles(smallerOuterCircle, outerStates, outerStatesNodes);
 		
-		if(stateCircles.length > 0) {
-			addNecklaceMap(smallerOuterCircle, stateCircles, function(necklaceMapNodes) {
-				// Swap out the offending node in each flow with the necklace map node.
-				if(stateCircles.length > 0) {
-					for(i = 0, j = flows.length; i < j; i += 1) {
-						flow = flows[i];
-						sPt = flow.getStartPt();
-						ePt = flow.getEndPt();
-						
-						// if the SPUSPS in sPt/ePt isn't the target, replace it with
-						// the necklaceMapNode it should be. 
-						if("FIPS" + sPt.STATEFP !== datasetName) {
-							flow.setStartPt(necklaceMapNodes[sPt.STATEFP]);
-						}
-						if("FIPS" + ePt.STATEFP !== datasetName) {
-							flow.setEndPt(necklaceMapNodes[ePt.STATEFP]);
-						}
-					}	
-				}
+		// If there are any stateCircles...
+		if(stateCircles.length > 0) { 
+			// Create and add the necklace map to the map. 
+			addNecklaceMap(smallerOuterCircle, stateCircles, function(necklaceMapNodes) {				
 				callback();
 			});
 		} else {

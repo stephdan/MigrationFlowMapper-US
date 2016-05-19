@@ -628,8 +628,6 @@ Flox.Model = function() {
 			        nodeCopy[prop] = node[prop];
 			    }
 			}
-			
-			
 			JSON.nodes.push(nodeCopy);
 		}
 		
@@ -1003,6 +1001,10 @@ Flox.Model = function() {
 	
 	my.getMaxFlowValue = function() {
 		return maxFlowValue;
+	};
+	
+	my.setMaxFlowValue = function(d) {
+		maxFlowValue = (d);
 	};
 	
 	my.getMeanFlowValue = function() {
