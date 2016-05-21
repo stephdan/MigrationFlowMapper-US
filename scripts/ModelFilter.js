@@ -36,6 +36,7 @@ Flox.ModelFilter = function(m) {
 		selectedStateFIPS = model_copy.getDatasetName(),
 		countyFIPS,
 		outerStateFIPS,
+		nodes = model_copy.getPoints(),
 		ePt, sPt, f, direction, newFlow, flow, val;
 		
 		// loop backwards through flows
@@ -105,11 +106,12 @@ Flox.ModelFilter = function(m) {
 				}
 		    });
 		});
-				
+		
 		// Remove all flows from the old model?
 		model_copy.deleteAllFlows();
 		
 		// add flows to the new model
+		model_copy.initNodes(nodes);
 		model_copy.addFlows(flows);
 		
 		// return the new model
@@ -124,6 +126,7 @@ Flox.ModelFilter = function(m) {
 		var flows = model_copy.getAllFlows(),
 		i, j,
 		outOfStateFlows = {},
+		nodes = model_copy.getPoints(),
 		selectedStateFIPS = model_copy.getDatasetName(),
 		countyFIPS,
 		outerStateFIPS,
@@ -220,6 +223,7 @@ Flox.ModelFilter = function(m) {
 		model_copy.deleteAllFlows();
 		
 		// add flows to the new model
+		model_copy.initNodes(nodes);
 		model_copy.addFlows(flows);
 		
 		// return the new model
@@ -227,10 +231,6 @@ Flox.ModelFilter = function(m) {
 	}
 
 	function getSelectedCountyModel(countyFIPS, settings) {
-		// Find the node that has the countyFIPS.
-		// Maybe can use jquery or d3 to do this?
-		// Though that would only work if the county node was currently loaded.
-		// Which it is not, because everything is deleted now.
 		var incomingFlows = [], 
 			outgoingFlows = [], 
 			countyFlows,
@@ -248,11 +248,13 @@ Flox.ModelFilter = function(m) {
 				if(settings.countyOutgoing) {
 					outgoingFlows = node.outgoingFlows;
 				}
+				break;
 			}
 		}
 		
 		countyFlows = incomingFlows.concat(outgoingFlows);
 		model_copy.deleteAllFlows();
+		model_copy.initNodes(nodes);
 		model_copy.addFlows(countyFlows);
 	}
 
@@ -291,6 +293,7 @@ Flox.ModelFilter = function(m) {
 		var flows = model_copy.getAllFlows(),
 		    netFlows = [],
 		    unopposedFlows = [],
+		    nodes = model_copy.getPoints(),
 		    
 		// TODO is Map available in all recent browsers?
 		    map = new Map(),
@@ -318,6 +321,7 @@ Flox.ModelFilter = function(m) {
 		netFlows = Array.from(map.values());
 		netFlows = netFlows.concat(unopposedFlows);
 		model_copy.deleteAllFlows();
+		model_copy.initNodes(nodes);
 		model_copy.addFlows(netFlows);
 
 		//Flox.logFlows(model_copy);
@@ -354,11 +358,32 @@ Flox.ModelFilter = function(m) {
 	 * Return a model containing only flows with start and end points
 	 * within the selected state. 
 	 */
-	my.getInStateFlowsModel = function (){
+	my.removeInStateFlows = function (){
 		var selectedState = model_copy.getDatasetName(),
-			flows = model_copy.getFlows(), 
+			flows = model_copy.getFlows(), nodes,
 			f, i, j;
 		
+		for(i = flows.length - 1;  i >= 0; i -= 1) {
+			// Slice out flows that have nodes only inside the state.
+			f = flows[i];
+			if("FIPS" + f.getStartPt().STATEFP === selectedState && 
+			     "FIPS" + f.getEndPt().STATEFP === selectedState) {
+				flows.splice(i, 1);
+			}
+		}
+		
+		nodes = model_copy.getPoints();
+		model_copy.deleteAllFlows();
+		model_copy.initNodes(nodes);
+		model_copy.addFlows(flows);
+		
+	};
+	
+	my.removeOuterStateFlows = function() {
+		var selectedState = model_copy.getDatasetName(),
+			flows = model_copy.getFlows(), 
+			f, i, j, nodes;
+			
 		for(i = flows.length - 1;  i >= 0; i -= 1) {
 			// Slice out flows that have a node outside the state?
 			f = flows[i];
@@ -368,26 +393,9 @@ Flox.ModelFilter = function(m) {
 			}
 		}
 		
+		nodes = model_copy.getPoints();
 		model_copy.deleteAllFlows();
-		model_copy.addFlows(flows);
-		
-	};
-	
-	my.getOuterStateFlowsModel = function() {
-		var selectedState = model_copy.getDatasetName(),
-			flows = model_copy.getFlows(), 
-			f, i, j;
-			
-		for(i = flows.length - 1;  i >= 0; i -= 1) {
-			// Slice out flows that have a node outside the state?
-			f = flows[i];
-			if(f.getStartPt().STUSPS === selectedState && 
-			     f.getEndPt().STUSPS === selectedState) {
-				flows.splice(i, 1);
-			}
-		}
-		
-		model_copy.deleteAllFlows();
+		model_copy.initNodes(nodes);
 		model_copy.addFlows(flows);
 	};
 	
@@ -397,6 +405,10 @@ Flox.ModelFilter = function(m) {
 	 */
 	my.filterBySettings = function(settings) {
 		
+		if(settings.county) {
+			getSelectedCountyModel(settings.county, settings);
+		}
+		
 		// Net flows if settings.netFlows
 		if(settings.netFlows) {
 			my.getNetFlowsModel();
@@ -405,12 +417,14 @@ Flox.ModelFilter = function(m) {
 			mergeOutOfStateTotalFlows();
 		}
 		
-		if(settings.inStateFlows) {
-			// filter out all flows connected to other states
-			my.getInStateFlowsModel();
-		} else if (settings.outerStateFlows) {
-			// Filter out all flows that are entirely in-state
-			my.getOuterStateFlowsModel();
+		if(settings.inStateFlows === false) {
+			// filter out in state flows
+			my.removeInStateFlows();
+		}
+		
+		if (settings.outerStateFlows === false) {
+			// Filter out out-of-state flows
+			my.removeOuterStateFlows();
 		}
 		
 		// Filter out all but the biggest flows.
@@ -421,12 +435,10 @@ Flox.ModelFilter = function(m) {
 	
 	
 	my.getSelectedCountyModel = function(countyFIPS, settings) {
-		var maxFlowValue = model_copy.getMaxFlowValue();
-		
+			
 		getSelectedCountyModel(countyFIPS, settings);
 		my.filterBySettings(settings);
 		
-		//model_copy.setMaxFlowValue(maxFlowValue);
 		return model_copy;
 	};
 	

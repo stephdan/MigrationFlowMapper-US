@@ -16,10 +16,14 @@ var mapComponent,
 	
 	filterSettings = {
 		netFlows : true,
+		
 		inStateFlows: true,
 		outerStateFlows: false,
+		
 		countyIncoming: true,
-		countyOutgoing: true
+		countyOutgoing: true,
+		county: false,
+		state: false
 	},
 	
 	my = {};
@@ -349,7 +353,7 @@ my.importTotalCountyFlowData = function(stateFIPS) {
 		
 		filteredModel = new Flox.ModelFilter(model_master).filterBySettings(filterSettings);
 		
-		mapComponent.configureNecklaceMap(stateFIPS, filteredModel, function() {
+		mapComponent.configureNecklaceMap(filteredModel, function() {
 			
 			//my.logFlows(maxFlowsModel);
 			
@@ -433,16 +437,53 @@ my.showSelectedCountyFlows = function(countyFIPS) {
 	selectedCountyModel = new Flox.ModelFilter(model_master)
 								  .getSelectedCountyModel(countyFIPS, filterSettings);
 	
-	
 	stateFIPS = selectedCountyModel.getDatasetName();
 	
-	
-	mapComponent.configureNecklaceMap(stateFIPS, selectedCountyModel, function() {
-		new Flox.FlowLayouter(selectedCountyModel).straightenFlows();
+	mapComponent.configureNecklaceMap(selectedCountyModel, function() {
+		//new Flox.FlowLayouter(selectedCountyModel).straightenFlows();
+		layoutFlows(selectedCountyModel);
 		refreshMap(selectedCountyModel);
 	});	
 };
 
+/**
+ * Filter, layout, and display the model according to filterSettings.
+ */
+my.filterBySettings = function() {
+	// so...
+	var filteredModel, stateFIPS;
+	
+	filteredModel = new Flox.ModelFilter(model_master)
+								  .filterBySettings(filterSettings);
+								  
+	stateFIPS = filteredModel.getDatasetName();
+	
+	mapComponent.configureNecklaceMap(filteredModel, function() {
+		//new Flox.FlowLayouter(selectedCountyModel).straightenFlows();
+		layoutFlows(filteredModel);
+		refreshMap(filteredModel);
+	});							  
+};
+
+my.getFilterSettings = function() {
+	return filterSettings;
+};
+
+/**
+ * Loops over the filterSettings, changing the ones specified in settings.
+ * @param {Object} settings - Key value pair(s) of filterSettings to change.
+ */
+my.setFilterSettings = function(settings) {
+	var prop;
+	for (prop in settings) {
+		if(settings.hasOwnProperty(prop)) {
+			if (filterSettings.hasOwnProperty(prop)) {
+				filterSettings[prop] = settings[prop];
+			}
+		}
+	}
+	console.log(filterSettings);
+};
 my.initFlox = function() {
 	model_master = new Flox.Model();
 	mapComponent = new Flox.MapComponent_d3();

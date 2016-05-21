@@ -23,7 +23,7 @@ Flox.MapComponent_d3 = function() {
 	    // TODO the scale setting below could be set to zoom in to the bounding
 	    // box of the lower 48 based on the window size. 
 	    zoom = d3.behavior.zoom().translate([width / 2, height / 2]).scale(0.06).scaleExtent([0.05, 80])// change these numbers to be able to zoom in or out further.
-	.on("zoom", zoomed),
+		.on("zoom", zoomed),
 
 	    i,
 	    j,
@@ -38,12 +38,12 @@ Flox.MapComponent_d3 = function() {
 		path = d3.geo.path().projection(projection);
 		
 		// Create the svg element to hold all the map features.
-		svg = d3.select("#map").append("svg").attr("width", width).attr("height", height).on("click", stopped, true);
+		svg = d3.select("#map").append("svg").attr("width", "100%").attr("height", "100%").on("click", stopped, true);
 
 
 		// MAP LAYERS ------------------------------------
 		// Add a background layer for detecting pointer events
-		background = svg.append("rect").attr("class", "background").attr("width", width).attr("height", height).on("click", reset);
+		background = svg.append("rect").attr("class", "background").attr("width", "100%").attr("height", "100%").on("click", reset);
 		var mapFeaturesLayer = svg.append("g").attr("id", "mapFeaturesLayer"),
 			statesLayer = mapFeaturesLayer.append("g").attr("id", "statesLayer"),
 			countiesLayer = mapFeaturesLayer.append("g").attr("id", "countieslayer"),
@@ -56,8 +56,8 @@ Flox.MapComponent_d3 = function() {
 		$(window).resize(function() {
 			width = this.innerWidth;
 			height = this.innerHeight;
-			svg.attr("width", width).attr("height", height);
-			background.attr("width", width).attr("height", height);
+			svg.attr("width", "100%").attr("height", "100%");
+			background.attr("width", "100%").attr("height", "100%");
 		});
 
 		// Create and arrange layers in the appropriate order.
@@ -277,8 +277,8 @@ Flox.MapComponent_d3 = function() {
 			svgFlows.append("path")// add a new path. This is the arrowhead!
 				.classed("arrowOutline", true)
 				.style("cursor", "default")
-				.attr("stroke", "white")
-				.attr("fill", "white")
+				.attr("stroke", "#ccc")
+				.attr("fill", "#ccc")
 				.attr("stroke-width", 2)
 				.attr("d", function(d) {
 					return buildSvgArrowPath(d);
@@ -286,7 +286,7 @@ Flox.MapComponent_d3 = function() {
 		}
 		svgFlows.append("path")
 			.classed("curveOutline", true)
-			.attr("stroke", "white")
+			.attr("stroke", "#ccc")
 			.style("cursor", "default")
 			.attr("fill", "none")
 			.attr("stroke-width", function(d) {
@@ -626,7 +626,14 @@ Flox.MapComponent_d3 = function() {
 	function selectCounty(countyFIPS) {
 		removeAllFlows();
 		d3.select("#necklaceMapLayer").remove();
-		Flox.showSelectedCountyFlows(countyFIPS);
+		
+		// This is kinda sucky
+		// Flox.showSelectedCountyFlows(countyFIPS);
+		
+		// Instead, change a filter settings and tell Flox to filter flows.
+		Flox.setFilterSettings({county: countyFIPS});
+		Flox.filterBySettings();
+		
 	}
 
 	// Selects the state. 
@@ -661,7 +668,7 @@ Flox.MapComponent_d3 = function() {
 
 	
 	// Zooms out to full extent, deselects everything, hides all county
-	// boundaries.
+	// boundaries, resets some filter settings.
 	function reset() {
 		active.classed("active", false);
 		active = d3.select(null);
@@ -672,7 +679,9 @@ Flox.MapComponent_d3 = function() {
 		
 		// Also remove all necklace maps.
 		d3.select("#necklaceMapLayer").remove(); 
-
+		
+		Flox.setFilterSettings({county: false, state: false});
+		
 		svg.transition().duration(750).call(zoom.translate([width / 2, height / 2]).scale(0.06).event);
 	}
 
@@ -855,7 +864,7 @@ Flox.MapComponent_d3 = function() {
  * @param {Object} model - FloxModel containing flows
  * @param {Function} callback - Called when finished.
 	 */
-	function configureNecklaceMap(stateFIPS, model, callback) {
+	function configureNecklaceMap(model, callback) {
 		
 		var flows = model.getFlows(),
 			outerStates = [],
@@ -870,6 +879,9 @@ Flox.MapComponent_d3 = function() {
 			smallerOuterCircle,
 			datasetName = model.getDatasetName(); // FIPS code of selected state
 			// in the format "FIPS00"
+		
+		// Remove the existing necklace map.
+		d3.select("#necklaceMapLayer").remove();
 		
 		// Get the polygon of the currently selected state, which contains 
 		// various needed parameters. 	

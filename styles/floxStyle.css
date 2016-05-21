@@ -1,5 +1,7 @@
 html, body {
 	height: 100%;
+	overflow: hidden;
+
 }
 
 #map {
@@ -7,6 +9,22 @@ html, body {
 	height: 100%;
     font: 10pt;
     margin: 0px;
+    padding: 0px;
+}
+
+.background {
+	padding: 0px;
+	margin: 0px;
+}
+
+#mapFeaturesLayer {
+	padding: 0px;
+	margin: 0px;
+}
+
+#filterGUI {
+	position: absolute;
+	margin: 10px;
 }
 
 .tooltip-flow {
@@ -20,6 +38,7 @@ html, body {
 	background: #ddd;
 	pointer-events: none;
 }
+
 .tooltip-county {
 	position: absolute;
 	text-align: left;
@@ -112,7 +131,6 @@ p {
 	margin-bottom: 0px;
 	display: inline-block;
 }
-
 
 .checkboxHolder {
 	margin-bottom: -10px;

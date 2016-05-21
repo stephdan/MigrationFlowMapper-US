@@ -51,7 +51,39 @@
 
 <body>
 
+	<div id="filterGUI">
+		<div class="btn-group" data-toggle="buttons">
+			
+		  <label class="btn btn-primary active" id="netFlowRadioLabel">
+		    <input type="radio" name="filterRadio" id="netFlowRadio" 
+		     autocomplete="off" checked> 
+		     Net Flow
+		  </label>
+		  
+		  <label class="btn btn-primary" id="totalFlowRadioLabel">
+		    <input type="radio" name="filterRadio" id="totalFlowRadio" 
+		     autocomplete="off"> 
+		     Total Flow
+		  </label>
+		</div>
+		
+		<br />
+		
+		<div class="btn-group" data-toggle="buttons" style="margin-top: 5px">
+			
+		  <label class="btn btn-primary active" id="inStateFlowsToggle">
+		    <input type="checkbox" checked autocomplete="off"> In-state Flows
+		  </label>
+		  
+		  <label class="btn btn-primary" id="outOfStateFlowsToggle">
+		    <input type="checkbox" autocomplete="off"> Out-of-state Flows
+		  </label>	
+		  	  
+		</div>
+		
+	</div>
 
+	
 
     <!-- This is the div where the map goes. 
     The "sidebar-map" class was added to make the leaflet sidebar work.
@@ -68,6 +100,7 @@
     <script src="scripts/FlowLayouter.js"></script>
     <script src="scripts/GeomUtils.js"></script>
     <script src="scripts/ModelFilter.js"></script>
+    <script src="scripts/GUI.js"></script>
 	<script>Flox.initFlox();</script>
 
 </body>
