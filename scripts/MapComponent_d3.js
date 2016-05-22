@@ -243,8 +243,10 @@ Flox.MapComponent_d3 = function() {
 
 	function drawFlows(drawArrows) {
 
-		model_copy.configureArrows();
-
+		if(drawArrows) {
+			model_copy.configureArrows();
+		}
+		
 		var maxFlowWidth = model_copy.getMaxFlowWidth(),
 		    maxFlowValue = model_copy.getMaxFlowValue(),
 		    flows = model_copy.getFlows(),
@@ -334,11 +336,21 @@ Flox.MapComponent_d3 = function() {
 			d3.select(this).select(".arrow").attr("fill", "yellow");
         })
         .on("mousemove", function(d) {
-			tooltip.html("Value: " + d.getValue() + "<br/>" + 
+			if(d.AtoB) {
+				// It's a total flow.
+				tooltip.html("Total Flow: " + d.getValue() + "<br/>" + 
+			             d.getStartPt().name + " to " + d.getEndPt().name + ": " + d.AtoB + "<br/" + 
+			             d.getEndPt().name + " to " + d.getStartPt().name + ": " + d.BtoA)
+			       .style("left", (d3.event.pageX + 4) + "px")
+			       .style("top", (d3.event.pageY - 34) + "px");
+			} else {
+				tooltip.html("Value: " + d.getValue() + "<br/>" + 
 			             "From: " + d.getStartPt().name + "<br/>" + 
 			             "To: " + d.getEndPt().name )
 			       .style("left", (d3.event.pageX + 4) + "px")
 			       .style("top", (d3.event.pageY - 34) + "px");
+			}
+			
         })
         .on("mouseout", function() {
 			tooltip.style("display", "none");
@@ -389,7 +401,7 @@ Flox.MapComponent_d3 = function() {
 		// Store m in model_copy
 		model_copy = m;
 
-		var drawArrows = model_copy.isDrawArrows;
+		var drawArrows = model_copy.isDrawArrows();
 
 		if (model_copy.isDrawFlows()) {
 			drawFlows(drawArrows);

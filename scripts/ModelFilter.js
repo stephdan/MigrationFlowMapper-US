@@ -285,6 +285,32 @@ Flox.ModelFilter = function(m) {
 		return null;
 	}
 
+
+	function totalFlow(flow1, flow2) {
+		// TODO make sure flow1 and flow2 exist
+			
+			// get the values
+		var v1 = flow1.getValue(),
+			v2 = flow2.getValue(),
+		
+			// Get the total value
+			vTotal = v1 + v2,
+			newFlow;
+		
+		// Make new flow. The start point is start point
+		// of the bigger flow. Value is vTotal.
+		if(v1 > v2) {
+			newFlow = new Flox.Flow(flow1.getStartPt(), flow1.getEndPt(), vTotal);
+			newFlow.AtoB = v1;
+			newFlow.BtoA = v2;
+		} else {
+			newFlow = new Flox.Flow(flow2.getStartPt(), flow2.getEndPt(), vTotal);
+			newFlow.AtoB = v2;
+			newFlow.BtoA = v1;
+		}
+		return newFlow;
+	}
+
 	/**
 	 * Return a model containing net flows derived from total flows.
 	 */
@@ -306,7 +332,7 @@ Flox.ModelFilter = function(m) {
 			flow = flows[i];
 			if ( typeof (flow.oppositeFlow) !== "undefined") {
 				flow = netFlow(flow, flow.oppositeFlow);
-				// flow is null if net flow is 0
+				// flow can be null for some reason.
 				if (flow !== null) {
 					id1 = Number(flow.getStartPt().id);
 					id2 = Number(flow.getEndPt().id);
@@ -327,6 +353,51 @@ Flox.ModelFilter = function(m) {
 		//Flox.logFlows(model_copy);
 		return model_copy;
 	};
+	
+	my.getTotalFlowsModel = function() {
+		// Get the flows from the original model
+		var flows = model_copy.getAllFlows(),
+		    totalFlows = [],
+		    nodes = model_copy.getPoints(),
+		    map = new Map(),
+		    i,
+		    flow,
+		    id1,
+		    id2;
+		   
+		for ( i = 0; i < flows.length; i += 1) {
+			flow = flows[i];
+			// Does it have an opposite flow?
+			if ( typeof (flow.oppositeFlow) !== "undefined") {
+				
+				// A nice function for taking two flows and making a total flows.
+				flow = totalFlow(flow, flow.oppositeFlow);
+				
+				if (flow !== null) {
+					id1 = Number(flow.getStartPt().id);
+					id2 = Number(flow.getEndPt().id);
+					map.set(Math.min(id1, id2) + "_" + Math.max(id1, id2), flow);
+				}
+			} else { // flow doesn't have an opposite flow.
+				// Still need tooltip info tho. 
+				flow.AtoB = flow.getValue();
+				flow.BtoA = 0;
+			}
+		}
+		
+		// TODO polyfill for Array.from
+		totalFlows = Array.from(map.values());
+		model_copy.deleteAllFlows();
+		model_copy.initNodes(nodes);
+		model_copy.addFlows(totalFlows);
+
+		//Flox.logFlows(model_copy);
+		return model_copy;
+		
+		
+	};
+	
+	
 	
 	/**
 	 * Return a model containing the n largest flows, where n is the value of 
@@ -412,9 +483,11 @@ Flox.ModelFilter = function(m) {
 		// Net flows if settings.netFlows
 		if(settings.netFlows) {
 			my.getNetFlowsModel();
-			mergeOutOfStateNetFlows();
+			//mergeOutOfStateNetFlows();
 		} else {
-			mergeOutOfStateTotalFlows();
+			my.getTotalFlowsModel();
+			model_copy.setDrawArrows(false);
+			//mergeOutOfStateTotalFlows();
 		}
 		
 		if(settings.inStateFlows === false) {

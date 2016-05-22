@@ -15,6 +15,7 @@ var mapComponent,
 	nodeGrid = null,
 	
 	filterSettings = {
+		
 		netFlows : true,
 		
 		inStateFlows: true,
@@ -458,11 +459,11 @@ my.filterBySettings = function() {
 								  
 	stateFIPS = filteredModel.getDatasetName();
 	
-	mapComponent.configureNecklaceMap(filteredModel, function() {
+	//mapComponent.configureNecklaceMap(filteredModel, function() {
 		//new Flox.FlowLayouter(selectedCountyModel).straightenFlows();
 		layoutFlows(filteredModel);
 		refreshMap(filteredModel);
-	});							  
+	//});							  
 };
 
 my.getFilterSettings = function() {
