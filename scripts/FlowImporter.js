@@ -50,8 +50,6 @@ Flox.FlowImporter = ( function(d3) {
 				row = flowData[i];
 
 				// First check if see if this flow has out of state nodes.
-				// How to determine this? We don't have STUSPS in row.
-				// There is State FIPS.
 				if(Number(row.placeA_STATEFP) !== Number(stateFIPS)) {
 					// Place A is out of state.
 					// Get the state node for place A.
@@ -61,22 +59,27 @@ Flox.FlowImporter = ( function(d3) {
 				}
 				
 				if(Number(row.placeB_STATEFP) !== Number(stateFIPS)) {
-					// Place A is out of state.
-					// Get the state node for place A.
+					// Place B is out of state.
+					// Get the state node for place B.
 					bPt = findStateNode(countyNodes, row.placeB_STATEFP);
 				} else { // Not out of state. Use the full fips.
 					bPt = findNodeID(countyNodes, row.placeB_FIPS);
 				}
 				
 				if (aPt && bPt) { // If both points exist in county nodes...
-					BtoA = Number(row.BtoA); // Get the value of BtoA flow
-					AtoB = Number(row.AtoB); // Get the value of AtoB flow
+					BtoA = Number((row.BtoA).replace(",", "")); // Get the value of BtoA flow
+					AtoB = Number((row.AtoB).replace(",", "")); // Get the value of AtoB flow
+					
+					if(isNaN(BtoA) || isNaN(AtoB)) {
+						throw new Error("FlowImporter found NaN where there should be a Number.");
+					}
+					
 					flowBA = new Flox.Flow(bPt, aPt, BtoA); // Make the BtoA flow
 					flowAB = new Flox.Flow(aPt, bPt, AtoB); // make the AtoB flow
 					
 					// If the value of BA is bigger than 0...
 					if(BtoA > 0) {
-						//flowBA.oppositeFlow = flowAB; // Assign AB as opposite. But it could be 0!
+						//flowBA.oppositeFlow = flowAB;
 						flows.push(flowBA);
 						aPt.totalIncomingFlow += BtoA;
 						aPt.netFlow += BtoA;

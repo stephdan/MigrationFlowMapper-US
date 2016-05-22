@@ -19,7 +19,7 @@ Flox.Model = function() {
 		antiTorsionWeight = 0.8,
 		angularDistributionWeight = 0.5,
 		nodeWeight = 0.0,
-		nodeTolerancePx = 5,
+		nodeTolerancePx = 2,
 		moveFlowsIntersectingNodes = true,
 		multipleIterations = true,
 		NBR_ITERATIONS = 100,
@@ -361,6 +361,7 @@ Flox.Model = function() {
 			}
 	        startPoint.outgoingFlows.push(flow);
 	        endPoint.incomingFlows.push(flow);
+	        
 	        assignOppositeFlow(flow);
 		}
 	    //updateCachedValues();

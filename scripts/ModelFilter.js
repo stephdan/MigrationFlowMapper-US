@@ -135,15 +135,22 @@ Flox.ModelFilter = function(m) {
 		// loop backwards through flows
 		for (i = flows.length - 1; i >= 0; i -= 1) {
 			f = flows[i];
+			
 			sPt = f.getStartPt();
 			ePt = f.getEndPt();
 			// If the start or end point are not inside the selected state
 			if("FIPS" + sPt.STATEFP !== selectedStateFIPS || "FIPS" + ePt.STATEFP !== selectedStateFIPS) {
+				
+				// Delete oppositeFlow parameter. This will no longer be valid
+				// once flows are merged, and will be recalculated when flows
+				// are added to the model. 
+				delete f.oppositeFlow;
+				
 				// Is it the start or end point that is out of state?
 				if ("FIPS" + sPt.STATEFP === selectedStateFIPS) { // end point is out of state.
 					countyFIPS = sPt.id;
 					outerStateFIPS = ePt.STATEFP;
-					ePt.name = outerStateFIPS; 
+					ePt.name = ePt.STUSPS; 
 					
 					// If it's not there already, add the in-state county fips of 
 					// this flow as a property of outOfStateFlows
@@ -157,6 +164,7 @@ Flox.ModelFilter = function(m) {
 						outOfStateFlows[countyFIPS][outerStateFIPS] = {};
 					}
 					
+					// This flow is going OUT to another state.
 					// Iff'n ain't thur, add outgoing as a property
 					// of the outer state of the county of outOfStateFlows,
 					// and make f the value.
@@ -169,7 +177,7 @@ Flox.ModelFilter = function(m) {
 				} else { // start point is out of state.
 					countyFIPS = String(ePt.id);
 					outerStateFIPS = sPt.STATEFP;
-					sPt.name = outerStateFIPS;
+					sPt.name = sPt.STUSPS;
 					
 					// If it's not there already, add the in-state county fips of 
 					// this flow as a property of outOfStateFlows
@@ -183,12 +191,13 @@ Flox.ModelFilter = function(m) {
 						outOfStateFlows[countyFIPS][outerStateFIPS] = {};
 					}
 					
+					// This flow is coming IN from another state.
 					// Iff'n ain't thur, add incoming as a property
 					// of the outer state of the county of outOfStateFlows,
 					// and make f the value.
 					if(!outOfStateFlows[countyFIPS][outerStateFIPS].hasOwnProperty("incoming")) {
 						outOfStateFlows[countyFIPS][outerStateFIPS].incoming = f;
-					} else { // Add the value of f to the appropriate outgoing flow
+					} else { // Add the value of f to the appropriate incoming flow
 						outOfStateFlows[countyFIPS][outerStateFIPS].incoming.addValue(f.getValue());
 					}
 				}
@@ -197,7 +206,7 @@ Flox.ModelFilter = function(m) {
 				flows.splice(i, 1);
 			}
 			// This flow is entirely inside the selected state. Do nothing! It
-			// will remain unchanged.			
+			// will remain unchanged, and will stay inside flows.		
 		}
 		
 		// TODO add polyfill for Object.keys
@@ -273,17 +282,7 @@ Flox.ModelFilter = function(m) {
 		return mergeOutOfStateTotalFlows();
 	};
 
-	function netFlow(flow1, flow2) {
-		// TODO make sure flow1 and flow2 exist
-		var diff = flow1.getValue() - flow2.getValue();
-		if (diff > 0) {// f1 is bigger
-			return new Flox.Flow(flow1.getStartPt(), flow1.getEndPt(), diff);
-		}
-		if (diff < 0) {// f2 is bigger
-			return new Flox.Flow(flow2.getStartPt(), flow2.getEndPt(), Math.abs(diff));
-		}
-		return null;
-	}
+	
 
 
 	function totalFlow(flow1, flow2) {
@@ -311,6 +310,18 @@ Flox.ModelFilter = function(m) {
 		return newFlow;
 	}
 
+	function netFlow(flow1, flow2) {
+		// TODO make sure flow1 and flow2 exist
+		var diff = flow1.getValue() - flow2.getValue();
+		if (diff > 0) {// f1 is bigger
+			return new Flox.Flow(flow1.getStartPt(), flow1.getEndPt(), diff);
+		}
+		if (diff < 0) {// f2 is bigger
+			return new Flox.Flow(flow2.getStartPt(), flow2.getEndPt(), Math.abs(diff));
+		}
+		return null;
+	}
+
 	/**
 	 * Return a model containing net flows derived from total flows.
 	 */
@@ -327,9 +338,13 @@ Flox.ModelFilter = function(m) {
 		    flow,
 		    id1,
 		    id2;
-
+	
+		// loop through flows
 		for ( i = 0; i < flows.length; i += 1) {
+			
 			flow = flows[i];
+			
+			// If this flow has an opposite flow
 			if ( typeof (flow.oppositeFlow) !== "undefined") {
 				flow = netFlow(flow, flow.oppositeFlow);
 				// flow can be null for some reason.
@@ -358,6 +373,7 @@ Flox.ModelFilter = function(m) {
 		// Get the flows from the original model
 		var flows = model_copy.getAllFlows(),
 		    totalFlows = [],
+		    unopposedFlows = [],
 		    nodes = model_copy.getPoints(),
 		    map = new Map(),
 		    i,
@@ -382,11 +398,13 @@ Flox.ModelFilter = function(m) {
 				// Still need tooltip info tho. 
 				flow.AtoB = flow.getValue();
 				flow.BtoA = 0;
+				unopposedFlows.push(flow);
 			}
 		}
 		
 		// TODO polyfill for Array.from
 		totalFlows = Array.from(map.values());
+		totalFlows = totalFlows.concat(unopposedFlows);
 		model_copy.deleteAllFlows();
 		model_copy.initNodes(nodes);
 		model_copy.addFlows(totalFlows);
@@ -475,19 +493,15 @@ Flox.ModelFilter = function(m) {
  * @param {Object} settings
 	 */
 	my.filterBySettings = function(settings) {
-		
+				
 		if(settings.county) {
 			getSelectedCountyModel(settings.county, settings);
 		}
 		
-		// Net flows if settings.netFlows
-		if(settings.netFlows) {
-			my.getNetFlowsModel();
-			//mergeOutOfStateNetFlows();
+		if(settings.outerStateFlows) {
+			mergeOutOfStateTotalFlows();
 		} else {
-			my.getTotalFlowsModel();
-			model_copy.setDrawArrows(false);
-			//mergeOutOfStateTotalFlows();
+			my.removeOuterStateFlows();
 		}
 		
 		if(settings.inStateFlows === false) {
@@ -495,9 +509,12 @@ Flox.ModelFilter = function(m) {
 			my.removeInStateFlows();
 		}
 		
-		if (settings.outerStateFlows === false) {
-			// Filter out out-of-state flows
-			my.removeOuterStateFlows();
+		// Net flows if settings.netFlows
+		if(settings.netFlows) {
+			my.getNetFlowsModel();
+		} else {
+			my.getTotalFlowsModel();
+			model_copy.setDrawArrows(false);
 		}
 		
 		// Filter out all but the biggest flows.

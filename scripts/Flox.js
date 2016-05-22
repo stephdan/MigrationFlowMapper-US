@@ -4,7 +4,6 @@ var Flox = (function() {
 "use strict";
 
 var mapComponent,
-	model_master,
     drawRangeboxes = false,
     drawControlPoints = false,
     editMode = true,
@@ -26,6 +25,9 @@ var mapComponent,
 		county: false,
 		state: false
 	},
+	
+	model_master,
+	derivedModels = {},
 	
 	my = {};
     
@@ -330,14 +332,11 @@ my.loadTestFlows = function () {
 	importCSV("data/testFlows.csv");
 };
 
-my.importTotalCountyFlowData = function(stateFIPS) {
-	var nodePath = "data/geometry/centroids_counties_all.csv",
-		flowPath = "data/census/flows/" + stateFIPS + "_net.csv",
-		maxFlowsModel, mergedModel, filteredModel;
-		
+my.importTotalCountyFlowData = function(stateFIPS) {		
 	// erase all flows from the model.
 	model_master.deleteAllFlows();
 	
+	derivedModels = {};
 	// Set the mapScale in the model to the appropriate scale for this map.
 	// This scale is used by the layouter!
 	// Could it also be used by the renderer?
@@ -349,41 +348,13 @@ my.importTotalCountyFlowData = function(stateFIPS) {
 		// flows are the imported flows!
 		model_master.initNodes(countyNodes);
 		model_master.addFlows(flows);
+		model_master.updateCachedValues();
 		model_master.setDatasetName("FIPS" + stateFIPS);
 		console.log("data imported");
 		
-		filteredModel = new Flox.ModelFilter(model_master).filterBySettings(filterSettings);
-		
-		mapComponent.configureNecklaceMap(filteredModel, function() {
-			
-			//my.logFlows(maxFlowsModel);
-			
-			layoutFlows(filteredModel);
-			refreshMap(filteredModel);
-				
-			// runLayoutWorker(model_copy, function() {
-				// refreshMap(model_copy);
-			// });
-		});
-		
+		my.filterBySettings();		
 	});
 };
-
-my.showMergedFlows = function() {
-	// Make a copy of the model, pass that into the other things.
-	var model_copy = new Flox.ModelFilter(model_master).copyModel();
-	
-	mapComponent.configureNecklaceMap(model_copy, function() {
-		
-		model_copy = new Flox.ModelFilter(model_copy).mergeOutOfStateFlows();
-		
-		layoutFlows(model_copy);			
-		// runLayoutWorker(model_copy, function() {
-			// refreshMap(model_copy);
-		// });
-	});
-};
-
 
 my.getMapScale = function () {
 	return mapComponent.getMapScale();
@@ -393,77 +364,26 @@ my.rotateProjection = function(lat, lng, roll) {
 	mapComponent.rotateProjection(lat, lng, roll);
 };
 
-my.showNetFlows = function() {
-	var netFlowsModel;
-	
-	filterSettings.netFlows = true;
-	
-	// Get netFlowsModel	
-	netFlowsModel = new Flox.ModelFilter(model_master).filterBySettings(filterSettings);
-	
-	mapComponent.configureNecklaceMap(netFlowsModel, function() {
-			
-			layoutFlows(netFlowsModel);	
-			refreshMap(netFlowsModel);		
-			// runLayoutWorker(netFlowsModel, function() {
-				// refreshMap(netFlowsModel);
-			// });
-	});
-};
-
-my.showTotalFlows = function() {
-	
-	var totalFlowsModel;
-	filterSettings.netFlows = false;
-	
-	totalFlowsModel = new Flox.ModelFilter(model_master).filterBySettings(filterSettings);
-	
-	mapComponent.configureNecklaceMap(totalFlowsModel, function() {
-			
-			layoutFlows(totalFlowsModel);	
-			refreshMap(totalFlowsModel);		
-			
-				
-			// runLayoutWorker(model_master, function() {
-				// refreshMap(model_master);
-			// });
-	});
-};
-
-my.showSelectedCountyFlows = function(countyFIPS) {
-	// Filter out all flows except for the ones going to and from the selected
-	// county.
-	var selectedCountyModel, stateFIPS;
-	
-	selectedCountyModel = new Flox.ModelFilter(model_master)
-								  .getSelectedCountyModel(countyFIPS, filterSettings);
-	
-	stateFIPS = selectedCountyModel.getDatasetName();
-	
-	mapComponent.configureNecklaceMap(selectedCountyModel, function() {
-		//new Flox.FlowLayouter(selectedCountyModel).straightenFlows();
-		layoutFlows(selectedCountyModel);
-		refreshMap(selectedCountyModel);
-	});	
-};
-
 /**
  * Filter, layout, and display the model according to filterSettings.
  */
 my.filterBySettings = function() {
 	// so...
-	var filteredModel, stateFIPS;
+	var filteredModel;
 	
 	filteredModel = new Flox.ModelFilter(model_master)
 								  .filterBySettings(filterSettings);
 								  
-	stateFIPS = filteredModel.getDatasetName();
-	
-	//mapComponent.configureNecklaceMap(filteredModel, function() {
-		//new Flox.FlowLayouter(selectedCountyModel).straightenFlows();
+	mapComponent.configureNecklaceMap(filteredModel, function() {
+		//new Flox.FlowLayouter(filteredModel).straightenFlows();
+		
 		layoutFlows(filteredModel);
 		refreshMap(filteredModel);
-	//});							  
+		
+		// runLayoutWorker(filteredModel, function() {
+			// refreshMap(filteredModel);
+		// });
+	});							  
 };
 
 my.getFilterSettings = function() {
@@ -485,6 +405,31 @@ my.setFilterSettings = function(settings) {
 	}
 	console.log(filterSettings);
 };
+
+my.setDerivedModels = function(newModels) {
+	var param;
+	
+	for(param in newModels) {
+		if(newModels.hasOwnProperty(param)) {
+			if(!derivedModels.hasOwnProperty(param)) {
+				derivedModels[param] = newModels[param];
+			}
+		}
+	}
+};
+
+my.getDerivedModel = function(requestedModel) {
+	if(derivedModels.hasOwnProperty(requestedModel)) {
+		return derivedModels[requestedModel];
+	} else {
+		throw new Error("tried to get derived model that doesn't exist");
+	}
+};
+
+my.getAllDerivedModels = function() {
+	return derivedModels;
+};
+
 my.initFlox = function() {
 	model_master = new Flox.Model();
 	mapComponent = new Flox.MapComponent_d3();
@@ -530,9 +475,23 @@ my.logFlows = function(model) {
 	}
 };
 
+my.logModel_master = function() {
+	model_master.sortFlows();
+	var flows = model_master.getAllFlows(),
+	i, j, f;
+	for (i = 0, j = flows.length; i < j; i += 1) {
+		f = flows[i];
+		console.log(f.getValue() + " : " 
+		+  f.getStartPt().name + ", " + f.getStartPt().STUSPS + " to " 
+		+  f.getEndPt().name + ", " + f.getEndPt().STUSPS);
+	}
+	
+};
+
 my.layoutFlows = function(m) {
 	layoutFlows(m);
 };
+
 
 // END DEBUG STUFF-------------------------------------
 

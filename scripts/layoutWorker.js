@@ -772,7 +772,7 @@ function moveFlowIntersectingANode(flow) {
     while(flipCount < 3 && (flowIntersectsANode(flow))) {
 		distFromBaseline = getDistanceFromCtrlPtToBaseline(flow);
 		
-		if(distFromBaseline > dist * 2) { // FIXME 2 could equal rangebox height
+		if(distFromBaseline > (dist * model.getFlowRangeboxHeight())) { // FIXME 2 could equal rangebox height
 			// move cPt to baseline, reverse polarity
 			cPt.x = flow.getBaselineMidPoint().x;
             cPt.y = flow.getBaselineMidPoint().y;

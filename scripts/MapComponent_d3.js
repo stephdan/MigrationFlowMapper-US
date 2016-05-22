@@ -247,26 +247,21 @@ Flox.MapComponent_d3 = function() {
 			model_copy.configureArrows();
 		}
 		
-		var maxFlowWidth = model_copy.getMaxFlowWidth(),
-		    maxFlowValue = model_copy.getMaxFlowValue(),
-		    flows = model_copy.getFlows(),
-		    clippedFlows = [],
+		var model_master = Flox.getModel(),
+			flows = model_copy.getFlows(),
 		    i,
 		    j,
 		    f,
 		    rs,
 		    re,
-		    clippedFlow,
 		    svgFlows,
-		    curves,
-		    tooltip,
-		    arrows;
+		    tooltip;
 	
 		tooltip = d3.select("body").append("div")
 					.attr("class", "tooltip-flow")
 					.style("display", "none");
 
-		flows.sort(function(a, b){ return a.getValue() - b.getValue(); });
+		flows.sort(function(a, b){ return b.getValue() - a.getValue(); });
 
 		// called svgFlows because flows is already taken!
 		svgFlows = d3.select("#flowsLayer").append("g").attr("id", "svgFlows")
@@ -292,7 +287,7 @@ Flox.MapComponent_d3 = function() {
 			.style("cursor", "default")
 			.attr("fill", "none")
 			.attr("stroke-width", function(d) {
-				return model_copy.getFlowStrokeWidth(d) + 2;
+				return model_master.getFlowStrokeWidth(d) + 2;
 			})
 			.attr("d", function(d) {
 				return buildSvgFlowPath(d, drawArrows);
@@ -323,7 +318,7 @@ Flox.MapComponent_d3 = function() {
 			.style("cursor", "default")
 			.attr("fill", "none")
 			.attr("stroke-width", function(d) {
-				return model_copy.getFlowStrokeWidth(d);
+				return model_master.getFlowStrokeWidth(d);
 			})
 			.attr("d", function(d) {
 				return buildSvgFlowPath(d, drawArrows);
@@ -339,12 +334,12 @@ Flox.MapComponent_d3 = function() {
 			if(d.AtoB) {
 				// It's a total flow.
 				tooltip.html("Total Flow: " + d.getValue() + "<br/>" + 
-			             d.getStartPt().name + " to " + d.getEndPt().name + ": " + d.AtoB + "<br/" + 
+			             d.getStartPt().name + " to " + d.getEndPt().name + ": " + d.AtoB + "<br/>" + 
 			             d.getEndPt().name + " to " + d.getStartPt().name + ": " + d.BtoA)
 			       .style("left", (d3.event.pageX + 4) + "px")
 			       .style("top", (d3.event.pageY - 34) + "px");
 			} else {
-				tooltip.html("Value: " + d.getValue() + "<br/>" + 
+				tooltip.html("Net Flow: " + d.getValue() + "<br/>" + 
 			             "From: " + d.getStartPt().name + "<br/>" + 
 			             "To: " + d.getEndPt().name )
 			       .style("left", (d3.event.pageX + 4) + "px")
