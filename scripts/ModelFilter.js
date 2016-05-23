@@ -34,7 +34,6 @@ Flox.ModelFilter = function(model_master) {
 		selectedStateFIPS = model_copy.getDatasetName(),
 		countyFIPS,
 		outerStateFIPS,
-		nodes = model_copy.getPoints(),
 		ePt, sPt, f, direction, newFlow, flow, val;
 		
 		// loop backwards through flows
@@ -109,7 +108,6 @@ Flox.ModelFilter = function(model_master) {
 		model_copy.deleteAllFlows();
 		
 		// add flows to the new model
-		model_copy.initNodes(nodes);
 		model_copy.addFlows(flows);
 		
 		// return the new model
@@ -124,7 +122,6 @@ Flox.ModelFilter = function(model_master) {
 		var flows = model_copy.getAllFlows(),
 		i, j,
 		outOfStateFlows = {},
-		nodes = model_copy.getPoints(),
 		selectedStateFIPS = model_copy.getDatasetName(),
 		countyFIPS,
 		outerStateFIPS,
@@ -230,7 +227,6 @@ Flox.ModelFilter = function(model_master) {
 		model_copy.deleteAllFlows();
 		
 		// add flows to the new model
-		model_copy.initNodes(nodes);
 		model_copy.addFlows(flows);
 		
 		// return the new model
@@ -261,7 +257,6 @@ Flox.ModelFilter = function(model_master) {
 		
 		countyFlows = incomingFlows.concat(outgoingFlows);
 		model_copy.deleteAllFlows();
-		model_copy.initNodes(nodes);
 		model_copy.addFlows(countyFlows);
 	}
 
@@ -328,7 +323,6 @@ Flox.ModelFilter = function(model_master) {
 		var flows = model_copy.getAllFlows(),
 		    netFlows = [],
 		    unopposedFlows = [],
-		    nodes = model_copy.getPoints(),
 		    
 		// TODO is Map available in all recent browsers?
 		    map = new Map(),
@@ -360,7 +354,6 @@ Flox.ModelFilter = function(model_master) {
 		netFlows = Array.from(map.values());
 		netFlows = netFlows.concat(unopposedFlows);
 		model_copy.deleteAllFlows();
-		model_copy.initNodes(nodes);
 		model_copy.addFlows(netFlows);
 
 		//Flox.logFlows(model_copy);
@@ -372,7 +365,6 @@ Flox.ModelFilter = function(model_master) {
 		var flows = model_copy.getAllFlows(),
 		    totalFlows = [],
 		    unopposedFlows = [],
-		    nodes = model_copy.getPoints(),
 		    map = new Map(),
 		    i,
 		    flow,
@@ -404,13 +396,10 @@ Flox.ModelFilter = function(model_master) {
 		totalFlows = Array.from(map.values());
 		totalFlows = totalFlows.concat(unopposedFlows);
 		model_copy.deleteAllFlows();
-		model_copy.initNodes(nodes);
 		model_copy.addFlows(totalFlows);
 
 		//Flox.logFlows(model_copy);
 		return model_copy;
-		
-		
 	};
 	
 	
@@ -420,20 +409,19 @@ Flox.ModelFilter = function(model_master) {
 	 * maxFlows in the model.
 	 */
 	my.getMaxFlowsModel = function() {
-		var maxFlows, i, j, n, allFlows, allNodes;
+		var maxFlows, i, j, n, allFlows;
 	
 		n = model_copy.getMaxFlows();
 		
 		model_copy.sortFlows();
 		
 		allFlows = model_copy.getAllFlows();
-		allNodes = model_copy.getPoints();
+
 		
 		maxFlows = allFlows.slice(0, n);
 		
 		model_copy.deleteAllFlows();
 		
-		model_copy.initNodes(allNodes);
 		model_copy.addFlows(maxFlows);
 		
 		model_copy.updateCachedValues();
@@ -458,12 +446,8 @@ Flox.ModelFilter = function(model_master) {
 				flows.splice(i, 1);
 			}
 		}
-		
-		nodes = model_copy.getPoints();
 		model_copy.deleteAllFlows();
-		model_copy.initNodes(nodes);
 		model_copy.addFlows(flows);
-		
 	};
 	
 	my.removeOuterStateFlows = function() {
@@ -480,9 +464,7 @@ Flox.ModelFilter = function(model_master) {
 			}
 		}
 		
-		nodes = model_copy.getPoints();
 		model_copy.deleteAllFlows();
-		model_copy.initNodes(nodes);
 		model_copy.addFlows(flows);
 	};
 	

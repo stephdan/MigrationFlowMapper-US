@@ -79,7 +79,6 @@ Flox.MapComponent_d3 = function() {
 			if (error) {
 				throw error;
 			}
-			//console.log(us);
 			statesLayer.selectAll("path").data(topojson.feature(us, us.objects.states)
 				.features).enter().append("path")
 				.attr("d", path)
@@ -113,12 +112,11 @@ Flox.MapComponent_d3 = function() {
 						d3.select(this).attr("fill", "yellow");
 					})
 					.on("mousemove", function(d) {
-						var node, outgoingFlow, incomingFlow;
-						d3.select(".node.FIPS" + d.properties.STATEFP + d.properties.COUNTYFP)
-						  .each(function(b) {
-					  	outgoingFlow = b.totalOutgoingFlow;
-					  	incomingFlow = b.totalIncomingFlow;
-						  });
+						var node, outgoingFlow, incomingFlow, model_master;
+						model_master = Flox.getModel();
+						node = model_master.findNodeByID(d.properties.STATEFP + d.properties.COUNTYFP);
+						outgoingFlow = node.totalOutgoingFlow;
+						incomingFlow = node.totalIncomingFlow;
 						countyTooltip.html("Name: " + d.properties.NAME + "<br/>" + 
 										   "Total Outflow: " + outgoingFlow + "<br/>" +
 										   "Total Inflow: " + incomingFlow)
@@ -292,28 +290,28 @@ Flox.MapComponent_d3 = function() {
 			.enter().append("g");
 	
 		// Draw outlines first
-		if (drawArrows) {
-			svgFlows.append("path")// add a new path. This is the arrowhead!
-				.classed("arrowOutline", true)
-				.style("cursor", "default")
-				.attr("stroke", "#ccc")
-				.attr("fill", "#ccc")
-				.attr("stroke-width", 2)
-				.attr("d", function(d) {
-					return buildSvgArrowPath(d);
-				});
-		}
-		svgFlows.append("path")
-			.classed("curveOutline", true)
-			.attr("stroke", "#ccc")
-			.style("cursor", "default")
-			.attr("fill", "none")
-			.attr("stroke-width", function(d) {
-				return activeModel.getFlowStrokeWidth(d) + 2;
-			})
-			.attr("d", function(d) {
-				return buildSvgFlowPath(d, drawArrows);
-			});
+		// if (drawArrows) {
+			// svgFlows.append("path")// add a new path. This is the arrowhead!
+				// .classed("arrowOutline", true)
+				// .style("cursor", "default")
+				// .attr("stroke", "#ccc")
+				// .attr("fill", "#ccc")
+				// .attr("stroke-width", 2)
+				// .attr("d", function(d) {
+					// return buildSvgArrowPath(d);
+				// });
+		// }
+		// svgFlows.append("path")
+			// .classed("curveOutline", true)
+			// .attr("stroke", "#ccc")
+			// .style("cursor", "default")
+			// .attr("fill", "none")
+			// .attr("stroke-width", function(d) {
+				// return activeModel.getFlowStrokeWidth(d) + 2;
+			// })
+			// .attr("d", function(d) {
+				// return buildSvgFlowPath(d, drawArrows);
+			// });
 			
 		// Draw arrowheads
 		if (drawArrows) {
@@ -878,7 +876,7 @@ Flox.MapComponent_d3 = function() {
 		formattedCircle = {
 			cx: circle.x,
 			cy: circle.y,
-			r: circle.r
+			r: circle.r + 30
 		};
 		return formattedCircle;
 		

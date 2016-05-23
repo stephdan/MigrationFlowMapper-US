@@ -13,8 +13,8 @@ Flox.FlowImporter = ( function(d3) {
 			}
 		}
 	}
-
-	function findNodeID(nodes, id) {
+	
+	function findNodeByID(nodes, id) {
 		var i, j;
 
 		// Loop through the nodes.
@@ -55,7 +55,7 @@ Flox.FlowImporter = ( function(d3) {
 					// Get the state node for place A.
 					aPt = findStateNode(countyNodes, row.placeA_STATEFP);
 				} else { // Not out of state. Use the full fips.
-					aPt = findNodeID(countyNodes, row.placeA_FIPS);
+					aPt = findNodeByID(countyNodes, row.placeA_FIPS);
 				}
 				
 				if(Number(row.placeB_STATEFP) !== Number(stateFIPS)) {
@@ -63,7 +63,7 @@ Flox.FlowImporter = ( function(d3) {
 					// Get the state node for place B.
 					bPt = findStateNode(countyNodes, row.placeB_STATEFP);
 				} else { // Not out of state. Use the full fips.
-					bPt = findNodeID(countyNodes, row.placeB_FIPS);
+					bPt = findNodeByID(countyNodes, row.placeB_FIPS);
 				}
 				
 				if (aPt && bPt) { // If both points exist in county nodes...
@@ -299,13 +299,13 @@ Flox.FlowImporter = ( function(d3) {
 					endID = flowData[j].destination;
 
 					// Find the node with the same ID
-					endPt = findNodeID(nodes, endID);
+					endPt = findNodeByID(nodes, endID);
 
 					// For each column in the table...
 					for (startID in flowData[j]) {
 
 						// if originID matches one if the ids in nodes
-						startPt = findNodeID(nodes, startID);
+						startPt = findNodeByID(nodes, startID);
 
 						if (startPt && endPt && (startPt && endID !== startID)) {
 

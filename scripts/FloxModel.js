@@ -12,8 +12,10 @@ Flox.Model = function() {
 		maxFlowPoints = 20,
 		distanceWeightExponent = 3,
 		peripheralStiffnessFactor = 0.1,
+		
 		maxFlowLengthSpringConstant = 0.05,
 		minFlowLengthSpringConstant = 0.5,
+		
 		enforceRangebox = true,
 		flowRangeboxHeight = 0.3,
 		antiTorsionWeight = 0.8,
@@ -34,8 +36,8 @@ Flox.Model = function() {
 		maxFlowWidth = 30,
 		maxNodeRadius = 10,
 		isShowLockedFlows = true,
-		flowDistanceFromStartPointPixel = 5,
-		flowDistanceFromEndPointPixel = 5,
+		flowDistanceFromStartPointPixel = 10,
+		flowDistanceFromEndPointPixel = 10,
 		NODE_STROKE_WIDTH = 0.5,
 		
 		// arrow settings
@@ -573,7 +575,20 @@ Flox.Model = function() {
 		meanNodeValue = settings.meanNodeValue;
 	}
 	
-	
+	function findNodeByID(id) {
+		var i, j;
+
+		// Loop through the nodes.
+		// If node.id matches id, return the node!
+		for ( i = 0, j = nodes.length; i < j; i += 1) {
+			if (nodes[i].id === id) {
+				return nodes[i];
+			}
+		}
+		//console.log("It's not in there!");
+		return false;
+		// It's not in there!
+	}
 
 // PUBLIC ======================================================================
 	
@@ -1358,7 +1373,7 @@ Flox.Model = function() {
 	 * Return null if no such node exists.
 	 */
 	my.findNodeByID = function(id) {
-		
+		return findNodeByID(id);
 	};
 
 	/**
