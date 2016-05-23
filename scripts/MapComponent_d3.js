@@ -241,13 +241,31 @@ Flox.MapComponent_d3 = function() {
 		return defaultColor;
 	}
 
-	function drawFlows(drawArrows) {
-
-		if(drawArrows) {
-			model_copy.configureArrows();
+	/**
+	 * Configures the arrows so they will be scaled according to a model with
+	 * more flows in it than the maxFlows model passed into drawFeatures. This
+	 * allows arrows to be drawn the correct size when viewing individual
+	 * county flows. 
+	 */
+	function configureArrowsWithActiveModel(activeModel) {
+		
+		var flows, flow, arrowSettings, i, j;
+		
+		// get the flows from the model_copy
+		flows = model_copy.getFlows();
+		for(i = 0, j = flows.length; i < j; i += 1) {
+			flow = flows[i];
+			arrowSettings = activeModel.getArrowSettings(flow);
+			
+			flow.configureArrow(arrowSettings);
 		}
 		
-		var model_master = Flox.getModel(),
+	}
+
+
+	function drawFlows(drawArrows) {
+
+		var activeModel = Flox.getActiveFullModel(),
 			flows = model_copy.getFlows(),
 		    i,
 		    j,
@@ -256,6 +274,10 @@ Flox.MapComponent_d3 = function() {
 		    re,
 		    svgFlows,
 		    tooltip;
+	
+		if(drawArrows) {
+			configureArrowsWithActiveModel(activeModel);
+		}
 	
 		tooltip = d3.select("body").append("div")
 					.attr("class", "tooltip-flow")
@@ -287,7 +309,7 @@ Flox.MapComponent_d3 = function() {
 			.style("cursor", "default")
 			.attr("fill", "none")
 			.attr("stroke-width", function(d) {
-				return model_master.getFlowStrokeWidth(d) + 2;
+				return activeModel.getFlowStrokeWidth(d) + 2;
 			})
 			.attr("d", function(d) {
 				return buildSvgFlowPath(d, drawArrows);
@@ -318,7 +340,8 @@ Flox.MapComponent_d3 = function() {
 			.style("cursor", "default")
 			.attr("fill", "none")
 			.attr("stroke-width", function(d) {
-				return model_master.getFlowStrokeWidth(d);
+				
+				return activeModel.getFlowStrokeWidth(d);
 			})
 			.attr("d", function(d) {
 				return buildSvgFlowPath(d, drawArrows);

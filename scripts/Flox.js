@@ -422,8 +422,18 @@ my.getDerivedModel = function(requestedModel) {
 	if(derivedModels.hasOwnProperty(requestedModel)) {
 		return derivedModels[requestedModel];
 	} else {
-		throw new Error("tried to get derived model that doesn't exist");
+		return false;
 	}
+};
+
+/**
+ * Returns the appropriate derived model based on the current filter settings.
+ */
+my.getActiveFullModel = function() {
+	if(filterSettings.netFlows) {
+		return derivedModels.netFlowsModel;
+	}
+	return derivedModels.totalFlowsModel;
 };
 
 my.getAllDerivedModels = function() {

@@ -1,29 +1,27 @@
-Flox.ModelFilter = function(m) {
+Flox.ModelFilter = function(model_master) {
 
 	"use strict";
 
-	if (!m) {
+	if (!model_master) {
 		throw new Error("Flox.ModelFilter is missing a Model");
 	}
 
-	var model_copy,
+	var model_copy, // TODO need this?
 		my = {}; // Public object
 	
 	/**
 	 * Return a copy of the model that was passed in on instantiation. 
 	 */
-	function copyModel() {
+	function copyModel(m) {
 		console.log("copying model");
 		var modelJSON = m.toJSON(), // FIXME only copies maxFlows?
 		    modelCopy = new Flox.Model();
-
 		modelCopy.deserializeModelJSON(modelJSON);
-
 		return modelCopy;
 	}
 
 	// Create a copy of the provided model.
-	model_copy = copyModel();
+	//model_copy = copyModel();
 
 	/**
 	 * Merge all flows going between the same county and state.
@@ -493,29 +491,47 @@ Flox.ModelFilter = function(m) {
  * @param {Object} settings
 	 */
 	my.filterBySettings = function(settings) {
-				
-		if(settings.county) {
-			getSelectedCountyModel(settings.county, settings);
+		
+		// Net flows if settings.netFlows
+		if(settings.netFlows) {
+			if(!Flox.getDerivedModel("netFlowsModel")) { // if netFlowsModel isn't there yet
+				model_copy = copyModel(model_master); // Copy the master
+				mergeOutOfStateTotalFlows(); 
+				my.getNetFlowsModel();
+				model_copy.updateCachedValues();
+				// Set netFlowsModel to a COPY of the net flows model, so more changes
+				// can be made to it in the filter without messing it up
+				Flox.setDerivedModels( { "netFlowsModel": (copyModel(model_copy)) } );
+			} else {
+				// netFlowsModel exists, get a COPY of it.
+				model_copy = copyModel(Flox.getDerivedModel("netFlowsModel"));
+			}
+		} else { // same as above, but with totalFlowsModel
+			if(!Flox.getDerivedModel("totalFlowsModel")){
+				model_copy = copyModel(model_master);
+				mergeOutOfStateTotalFlows();
+				my.getTotalFlowsModel();
+				model_copy.updateCachedValues();
+				model_copy.setDrawArrows(false); // total flows are bi-directional, so no arrows
+				Flox.setDerivedModels( { "totalFlowsModel": (copyModel(model_copy)) } );
+			} else {
+				model_copy = copyModel(Flox.getDerivedModel("totalFlowsModel"));
+				model_copy.setDrawArrows(false); 
+			}
 		}
 		
-		if(settings.outerStateFlows) {
-			mergeOutOfStateTotalFlows();
-		} else {
+		if(settings.county) {
+			getSelectedCountyModel(settings.county, settings);
+		}		
+		
+		if(!settings.outerStateFlows) {
 			my.removeOuterStateFlows();
 		}
 		
 		if(settings.inStateFlows === false) {
 			// filter out in state flows
 			my.removeInStateFlows();
-		}
-		
-		// Net flows if settings.netFlows
-		if(settings.netFlows) {
-			my.getNetFlowsModel();
-		} else {
-			my.getTotalFlowsModel();
-			model_copy.setDrawArrows(false);
-		}
+		}		
 		
 		// Filter out all but the biggest flows.
 		my.getMaxFlowsModel();		

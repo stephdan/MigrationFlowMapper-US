@@ -457,40 +457,57 @@ Flox.Model = function() {
 	}
 
 
-	// configure arrows for flows 
-	function configureArrows() {
-		var i, j, flow, flowWidth,	
+	function getArrowSettings(flow) {
+		var arrowSettings,
+			i, j,
 			minFlowWidth = (maxFlowWidth * minFlowValue / maxFlowValue),
 			endClipRadius, startClipRadius, endPt, startPt;
-			
-			//minFlowWidth = minFlowWidth > 1.5 ? minFlowWidth : 1.5;
-			// FIXME again with the hard-coded minimum flow width. Stop doing this!
-				
+		
+		endPt = flow.getEndPt();
+		startPt = flow.getStartPt();
+		
+		if(endPt.necklaceMapNode) {
+			endClipRadius = endPt.r + endPt.strokeWidth;
+		} else {
+			endClipRadius = getEndClipRadius(endPt);	
+		}
+		
+		if(startPt.necklaceMapNode) {
+			startClipRadius = startPt.r + startPt.strokeWidth;
+		} else {
+			startClipRadius = getStartClipRadius(startPt);	
+		}
+		
+		arrowSettings = {
+			endClipRadius: endClipRadius,
+			minFlowWidth: minFlowWidth,
+			maxFlowWidth: maxFlowWidth,
+			maxFlowValue: maxFlowValue,
+			arrowSizeRatio: arrowSizeRatio,
+			arrowLengthRatio: arrowLengthRatio,
+			arrowLengthScaleFactor: arrowLengthScaleFactor,
+			arrowWidthScaleFactor: arrowWidthScaleFactor,
+			arrowCornerPosition: arrowCornerPosition,
+			pointArrowTowardsEndpoint: pointArrowTowardsEndpoint,
+			arrowEdgeCtrlLength: arrowEdgeCtrlLength,
+			arrowEdgeCtrlWidth: arrowEdgeCtrlWidth
+		};	
+		
+		return arrowSettings;
+	}
+
+	// configure arrows for flows 
+	function configureArrows() {
+		var i, j,
+			arrowSettings;
+							
 		for(i = 0, j = flows.length; i < j; i += 1) {
-			flow = flows[i];
-			flowWidth = getFlowStrokeWidth(flow);	
-			
-			endPt = flow.getEndPt();
-			startPt = flow.getStartPt();
-			
-			if(endPt.necklaceMapNode) {
-				endClipRadius = endPt.r + endPt.strokeWidth;
-			} else {
-				endClipRadius = getEndClipRadius(endPt);	
-			}
-			
-			if(startPt.necklaceMapNode) {
-				startClipRadius = startPt.r + startPt.strokeWidth;
-			} else {
-				startClipRadius = getStartClipRadius(startPt);	
-			}
-			
-			flow.configureArrow(endClipRadius, minFlowWidth, maxFlowWidth, flowWidth,
-				arrowSizeRatio, arrowLengthRatio, arrowLengthScaleFactor,
-				arrowWidthScaleFactor, arrowCornerPosition, pointArrowTowardsEndpoint,
-				arrowEdgeCtrlLength, arrowEdgeCtrlWidth);	
+			arrowSettings = getArrowSettings(flows[i]);
+			flows[i].configureArrow(arrowSettings);	
 		}
 	}
+
+	
 
 	function deselectAllFeatures() {
 		var i, j, flow, node;
@@ -538,6 +555,22 @@ Flox.Model = function() {
 		flowDistanceFromEndPointPixel = settings.flowDistanceFromEndPointPixel;
 		NODE_STROKE_WIDTH = settings.NODE_STROKE_WIDTH;
 		datasetName = settings.datasetName;
+		
+		drawFlows = settings.drawFlows;
+		drawNodes = settings.drawNodes;
+		drawArrows = settings.drawArrows;
+		drawControlPoints = settings.drawControlPoints;
+		drawIntermediateFlowPoints = settings.drawIntermediateFlowPoints;
+		drawRangeboxes = settings.drawRangeboxes;
+		
+		minFlowValue = settings.minFlowValue;
+		maxFlowValue = settings.maxFlowValue;
+		meanFlowValue = settings.meanFlowValue; // used for anything? Adding flows during editing?
+		minFlowLength = settings.minFlowLength;
+		maxFlowLength = settings. maxFlowLength;
+		minNodeValue = settings.minNodeValue;
+		maxNodeValue = settings.maxNodeValue;
+		meanNodeValue = settings.meanNodeValue;
 	}
 	
 	
@@ -615,7 +648,23 @@ Flox.Model = function() {
 			checkFlowBoundingBoxes: checkFlowBoundingBoxes,
 			maxFlows : maxFlows,
 			mapScale: mapScale,
-			datasetName: datasetName
+			datasetName: datasetName,
+			
+			drawFlows: drawFlows,
+			drawNodes: drawNodes,
+			drawArrows: drawArrows,
+			drawControlPoints: drawControlPoints,
+			drawIntermediateFlowPoints: drawIntermediateFlowPoints,
+			drawRangeboxes: drawRangeboxes,
+			
+			minFlowValue: minFlowValue,
+			maxFlowValue: maxFlowValue,
+			meanFlowValue: meanFlowValue, // used for anything? Adding flows during editing?
+			minFlowLength: minFlowLength,
+			maxFlowLength: maxFlowLength,
+			minNodeValue: minNodeValue,
+			maxNodeValue: maxNodeValue,
+			meanNodeValue: meanNodeValue
 		};
 		
 		for(i = 0, j = nodes.length; i < j; i += 1) {
@@ -646,7 +695,7 @@ Flox.Model = function() {
 							y: sPt.y,
 							lat: sPt.lat,
 							lng: sPt.lng,
-							id: sPt.id,
+							id: sPt.id
 							
 						},
 					endPt: 
@@ -655,14 +704,17 @@ Flox.Model = function() {
 							y: ePt.y,
 							lat: ePt.lat,
 							lng: ePt.lng,
-							id: ePt.id,
+							id: ePt.id
 						},
 					cPt:
 						{
 							x: cPt.x,
 							y: cPt.y
 						},
-					value: flow.getValue()
+					value: flow.getValue(),
+					
+					AtoB: flow.AtoB,
+					BtoA: flow.BtoA
 				}
 			);
 		}
@@ -1331,6 +1383,9 @@ Flox.Model = function() {
 		nodes = newNodes;
 	};
 
+	my.getArrowSettings = function(flow) {
+		return getArrowSettings(flow);
+	};
 
 	my.deserializeModelJSON = function(modelJSON) {
 		// What did we pass this thing again?
@@ -1349,6 +1404,8 @@ Flox.Model = function() {
 			cPt = flowData[i].cPt;
 			flow = new Flox.Flow(sPt, ePt, flowData[i].value);
 			flow.setCtrlPt(cPt);
+			flow.AtoB = flowData[i].AtoB;
+			flow.BtoA = flowData[i].BtoA;
 			newFlows.push(flow);
 		}
 		addFlows(newFlows);

@@ -3,7 +3,7 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 	"use strict";
 	
     var id,
-    	startPt = sPt, // The starting point of the flow
+		startPt = sPt, // The starting point of the flow
         endPt = ePt, // The ending point of the flow
         ctrlPt, // The control point of the Bezier curve of the flow
 		value = val, // The flow's value determines the width 
@@ -43,13 +43,6 @@ Flox.Flow = function(sPt, ePt, val, newID) {
             dy = endPt.y - startPt.y;
         return Math.atan2(dy, dx);
     }
-
-	// Turns this flow into a bezier.js Bezier object.
-	function toBezier() {
-		return new Bezier(startPt.x, startPt.y, 
-                          ctrlPt.x, ctrlPt.y,
-                          endPt.x, endPt.y);
-	}
 
 	/**
      * Returns the length of a simple line string defined by a series of points.
@@ -802,22 +795,21 @@ Flox.Flow = function(sPt, ePt, val, newID) {
         targetPt.x = newX;
 	}
 	
-	function configureArrow(endClipRadius, minFlowWidth, maxFlowWidth, flowWidth,
-				arrowSizeRatio, arrowLengthRatio, arrowLengthScaleFactor,
-				arrowWidthScaleFactor, arrowCornerPosition, pointArrowTowardsEndpoint,
-				arrowEdgeCtrlLength, arrowEdgeCtrlWidth, nodeStrokeWidth) {
+	function configureArrow(s) {
 
 			// Get the difference between this flow's stroke size and the biggest
 	        // stroke size.
-		var baseT,
-			strokeDiff = maxFlowWidth - flowWidth,
+		var flowWidth = (s.maxFlowWidth * value) / s.maxFlowValue,
+			
+			baseT,
+			strokeDiff = s.maxFlowWidth - flowWidth,
 		
 			// Get the difference between this flow's stroke size and the smallest
 	        // stroke size.
-	        smallWidthDiff = flowWidth - minFlowWidth,
+	        smallWidthDiff = flowWidth - s.minFlowWidth,
 		
 			// Get a percentage of that difference based on valRatio
-			plusStroke = strokeDiff * (arrowSizeRatio),
+			plusStroke = strokeDiff * (s.arrowSizeRatio),
 		
 			// This much length will be subtracted from the lengths of arrowheads, 
 	        // proportionally to how relatively large they are compared to the 
@@ -825,23 +817,23 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 	        // So the smallest arrowhead will have nothing subtracted, and the 
 	        // other arrowheads will have the difference between it and the smallest
 	        // arrowhead * model.getArrowLengthRatio (a number from 0 - 1) subtracted.
-	        minusLength = smallWidthDiff * (arrowLengthRatio),
+	        minusLength = smallWidthDiff * (s.arrowLengthRatio),
 	        
 	        // Determine the distance of the tip of the arrow from the base.
 	        // Is scaled to the value of the flow, which itself is scaled by the 
 	        // scale factor of the model.
 			arrowLength = (flowWidth + plusStroke - minusLength)
-                * arrowLengthScaleFactor,
+                * s.arrowLengthScaleFactor,
                 
             // Determine the perpendicular distance of the corners of the arrow from 
 	        // a line drawn between the base and tip of the arrow.
 	        arrowWidth = (flowWidth + plusStroke)
-	                * arrowWidthScaleFactor,
+	                * s.arrowWidthScaleFactor,
 	                
 	        // Get the t value of the location on the flow where the base of the 
             // arrowhead will sit
-			endT = getIntersectionTWithCircleAroundEndPoint(arrowLength + endClipRadius),
-			tipT = getIntersectionTWithCircleAroundEndPoint(endClipRadius),
+			endT = getIntersectionTWithCircleAroundEndPoint(arrowLength + s.endClipRadius),
+			tipT = getIntersectionTWithCircleAroundEndPoint(s.endClipRadius),
 
 			// Set the base of the Arrow to the point on the curve determined above.
 			basePt = pointOnCurve(endT),
@@ -853,7 +845,6 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 			azimuth;
 		
 		
-		
         
         // Locate the various points that determine the shape and location of 
         // the Arrow. This pulls various parameters from the model that are 
@@ -863,20 +854,20 @@ Flox.Flow = function(sPt, ePt, val, newID) {
         tipPt.y = 0;
 
         // Locate the first corner
-        corner1Pt.x = arrowLength * arrowCornerPosition;
+        corner1Pt.x = arrowLength * s.arrowCornerPosition;
         corner1Pt.y = arrowWidth;
 
         // Locate the first control point
-        corner1cPt.x = corner1Pt.x + ((tipPt.x - corner1Pt.x) * arrowEdgeCtrlLength);
-        corner1cPt.y = arrowWidth * arrowEdgeCtrlWidth;
+        corner1cPt.x = corner1Pt.x + ((tipPt.x - corner1Pt.x) * s.arrowEdgeCtrlLength);
+        corner1cPt.y = arrowWidth * s.arrowEdgeCtrlWidth;
 
         // locate the second corner
-        corner2Pt.x = arrowLength * arrowCornerPosition;
+        corner2Pt.x = arrowLength * s.arrowCornerPosition;
         corner2Pt.y = -arrowWidth;
 
         // locate the second control point
-        corner2cPt.x = corner2Pt.x + ((tipPt.x - corner2Pt.x) * arrowEdgeCtrlLength);
-        corner2cPt.y = -arrowWidth * arrowEdgeCtrlWidth;
+        corner2cPt.x = corner2Pt.x + ((tipPt.x - corner2Pt.x) * s.arrowEdgeCtrlLength);
+        corner2cPt.y = -arrowWidth * s.arrowEdgeCtrlWidth;
         
 		// Get the angle of the arrow, which is the angle from the basePt to
 		// the end point of the flow. 
@@ -935,15 +926,8 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 	
 // PUBLIC =====================================================================
 
-	my.configureArrow = function (endClipRadius, minFlowWidth, maxFlowWidth, flowWidth,
-				arrowSizeRatio, arrowLengthRatio, arrowLengthScaleFactor,
-				arrowWidthScaleFactor, arrowCornerPosition, pointArrowTowardsEndpoint,
-				arrowEdgeCtrlLength, arrowEdgeCtrlWidth, nodeStrokeWidth) {
-			
-		configureArrow(endClipRadius, minFlowWidth, maxFlowWidth, flowWidth,
-				arrowSizeRatio, arrowLengthRatio, arrowLengthScaleFactor,
-				arrowWidthScaleFactor, arrowCornerPosition, pointArrowTowardsEndpoint,
-				arrowEdgeCtrlLength, arrowEdgeCtrlWidth, nodeStrokeWidth);
+	my.configureArrow = function (arrowSettings) {
+		configureArrow(arrowSettings);
 	};
 	
 	my.getIntersectionTWithCircleAroundEndPoint = function(r) {
