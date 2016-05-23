@@ -189,7 +189,8 @@ Flox.MapComponent_d3 = function() {
 			
 			// The place where this curve is clipped will depend on whether or
 			// not arrows are drawn.
-			flow = f.getArrow()[6];
+			//flow = f.getArrow()[6];
+			flow = f.getArrow().outFlow;
 			rs = model_copy.getFlowDistanceFromStartPointPixel() > 0 ? startClipRadius(f.getStartPt()) : 0;
 			flow = flow.getClippedFlow(rs, 1);
 			// clip the start bit off the arrowed flow
@@ -215,15 +216,15 @@ Flox.MapComponent_d3 = function() {
 		var a = f.getArrow(),
 		    s;
 
-		s = "M " + a[0].x + "," + a[0].y + " L" + a[1].x + "," + a[1].y + " Q" + a[2].x + "," + a[2].y + " " + a[3].x + "," + a[3].y + " Q" + a[4].x + "," + a[4].y + " " + a[5].x + "," + a[5].y + " L" + a[0].x + "," + a[0].y;
+		//s = "M " + a[0].x + "," + a[0].y + " L" + a[1].x + "," + a[1].y + " Q" + a[2].x + "," + a[2].y + " " + a[3].x + "," + a[3].y + " Q" + a[4].x + "," + a[4].y + " " + a[5].x + "," + a[5].y + " L" + a[0].x + "," + a[0].y;
 
-		// s = "M " + a.basePt.x +  "," + a.basePt.y +
-		// " L" + a.corner1Pt.x + "," + a.corner1Pt.y +
-		// " Q" + a.corner1cPt.x + "," + a.corner1cPt.y +
-		// " "  + a.tipPt.x + "," + a.tipPt.y +
-		// " Q" + a.corner2cPt.x + "," + a.corner2cPt.y +
-		// " "  + a.corner2Pt.x + "," + a.corner2Pt.y +
-		// " L" + a.basePt.x + "," + a.basePt.y;
+		s = "M " + a.basePt.x + "," + a.basePt.y + 
+		    " L" + a.corner1Pt.x + "," + a.corner1Pt.y + 
+		    " Q" + a.corner1cPt.x + "," + a.corner1cPt.y + 
+		     " " + a.tipPt.x + "," + a.tipPt.y + 
+		    " Q" + a.corner2cPt.x + "," + a.corner2cPt.y + 
+		     " " + a.corner2Pt.x + "," + a.corner2Pt.y + 
+		    " L" + a.basePt.x + "," + a.basePt.y;
 
 		return s;
 	}
@@ -245,20 +246,18 @@ Flox.MapComponent_d3 = function() {
 	 * allows arrows to be drawn the correct size when viewing individual
 	 * county flows. 
 	 */
-	function configureArrowsWithActiveModel(activeModel) {
-		
-		var flows, flow, arrowSettings, i, j;
-		
-		// get the flows from the model_copy
-		flows = model_copy.getFlows();
-		for(i = 0, j = flows.length; i < j; i += 1) {
-			flow = flows[i];
-			arrowSettings = activeModel.getArrowSettings(flow);
-			
-			flow.configureArrow(arrowSettings);
-		}
-		
-	}
+	// function configureArrowsWithActiveModel(activeModel) {
+// 		
+		// var flows, flow, arrowSettings, i, j;
+// 		
+		// // get the flows from the model_copy
+		// flows = model_copy.getFlows();
+		// for(i = 0, j = flows.length; i < j; i += 1) {
+			// flow = flows[i];
+			// arrowSettings = activeModel.getArrowSettings(flow);
+			// flow.configureArrow(arrowSettings);
+		// }
+	// }
 
 
 	function drawFlows(drawArrows) {
@@ -273,9 +272,9 @@ Flox.MapComponent_d3 = function() {
 		    svgFlows,
 		    tooltip;
 	
-		if(drawArrows) {
-			configureArrowsWithActiveModel(activeModel);
-		}
+		// if(drawArrows) {
+			// configureArrowsWithActiveModel(activeModel);
+		// }
 	
 		tooltip = d3.select("body").append("div")
 					.attr("class", "tooltip-flow")

@@ -454,10 +454,8 @@ Flox.Model = function() {
 
 	function getFlowStrokeWidth(flow) {
 		var strokeWidth =  (maxFlowWidth * flow.getValue()) / maxFlowValue;
-		    
 		return strokeWidth;
 	}
-
 
 	function getArrowSettings(flow) {
 		var arrowSettings,
@@ -480,7 +478,7 @@ Flox.Model = function() {
 			startClipRadius = getStartClipRadius(startPt);	
 		}
 		
-		arrowSettings = {
+		return {
 			endClipRadius: endClipRadius,
 			minFlowWidth: minFlowWidth,
 			maxFlowWidth: maxFlowWidth,
@@ -494,22 +492,16 @@ Flox.Model = function() {
 			arrowEdgeCtrlLength: arrowEdgeCtrlLength,
 			arrowEdgeCtrlWidth: arrowEdgeCtrlWidth
 		};	
-		
-		return arrowSettings;
 	}
 
 	// configure arrows for flows 
 	function configureArrows() {
-		var i, j,
-			arrowSettings;
-							
+		var i, j, arrowSettings;
 		for(i = 0, j = flows.length; i < j; i += 1) {
 			arrowSettings = getArrowSettings(flows[i]);
 			flows[i].configureArrow(arrowSettings);	
 		}
 	}
-
-	
 
 	function deselectAllFeatures() {
 		var i, j, flow, node;
@@ -1165,6 +1157,23 @@ Flox.Model = function() {
 
 	my.getArrowSizeRatio = function() {
 		return arrowSizeRatio;
+	};
+	
+	/**
+	 * Returns an empty array if arrows aren't being drawn.
+	 */
+	my.getArrows = function() {
+		var i, arrow,
+			arrows = [];
+		if(drawArrows) {
+			for(i = 0; i < flows.length; i += 1) {
+				if(flows[i].getArrow()) {
+					arrows.push(flows[i].getArrow());
+				}
+			}
+			
+		}
+		return arrows;
 	};
 	
 	my.setArrowSizeRatio = function(d) {

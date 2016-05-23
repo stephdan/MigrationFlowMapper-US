@@ -843,9 +843,7 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 			corner2Pt = {},
 			corner2cPt = {},
 			azimuth;
-		
-		
-        
+
         // Locate the various points that determine the shape and location of 
         // the Arrow. This pulls various parameters from the model that are 
         // themselves modified by the GUI to change the shape of the Arrows. 
@@ -872,13 +870,7 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 		// Get the angle of the arrow, which is the angle from the basePt to
 		// the end point of the flow. 
         azimuth = computeAzimuth(basePt, endPt);
-		
-		// Rotate all the points that make up the shape of the Arrow, using
-        // the Arrow's base point as the pivot, and assign them to the cached
-        // arrow object
-        //arrow = {};
-        //arrow.basePt = basePt;
-		
+				
 		// Transform the arrow points. Increases the size of the arrow
 		// and rotates it. 
 		transform(tipPt, basePt.x, basePt.y, azimuth);
@@ -887,16 +879,6 @@ Flox.Flow = function(sPt, ePt, val, newID) {
         transform(corner1cPt, basePt.x, basePt.y, azimuth);
         transform(corner2cPt, basePt.x, basePt.y, azimuth);
 		
-		// Assign the points to the arrow object, making them accessible to 
-		// the outside. 
-		// arrow.tipPt = tipPt;
-		// arrow.corner1Pt = corner1Pt;
-		// arrow.corner2Pt = corner2Pt;
-		// arrow.corner1cPt = corner1cPt;
-		// arrow.corner2cPt = corner2cPt;
-
-		arrow = [basePt, corner1Pt, corner1cPt, tipPt, corner2cPt, corner2Pt];
-
 		// Split the flow at the base point of the Arrow, plus a little bit.
         // The little bit is to provide sufficient overlap of the flow with the
         // arrowhead to prevent gaps between the flow and arrowhead when the
@@ -922,6 +904,17 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 		//arrow.outFlow = split(baseT)[0];
 		
 		arrow = [basePt, corner1Pt, corner1cPt, tipPt, corner2cPt, corner2Pt, split(baseT)[0]];
+		
+		arrow = {
+			basePt: basePt,
+			corner1Pt: corner1Pt,
+			corner1cPt: corner1cPt,
+			tipPt: tipPt,
+			corner2cPt: corner2cPt,
+			corner2Pt: corner2Pt,
+			outFlow: split(baseT)[0],
+			arrowLength: arrowLength
+		};
 	}
 	
 // PUBLIC =====================================================================

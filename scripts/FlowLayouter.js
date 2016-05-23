@@ -43,6 +43,24 @@ Flox.FlowLayouter = function (model) {
         this.fy += f.fy;
     };
 
+	/**
+	 * Configures the arrows so they will be scaled according to a model with
+	 * more flows in it than the maxFlows model passed into drawFeatures. This
+	 * allows arrows to be drawn the correct size when viewing individual
+	 * county flows. 
+	 */
+	function configureArrowsWithActiveModel(activeModel) {
+		var flows, flow, arrowSettings, i, j;
+		// get the flows from the model that was passed into FlowLayouter...
+		flows = model.getFlows();
+		for(i = 0, j = flows.length; i < j; i += 1) {
+			flow = flows[i];
+			// ...but get the settings from activeModel
+			arrowSettings = activeModel.getArrowSettings(flow);
+			flow.configureArrow(arrowSettings);
+		}
+	}
+
 	function angleDif(a1, a2) {
 		var val = a1 - a2;
 	    if (val > Math.PI) {
@@ -549,7 +567,8 @@ Flox.FlowLayouter = function (model) {
 			maxFlowLength = model.getMaxFlowLength(),
 			angularDistForces = [],
 			flowID, flow, fnew, f, ctrlPt, angularDistWeight, angularDistForce,
-			newCPtX, newCPtY, tempPoint;
+			newCPtX, newCPtY, tempPoint,
+			activeModel;
 		
 		for (i=0, j = flows.length; i < j; i += 1) {
             forces.push(new Force(0,0));
@@ -565,6 +584,11 @@ Flox.FlowLayouter = function (model) {
         model.cacheAllFlowLineSegments();
         model.cacheAllFlowBoundingBoxes();
 
+		if(model.isDrawArrows()) {
+			// get the active model
+			activeModel = Flox.getActiveFullModel();
+			configureArrowsWithActiveModel(activeModel);
+		}
 
         // Angular distribution forces
         for (i = 0, j = flows.length; i < j; i += 1) {
@@ -648,39 +672,6 @@ Flox.FlowLayouter = function (model) {
         }
     }
 
-	function flowIntersectsNode(flow, node) {
-		
-		var flowStrokeWidth = model.getFlowStrokeWidth(flow),
-		
-			nodeRadius = model.getNodeRadius(node) 
-		                     + (model.getNodeTolerancePx() / model.getMapScale()),
-		
-			threshDist =  nodeRadius + (flowStrokeWidth/2),
-		
-			xy = {x: node.x, y: node.y}, // FIXME this is a bit redundant
-		
-		// how far is the node from the flow?
-			shortestDist = flow.distance(xy);
-		
-		return (shortestDist < threshDist);
-	}
-
-
-	function flowIntersectsANode(flow) {
-		var nodes = model.getPoints(),
-		i, j, node;
-		for(i = 0, j = nodes.length; i < j; i += 1) {
-			node = nodes[i];
-			if(node !== flow.getStartPt() && node !== flow.getEndPt()) {
-				if(flowIntersectsNode(flow, node)) {
-					//console.log("Flow intersects a node!")
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
 	function getDistanceToLine(x, y, x0, y0, x1, y1) {
         var distToLine = (Math.abs((y0 - y1) * x + (x1 - x0) * y + (x0 * y1 - x1 * y0))
                 / (Math.sqrt(((x1 - x0) * (x1 - x0)) + ((y1 - y0) * (y1 - y0)))));
@@ -696,6 +687,74 @@ Flox.FlowLayouter = function (model) {
 		return getDistanceToLine(cPt.x, cPt.y, 
                                   sPt.x, sPt.y, 
                                   ePt.x, ePt.y);
+	}
+
+	function flowIntersectsNode(flow, node) {
+		var flowStrokeWidth = model.getFlowStrokeWidth(flow),
+			nodeRadius = node.r 
+		                     + (model.getNodeTolerancePx() 
+		                     / model.getMapScale()),
+			threshDist =  nodeRadius + (flowStrokeWidth/2),
+			// how far is the node from the flow?
+			shortestDist = flow.distance({x: node.x, y: node.y});
+		return (shortestDist < threshDist);
+	}
+
+	function getCirclesForNodesAndArrows(flow) {
+		var nodes = model.getPoints(),
+			arrows,
+			nodeCircles = [],
+			arrowCircles = [],
+			i, j, node, arrow, radius;
+			
+		// For each node, make a circle and push it to node Circles.
+		for(i = 0, j = nodes.length; i < j; i += 1) {
+			node = nodes[i];
+			// need the radius of node... Unless it's a necklace node.
+			if(node.necklaceMapNode) { // it already has an r
+				radius = node.r;
+			} else {
+				radius = model.getNodeRadius(node);
+			}
+			nodeCircles.push({x: node.x, y: node.y, r: radius});
+		}
+		
+		// For each arrow, make a circle and push it to arrowCircles
+		// For each node, make a circle and push it to node Circles.
+		if(model.isDrawArrows()) {
+			arrows = model.getArrows();
+			for(i = 0, j = arrows.length; i < j; i += 1) {
+				arrow = arrows[i];
+				arrowCircles.push({x: arrow.basePt.x, y: arrow.basePt.y, r: arrow.arrowLength});
+			}
+		}
+		
+		return nodeCircles;//.concat(arrowCircles);
+		
+	}
+
+	function flowIntersectsANode(flow) {
+		
+		// Here. Instead of getting nodes like this, we need a new function.
+		// It could be something like getCirclesForNodesAndArrows
+		// Is this something the model should handle? Or the layouter?
+		// The layouter. It's not a big deal. There's a function for getting the
+		// radius of a node. 
+		
+		var nodes = getCirclesForNodesAndArrows(flow),
+			//nodes = model.getPoints(),
+			i, j, node;
+			
+		for(i = 0, j = nodes.length; i < j; i += 1) {
+			node = nodes[i];
+			if(node.x !== flow.getStartPt().x && node.x !== flow.getEndPt().x &&
+			   node.y !== flow.getStartPt().y && node.y !== flow.getEndPt().y) {
+				if(flowIntersectsNode(flow, node)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	function moveFlowIntersectingANode(flow) {
@@ -716,7 +775,6 @@ Flox.FlowLayouter = function (model) {
 			newX, newY;
         
         // Create a point known to be on the right side of the line.
-
         if (dy > 0) {
             rightPt = {x: sPt.x+1, y: sPt.y}; //new Point(sPt.x + 1, sPt.y);
         } else if (dy < 0) {
@@ -740,8 +798,6 @@ Flox.FlowLayouter = function (model) {
         pt0D = (cPt.x - sPt.x) * (ePt.y - sPt.y) 
                    - (cPt.y - sPt.y) * (ePt.x - sPt.x);
 		
-		
-
         // Assign the perpendicular unitVector of the flow's baseline.
         // The values assigned to these will depend on whether the control
         // point is on the right or left side of the baseline.
@@ -770,7 +826,6 @@ Flox.FlowLayouter = function (model) {
         
         while(flipCount < 3 && (flowIntersectsANode(flow))) {
 			distFromBaseline = getDistanceFromCtrlPtToBaseline(flow);
-			
 			if(distFromBaseline > dist * model.getFlowRangeboxHeight()) { // FIXME 2 could equal rangebox height
 				// move cPt to baseline, reverse polarity
 				cPt.x = flow.getBaselineMidPoint().x;
@@ -780,18 +835,15 @@ Flox.FlowLayouter = function (model) {
 	            flipCount += 1;
 	            //continue;
 			} else {
-				//move the cPt
 				// Add the unitVectors to the control point. Also, multiply the
 		        // unitVectors by 2. This will cut the iterations in half without
 		        // losing significant fidelity. 
 		        newX = cPt.x + ((unitVectorX / model.getMapScale()) * 2);
 		        newY = cPt.y + ((unitVectorY / model.getMapScale()) * 2);
-		        
 		        cPt.x = newX;
 		        cPt.y = newY;
 	       }
         }
-        
         // If the flipcount is 3 or more, then no solution was found.
         // Move the cPt back to its original position. 
         if (flipCount >= 3) {
@@ -799,7 +851,6 @@ Flox.FlowLayouter = function (model) {
 			cPt.x = startingXY.x;
 	        cPt.y = startingXY.y;
         }
-        
         flow.setLocked(true);
 	}
 
