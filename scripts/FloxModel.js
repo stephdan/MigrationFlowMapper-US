@@ -17,11 +17,11 @@ Flox.Model = function() {
 		minFlowLengthSpringConstant = 0.5,
 		
 		enforceRangebox = true,
-		flowRangeboxHeight = 0.3,
+		flowRangeboxHeight = 0.4,
 		antiTorsionWeight = 0.8,
 		angularDistributionWeight = 0.5,
 		nodeWeight = 0.0,
-		nodeTolerancePx = 2,
+		nodeTolerancePx = 0,
 		moveFlowsIntersectingNodes = true,
 		multipleIterations = true,
 		NBR_ITERATIONS = 100,
@@ -36,8 +36,8 @@ Flox.Model = function() {
 		maxFlowWidth = 30,
 		maxNodeRadius = 10,
 		isShowLockedFlows = true,
-		flowDistanceFromStartPointPixel = 10,
-		flowDistanceFromEndPointPixel = 10,
+		flowDistanceFromStartPointPixel = 5,
+		flowDistanceFromEndPointPixel = 5,
 		NODE_STROKE_WIDTH = 0.5,
 		
 		// arrow settings
@@ -78,7 +78,9 @@ Flox.Model = function() {
 		// TODO The layouter might care about the scale in order to help
 		// determine an appropriate distance flows should be moved off nodes. 
 		stateScales = {
-			"FIPS54" : 0.5
+			"FIPS1"  : 1, // Alabama
+			"FIPS48" : 2, // Texas
+			"FIPS54" : 1  // West Virginia
 		},
 		
 		// Public object		
@@ -438,7 +440,7 @@ Flox.Model = function() {
 		
 		// Need the radius to draw the point tho
 		radius = Math.sqrt(area / Math.PI);
-		return radius;
+		return radius * mapScale;
 	}
 
 	function getStartClipRadius(startNode) {
@@ -454,7 +456,7 @@ Flox.Model = function() {
 
 	function getFlowStrokeWidth(flow) {
 		var strokeWidth =  (maxFlowWidth * flow.getValue()) / maxFlowValue;
-		return strokeWidth;
+		return strokeWidth * mapScale;
 	}
 
 	function getArrowSettings(flow) {
@@ -490,7 +492,8 @@ Flox.Model = function() {
 			arrowCornerPosition: arrowCornerPosition,
 			pointArrowTowardsEndpoint: pointArrowTowardsEndpoint,
 			arrowEdgeCtrlLength: arrowEdgeCtrlLength,
-			arrowEdgeCtrlWidth: arrowEdgeCtrlWidth
+			arrowEdgeCtrlWidth: arrowEdgeCtrlWidth,
+			mapScale: mapScale
 		};	
 	}
 
@@ -1353,7 +1356,11 @@ Flox.Model = function() {
 	
 	my.setStateMapScale = function(stateFIPS) {
 		var stateString = "FIPS" + stateFIPS;
-		mapScale = stateScales[stateString];
+		if(stateScales.hasOwnProperty(stateString)) {
+			mapScale = stateScales[stateString];
+		} else {
+			mapScale = 1;
+		}
 	};
 	
 	my.getStateMapScale = function(stateString) {

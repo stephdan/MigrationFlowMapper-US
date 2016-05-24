@@ -25,8 +25,6 @@ Flox.MapComponent_d3 = function() {
 	    zoom = d3.behavior.zoom().translate([width / 2, height / 2]).scale(0.06).scaleExtent([0.05, 80])// change these numbers to be able to zoom in or out further.
 		.on("zoom", zoomed),
 
-	    i,
-	    j,
 	    my = {};
 
 	// Create a map! Add a baselayer, initialize all the panning and zooming
@@ -83,7 +81,7 @@ Flox.MapComponent_d3 = function() {
 				.features).enter().append("path")
 				.attr("d", path)
 				.attr("id", function(d) {
-					return "FIPS" + d.properties.STATEFP;
+					return "FIPS" + Number(d.properties.STATEFP);
 				})
 				.attr("class", "feature state")
 				.attr("stroke", "white")
@@ -114,7 +112,7 @@ Flox.MapComponent_d3 = function() {
 					.on("mousemove", function(d) {
 						var node, outgoingFlow, incomingFlow, model_master;
 						model_master = Flox.getModel();
-						node = model_master.findNodeByID(d.properties.STATEFP + d.properties.COUNTYFP);
+						node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
 						outgoingFlow = node.totalOutgoingFlow;
 						incomingFlow = node.totalIncomingFlow;
 						countyTooltip.html("Name: " + d.properties.NAME + "<br/>" + 
@@ -376,7 +374,10 @@ Flox.MapComponent_d3 = function() {
 
 	function drawPoints() {
 		var points = model_copy.getPoints(),
-		    circles = d3.select("#pointsLayer").selectAll("circle").data(points).enter().append("circle");
+		    circles = d3.select("#pointsLayer")
+		    			.selectAll("circle")
+		    			.data(points)
+		    		    .enter().append("circle");
 
 		// Add some attributes to the points
 		circles.style("stroke", "black").style("stroke-width", function(d) {
@@ -403,6 +404,36 @@ Flox.MapComponent_d3 = function() {
 	}
 
 	/**
+	 * For debugging.
+	 * Draws obstacles, which includes nodes and circles around arrows. Good
+	 * for making sure flows don't overlap them. 
+	 */
+	function drawObstacles() {
+		var obstacles = Flox.getObstacles(model_copy),
+			circles;
+		
+		d3.select("#obstaclesLayer").remove();
+		
+		circles = d3.select("#mapFeaturesLayer").append("g").attr("id", "obstaclesLayer")
+					.selectAll("circle")
+					.data(obstacles)
+					.enter().append("circle");
+			
+		circles.style("stroke", "black")
+			   .style("fill", "C80000")
+			   .style("opacity", 0.4)
+			   .attr("cx", function(d) {
+					return d.x;
+			   })
+			   .attr("cy", function(d) {
+					return d.y;
+			   })
+			   .attr("r", function(d) {
+					return (d.r + model_copy.getNodeTolerancePx());
+			   });
+	}
+
+	/**
 	 * @param m : A copy of the model.
 	 */
 	function drawFeatures(m) {
@@ -425,6 +456,11 @@ Flox.MapComponent_d3 = function() {
 		if (model_copy.isDrawNodes()) {
 			drawPoints();
 		}
+		
+
+		//drawObstacles();
+
+		
 	}
 
 	function showCountyBordersWithinState(stateFIPS) {
@@ -572,6 +608,37 @@ Flox.MapComponent_d3 = function() {
 		return pt; 
 	}
 
+	function getMaxOutOfStateNetFlow(model) {
+		// Get the nodes
+		var nodes = model.getPoints(),
+			maxNetFlow = 0, i, netFlow;
+		// looooopy loop-de-looper loop loop
+		for (i = 0; i < nodes.length; i += 1) {
+			netFlow = Math.abs(nodes[i].netFlow);
+			maxNetFlow = netFlow > maxNetFlow ? netFlow: maxNetFlow;
+		}
+		return maxNetFlow;
+	}
+
+	// FIXME could I make one function that does both this and the above one?
+	function getMaxOutOfStateTotalFlow(model) {
+		// Get the nodes
+		var nodes = model.getPoints(),
+			maxTotalFlow = 0, i, totalFlow;
+		// looooopy loop-de-looper loop loop
+		for (i = 0; i < nodes.length; i += 1) {
+			totalFlow =nodes[i].totalIncomingFlow + nodes[i].totalOutgoingFlow;
+			maxTotalFlow = totalFlow > maxTotalFlow ? totalFlow: maxTotalFlow;
+		}
+		return maxTotalFlow;
+	}
+
+	function sortCirclesByRadius(circles) {
+		circles.sort(function(a,b) {
+			return b.r - a.r;
+		});
+	}
+
 	/**
 	 * Places circles on outerCircle that correspond to the states array.
 	 *
@@ -581,6 +648,13 @@ Flox.MapComponent_d3 = function() {
 	function getStateCircles(outerCircle, states, outerStatesNodes) {
 
 		var stateCircles = [],
+			nodeValue,
+			maxNodeValue,
+			activeFullModel = Flox.getActiveFullModel(),
+			filterSettings = Flox.getFilterSettings(),
+			maxR = outerCircle.r * 0.2,
+			maxArea = Math.PI * maxR * maxR,
+			ptArea,
 		    i,
 		    j,
 		    pt;
@@ -589,10 +663,29 @@ Flox.MapComponent_d3 = function() {
 			pt = outerStatesNodes[i];
 			projectPointOnCircle(pt, outerCircle);
 			pt.necklaceMapNode = true;
-			pt.r = outerCircle.r * 0.1;
-			pt.strokeWidth = pt.r * 0.15;
+			
+			// Here. Make this some value based on info in the point.
+			if (filterSettings.netFlows) {
+				// Use net flows to determine radius
+				// I need the max node net flow. I have the outerStateNodes that
+				// will be displayed, but I need to know the MAX max, of all of them.
+				// Which means I need the activeFullModel. And I need a nice easy
+				// way to get the max out of state node value. 
+				maxNodeValue = getMaxOutOfStateNetFlow(activeFullModel);
+				ptArea = (maxArea * Math.abs(pt.netFlow))/maxNodeValue;
+				pt.r = Math.sqrt(ptArea/Math.PI);
+								
+			} else {
+				// us total flow to determine radius
+				maxNodeValue = getMaxOutOfStateTotalFlow(activeFullModel);
+				ptArea = (maxArea * (pt.totalIncomingFlow + pt.totalOutgoingFlow))/maxNodeValue;
+				pt.r = Math.sqrt(ptArea/Math.PI);
+			}
+			//pt.r = outerCircle.r * 0.1;
+			pt.strokeWidth = pt.r * 0.10;
 			stateCircles.push(pt);
 		}
+		sortCirclesByRadius(stateCircles);
 		return stateCircles;
 	}
 
@@ -633,7 +726,7 @@ Flox.MapComponent_d3 = function() {
 		d3.select("#necklaceMapLayer").remove(); 
 		
 		// get the statePolygon, yes?
-		d3.select("#" + "FIPS" + stateFIPS).each(function(d) {
+		d3.select("#" + "FIPS" + Number(stateFIPS)).each(function(d) {
 			statePolygon = d; // Yes!
 		});
 		
@@ -758,22 +851,35 @@ Flox.MapComponent_d3 = function() {
 		// Add an SVG group to hold the necklace map.
 		necklaceMap = d3.select("#mapFeaturesLayer").append("g").attr("id", "necklaceMapLayer");
 
+		nodes = necklaceMap.selectAll(".node")
+					.data(stateNodes)
+					.enter().append("g")
+					.attr("class", "node");
+
 		// Load the data.
-		nodes = necklaceMap.selectAll("circle")
-					  .data(stateNodes)
-					  .enter().append("circle")
+		nodes.append("circle")
 					  .attr("r", function(d) {
 					  	return d.r;
 					  })
 					  .style("fill", "#D6F5FF")
-					  .style("stroke", "black")
+					  .style("stroke", "white")
 					  .style("stroke-width", function(d) {
 					  	return (d.strokeWidth);
-					  })
-					  //.call(force.drag)
-					  .on("mousedown", function() {
-					  	//d3.event.stopPropagation();
 					  });
+					  //.call(force.drag)
+					  //.on("mousedown", function() {
+					  	//d3.event.stopPropagation();
+					  //});
+
+		nodes.append("text")
+			 .attr("text-anchor", "middle")
+			 .style("font-size", function(d) {
+			 	return d.r + "px";
+			 })
+			 .attr("dominant-baseline", "central")
+			 .text(function(d){
+				return d.name;
+			 });
 
 		necklaceNodeTooltip = d3.select("body").append("div")
 								.attr("class", "tooltip-necklaceMapNode")
@@ -806,20 +912,36 @@ Flox.MapComponent_d3 = function() {
 
 		function tick () {
 			var dx, dy, dist;
-			nodes.attr("cx", function(d) {
+			// Changing the transform moves everything in the group.
+			nodes.attr("transform", function(d) {
 				dx = d.x - cx;
 				dy = d.y - cy;
 				dist = Math.sqrt(dx * dx + dy * dy);
 				d.x = dx * r / dist + cx;
-				return d.x;
-			});
-			nodes.attr("cy", function(d) {
+				
 				dx = d.x - cx;
 				dy = d.y - cy;
 				dist = Math.sqrt(dx * dx + dy * dy);
 				d.y = dy * r / dist + cy;
-				return d.y;
-			});
+				
+				return "translate(" + d.x + "," + d.y + ")";
+			})
+			
+			// This only moves the g, not the circles inside the g.
+			// nodes.attr("cx", function(d) {
+				// dx = d.x - cx;
+				// dy = d.y - cy;
+				// dist = Math.sqrt(dx * dx + dy * dy);
+				// d.x = dx * r / dist + cx;
+				// return d.x;
+			// });
+			// nodes.attr("cy", function(d) {
+				// dx = d.x - cx;
+				// dy = d.y - cy;
+				// dist = Math.sqrt(dx * dx + dy * dy);
+				// d.y = dy * r / dist + cy;
+				// return d.y;
+			// });
 		}
 
 		// On each tick of the force layout,

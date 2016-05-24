@@ -349,8 +349,10 @@ my.importTotalCountyFlowData = function(stateFIPS) {
 		model_master.initNodes(countyNodes);
 		model_master.addFlows(flows);
 		model_master.updateCachedValues();
-		model_master.setDatasetName("FIPS" + stateFIPS);
+		model_master.setDatasetName("FIPS" + Number(stateFIPS));
 		console.log("data imported");
+		
+		//my.logFlows(model_master);
 		
 		my.filterBySettings();		
 	});
@@ -373,6 +375,8 @@ my.filterBySettings = function() {
 	
 	filteredModel = new Flox.ModelFilter(model_master)
 								  .filterBySettings(filterSettings);
+	
+	//my.logFlows(filteredModel);
 								  
 	mapComponent.configureNecklaceMap(filteredModel, function() {
 		//new Flox.FlowLayouter(filteredModel).straightenFlows();
@@ -403,7 +407,6 @@ my.setFilterSettings = function(settings) {
 			}
 		}
 	}
-	console.log(filterSettings);
 };
 
 my.setDerivedModels = function(newModels) {
@@ -440,6 +443,8 @@ my.getAllDerivedModels = function() {
 	return derivedModels;
 };
 
+
+
 my.initFlox = function() {
 	model_master = new Flox.Model();
 	mapComponent = new Flox.MapComponent_d3();
@@ -474,6 +479,7 @@ my.initFlox = function() {
 // DEBUG STUFF-------------------------------------
 
 my.logFlows = function(model) {
+	model.sortFlows();
 	var flows = model.getAllFlows(),
 	i, j, f;
 	
@@ -496,6 +502,11 @@ my.logModel_master = function() {
 		+  f.getEndPt().name + ", " + f.getEndPt().STUSPS);
 	}
 	
+};
+
+my.getObstacles = function(model) {
+	var layouter = new Flox.FlowLayouter(model);
+	return layouter.getObstacles();
 };
 
 my.layoutFlows = function(m) {

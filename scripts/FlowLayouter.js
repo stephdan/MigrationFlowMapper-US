@@ -700,14 +700,15 @@ Flox.FlowLayouter = function (model) {
 		return (shortestDist < threshDist);
 	}
 
-	function getCirclesForNodesAndArrows(flow) {
+	function getObstacles() {
 		var nodes = model.getPoints(),
 			arrows,
-			nodeCircles = [],
-			arrowCircles = [],
-			i, j, node, arrow, radius;
+			nodeObstacles = [],
+			arrowObstacles = [],
+			i, j, node, arrow, radius, 
+			flows = model.getFlows(), 
+			flow;
 			
-		// For each node, make a circle and push it to node Circles.
 		for(i = 0, j = nodes.length; i < j; i += 1) {
 			node = nodes[i];
 			// need the radius of node... Unless it's a necklace node.
@@ -716,40 +717,29 @@ Flox.FlowLayouter = function (model) {
 			} else {
 				radius = model.getNodeRadius(node);
 			}
-			nodeCircles.push({x: node.x, y: node.y, r: radius});
+			nodeObstacles.push({x: node.x, y: node.y, r: radius, node: node,
+								type: "node"});
 		}
 		
-		// For each arrow, make a circle and push it to arrowCircles
-		// For each node, make a circle and push it to node Circles.
 		if(model.isDrawArrows()) {
-			arrows = model.getArrows();
-			for(i = 0, j = arrows.length; i < j; i += 1) {
-				arrow = arrows[i];
-				arrowCircles.push({x: arrow.basePt.x, y: arrow.basePt.y, r: arrow.arrowLength});
+			for(i = 0; i < flows.length; i += 1) {
+				flow = flows[i];
+				arrow = flow.getArrow();
+				arrowObstacles.push({x: arrow.basePt.x, y: arrow.basePt.y, 
+									r: arrow.arrowLength,
+									node: flow.getEndPt(),
+									type: "arrow"});
 			}
 		}
-		
-		return nodeCircles;//.concat(arrowCircles);
-		
+		return nodeObstacles;//.concat(arrowObstacles);
 	}
 
-	function flowIntersectsANode(flow) {
-		
-		// Here. Instead of getting nodes like this, we need a new function.
-		// It could be something like getCirclesForNodesAndArrows
-		// Is this something the model should handle? Or the layouter?
-		// The layouter. It's not a big deal. There's a function for getting the
-		// radius of a node. 
-		
-		var nodes = getCirclesForNodesAndArrows(flow),
-			//nodes = model.getPoints(),
-			i, j, node;
-			
-		for(i = 0, j = nodes.length; i < j; i += 1) {
-			node = nodes[i];
-			if(node.x !== flow.getStartPt().x && node.x !== flow.getEndPt().x &&
-			   node.y !== flow.getStartPt().y && node.y !== flow.getEndPt().y) {
-				if(flowIntersectsNode(flow, node)) {
+	function flowIntersectsObstacle(flow, obstacles) {
+		var i, j, obs;
+		for(i = 0, j = obstacles.length; i < j; i += 1) {
+			obs = obstacles[i];
+			if(obs.node !== flow.getEndPt() && obs.node !== flow.getStartPt()) {
+				if(flowIntersectsNode(flow, obs)) {
 					return true;
 				}
 			}
@@ -757,7 +747,7 @@ Flox.FlowLayouter = function (model) {
 		return false;
 	}
 
-	function moveFlowIntersectingANode(flow) {
+	function moveFlowIntersectingObstacles(flow, obstacles) {
 		
 		// Collect needed points from the flow
         var cPt = flow.getCtrlPt(),
@@ -772,7 +762,10 @@ Flox.FlowLayouter = function (model) {
 			unitVectorX, unitVectorY,
 			maxDist, startingXY, flipCount,
 			distFromBaseline, 
-			newX, newY;
+			newX, newY,
+			nodeObstacles = [],
+			arrowObstacles = [],
+			i, obs;
         
         // Create a point known to be on the right side of the line.
         if (dy > 0) {
@@ -824,7 +817,21 @@ Flox.FlowLayouter = function (model) {
         // (flip it) and go the other direction. After the third flip, stop.
         flipCount = 0;
         
-        while(flipCount < 3 && (flowIntersectsANode(flow))) {
+        for(i = 0; i < obstacles.length; i += 1) {
+			obs = obstacles[i];
+			if(obs.type === "node") {
+				nodeObstacles.push(obs);
+			}
+			if(obs.type === "arrow") {
+				arrowObstacles.push(obs);
+			}
+        }
+        
+        if(flow.cannotBeMovedOffNodes) {
+			obstacles = arrowObstacles;
+        }
+        
+        while(flipCount < 3 && (flowIntersectsObstacle(flow, obstacles))) {
 			distFromBaseline = getDistanceFromCtrlPtToBaseline(flow);
 			if(distFromBaseline > dist * model.getFlowRangeboxHeight()) { // FIXME 2 could equal rangebox height
 				// move cPt to baseline, reverse polarity
@@ -844,37 +851,79 @@ Flox.FlowLayouter = function (model) {
 		        cPt.y = newY;
 	       }
         }
+        
+        // Try again, but with nust the nodes?
+        // FIXME repeated code
+        if(!flow.cannotBeMovedOffNodes) {
+			while(flipCount < 5 && (flowIntersectsObstacle(flow, nodeObstacles))) {
+				distFromBaseline = getDistanceFromCtrlPtToBaseline(flow);
+				if(distFromBaseline > dist * model.getFlowRangeboxHeight()) {
+					// move cPt to baseline, reverse polarity
+					cPt.x = flow.getBaselineMidPoint().x;
+		            cPt.y = flow.getBaselineMidPoint().y;
+		            unitVectorX *= -1;
+		            unitVectorY *= -1;
+		            flipCount += 1;
+		            //continue;
+				} else {
+					// Add the unitVectors to the control point. Also, multiply the
+			        // unitVectors by 2. This will cut the iterations in half without
+			        // losing significant fidelity. 
+			        newX = cPt.x + ((unitVectorX / model.getMapScale()) * 2);
+			        newY = cPt.y + ((unitVectorY / model.getMapScale()) * 2);
+			        cPt.x = newX;
+			        cPt.y = newY;
+		       }
+		    }
+       } else {
+       		flipCount = 5;
+       }
+
         // If the flipcount is 3 or more, then no solution was found.
         // Move the cPt back to its original position. 
-        if (flipCount >= 3) {
-			console.log("Found a flow that was impossible to move off all nodes.");
+        if (flipCount >= 5) {
+			console.log("Found a flow that was impossible to move off all obstacles.");
 			cPt.x = startingXY.x;
 	        cPt.y = startingXY.y;
+	        flow.cannotBeMovedOffNodes = true;
+        } else {
+			flow.setLocked(true);
         }
-        flow.setLocked(true);
 	}
 
-	function getFlowsIntersectingNodes() {
+	function getFlowsOverlappingObstacles(obstacles) {
 		var flows = model.getFlows(),
 			intersectingFlows = [],
-			i, j, flow;
+			i, j, flow, node, obstacle;
 			
-		for(i = 0, j = flows.length; i < j; i += 1) {
+		for(i = 0; i < flows.length; i += 1) {
 			flow = flows[i];
-			if (flowIntersectsANode(flow)) {
-				//console.log("found a flow intersecting a node!")
-				intersectingFlows.push(flows[i]);
+			for(j = 0; j < obstacles.length; j += 1) {
+				obstacle = obstacles[j];
+				node = obstacle.node;
+				if(node !== flow.getStartPt() && node !== flow.getEndPt()) {
+					if(flowIntersectsNode(flow, obstacle)) {
+						intersectingFlows.push(flow);
+					}
+				}
 			}
+			// if (flowIntersectsANode(flow)) {
+				// intersectingFlows.push(flows[i]);
+			// }
 		}
 		return intersectingFlows;
 	}
 
 	function moveFlowsIntersectingNodes(){
 		// Get flows that overlap a node. 
-		var flows = getFlowsIntersectingNodes(),
-			i, j;
-		for(i = 0, j = flows.length; i < j; i += 1) {
-			moveFlowIntersectingANode(flows[i]);
+		var obstacles, flowsOverlappingObstacles, i, j;
+		
+		obstacles = getObstacles();
+		
+		flowsOverlappingObstacles = getFlowsOverlappingObstacles(obstacles);
+		
+		for(i = 0, j = flowsOverlappingObstacles.length; i < j; i += 1) {
+			moveFlowIntersectingObstacles(flowsOverlappingObstacles[i], obstacles);
 		}		
 	}
 
@@ -899,6 +948,10 @@ Flox.FlowLayouter = function (model) {
     my.moveFlowsIntersectingNodes = function() {
 		moveFlowsIntersectingNodes();
     };
+
+	my.getObstacles = function() {
+		return getObstacles();
+	};
 
 	return my;
 

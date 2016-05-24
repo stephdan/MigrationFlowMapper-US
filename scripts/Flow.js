@@ -799,7 +799,7 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 
 			// Get the difference between this flow's stroke size and the biggest
 	        // stroke size.
-		var flowWidth = (s.maxFlowWidth * value) / s.maxFlowValue,
+		var flowWidth = ((s.maxFlowWidth * value) / s.maxFlowValue) * s.mapScale,
 			
 			baseT,
 			strokeDiff = s.maxFlowWidth - flowWidth,

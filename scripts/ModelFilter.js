@@ -244,7 +244,7 @@ Flox.ModelFilter = function(model_master) {
 		
 		for(i = 0, j = nodes.length; i < j; i += 1) {
 			node = nodes[i];
-			if(node.id === countyFIPS) {
+			if(Number(node.id) === Number(countyFIPS)) {
 				if(settings.countyIncoming) {
 					incomingFlows = node.incomingFlows;
 				}
@@ -474,13 +474,19 @@ Flox.ModelFilter = function(model_master) {
 	 */
 	my.filterBySettings = function(settings) {
 		
+		
+		
 		// Net flows if settings.netFlows
 		if(settings.netFlows) {
 			if(!Flox.getDerivedModel("netFlowsModel")) { // if netFlowsModel isn't there yet
 				model_copy = copyModel(model_master); // Copy the master
+				
 				mergeOutOfStateTotalFlows(); 
+				
+				
 				my.getNetFlowsModel();
 				model_copy.updateCachedValues();
+				
 				// Set netFlowsModel to a COPY of the net flows model, so more changes
 				// can be made to it in the filter without messing it up
 				Flox.setDerivedModels( { "netFlowsModel": (copyModel(model_copy)) } );
