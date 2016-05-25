@@ -115,7 +115,7 @@ Flox.MapComponent_d3 = function() {
 						node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
 						outgoingFlow = node.totalOutgoingFlow;
 						incomingFlow = node.totalIncomingFlow;
-						countyTooltip.html("Name: " + d.properties.NAME + "<br/>" + 
+						countyTooltip.html(d.properties.NAME + "<br/>" + 
 										   "Total Outflow: " + outgoingFlow + "<br/>" +
 										   "Total Inflow: " + incomingFlow)
 								.style("left", (d3.event.pageX + 4) + "px")
@@ -707,6 +707,24 @@ Flox.MapComponent_d3 = function() {
 		.call(zoom.translate(translate).scale(scale).event);
 	}
 
+	// Zooms out to full extent, deselects everything, hides all county
+	// boundaries, resets some filter settings.
+	function reset() {
+		active.classed("active", false);
+		active = d3.select(null);
+
+		d3.selectAll(".county").classed("hidden", true);
+		removeAllCircles();
+		removeAllFlows();
+		
+		// Also remove all necklace maps.
+		d3.select("#necklaceMapLayer").remove(); 
+		
+		Flox.setFilterSettings({county: false, state: false});
+		
+		svg.transition().duration(750).call(zoom.translate([width / 2, height / 2]).scale(0.06).event);
+	}
+
 	/**
 	 * Does all the things needed when a state is selected. Makes a necklace
 	 * map, zooms in, lays out the flows, displays the flows, everything.
@@ -720,6 +738,8 @@ Flox.MapComponent_d3 = function() {
 			outerCircle,
 		    testStates,
 		    stateCircles;
+		    
+		Flox.setFilterSettings({county: false, state: false});
 		
 		// Clear out all flows and necklace maps.
 		removeAllFlows();
@@ -773,37 +793,15 @@ Flox.MapComponent_d3 = function() {
 	}
 
 	function countyClicked(d) {
-		
 		var FIPS = d.properties.STATEFP + d.properties.COUNTYFP;
-		
-		// If the county was already selected, deselect it. 
-		
-		// Change style stuff here?
-		
-		// Select this county
-		
 		selectCounty(FIPS);
-		
 	}
 
+	function necklaceNodeClicked(d) {
+		selectState(d.STATEFP);
+	}
 	
-	// Zooms out to full extent, deselects everything, hides all county
-	// boundaries, resets some filter settings.
-	function reset() {
-		active.classed("active", false);
-		active = d3.select(null);
-
-		d3.selectAll(".county").classed("hidden", true);
-		removeAllCircles();
-		removeAllFlows();
-		
-		// Also remove all necklace maps.
-		d3.select("#necklaceMapLayer").remove(); 
-		
-		Flox.setFilterSettings({county: false, state: false});
-		
-		svg.transition().duration(750).call(zoom.translate([width / 2, height / 2]).scale(0.06).event);
-	}
+	
 
 	function zoomed() {
 		var g = svg.select("#mapFeaturesLayer");
@@ -820,6 +818,8 @@ Flox.MapComponent_d3 = function() {
 		if (d3.event.defaultPrevented)
 			d3.event.stopPropagation();
 	}
+
+	
 
 	/**
 	 * Places nodes on the outer rim of circle, using d3 force directed graph
@@ -839,7 +839,10 @@ Flox.MapComponent_d3 = function() {
 		    // nodes are arranged around. Radius of the nodes is added to keep
 		    // them from overlapping outer counties. 
 			force, necklaceMap, nodes, i,
-			necklaceNodeTooltip;	
+			necklaceNodeTooltip,
+			labelSize = (outerCircle.r * 0.07),	// in pixels
+			pt,
+			labelOffset = 0;
 			
 		// delete the previous necklace map
 		d3.select("#necklaceMapLayer").remove(); 
@@ -854,32 +857,25 @@ Flox.MapComponent_d3 = function() {
 		nodes = necklaceMap.selectAll(".node")
 					.data(stateNodes)
 					.enter().append("g")
-					.attr("class", "node");
+					.attr("class", "node")
+					.style("cursor", "pointer");
 
 		// Load the data.
 		nodes.append("circle")
-					  .attr("r", function(d) {
-					  	return d.r;
-					  })
-					  .style("fill", "#D6F5FF")
-					  .style("stroke", "white")
-					  .style("stroke-width", function(d) {
-					  	return (d.strokeWidth);
-					  });
-					  //.call(force.drag)
-					  //.on("mousedown", function() {
-					  	//d3.event.stopPropagation();
-					  //});
+			.attr("r", function(d) {
+				return d.r;
+			})
+			.style("fill", "#D6F5FF")
+			.style("stroke", "white")
+			.style("stroke-width", function(d) {
+				return (d.strokeWidth);
+			});
+			// .call(force.drag)
+			// .on("mousedown", function() {
+				// d3.event.stopPropagation();
+			// });
 
-		nodes.append("text")
-			 .attr("text-anchor", "middle")
-			 .style("font-size", function(d) {
-			 	return d.r + "px";
-			 })
-			 .attr("dominant-baseline", "central")
-			 .text(function(d){
-				return d.name;
-			 });
+		
 
 		necklaceNodeTooltip = d3.select("body").append("div")
 								.attr("class", "tooltip-necklaceMapNode")
@@ -888,8 +884,6 @@ Flox.MapComponent_d3 = function() {
 		// Add some mouse interactions to the nodes, like tooltips.
 		nodes.on("mouseover", function(d) {
 			necklaceNodeTooltip.style("display", "inline");
-			//d3.select(this).select(".curve").attr("stroke", "yellow");
-			//d3.select(this).select(".arrow").attr("fill", "yellow");
         })
         .on("mousemove", function(d) {
 			necklaceNodeTooltip.html(d.name + "<br/>" + 
@@ -900,16 +894,12 @@ Flox.MapComponent_d3 = function() {
         })
         .on("mouseout", function() {
 			necklaceNodeTooltip.style("display", "none");
-			//d3.select(this).select(".curve").attr("stroke", "black");
-			//d3.select(this).select(".arrow").attr("fill", "black");
         })
         .on("click", function(d) {
         	necklaceNodeTooltip.style("display", "none");
-			selectState(d.STATEFP);
+			necklaceNodeClicked(d);
         });
 		
-
-
 		function tick () {
 			var dx, dy, dist;
 			// Changing the transform moves everything in the group.
@@ -957,6 +947,47 @@ Flox.MapComponent_d3 = function() {
 		}
 		force.stop();
 		
+		nodes.append("text")
+			//.attr("text-anchor", "middle")
+			.style("font-size", function(d) {
+				return labelSize +  "px";
+			})
+			//.attr("dominant-baseline", "central")
+			.text(function(d){
+				return d.name;
+			})
+			.each(function(d){
+				pt = d3.select(this);
+				if(labelSize < (d.r + (d.r * 0.35))) {
+					pt.attr("text-anchor", "middle")
+					  .attr("dominant-baseline", "central");
+				} else {
+					labelOffset = (d.r * -0.1);
+					if(d.x >= cx && d.y <= cy) { // top right
+						pt.attr("text-anchor", "start")
+						  .attr("x", d.r + labelOffset)
+						  .attr("y", -d.r - labelOffset);
+					}
+					if(d.x >= cx && d.y > cy) { // bottom right
+						pt.attr("text-anchor", "start")
+						  .attr("dominant-baseline", "hanging")
+						  .attr("x", d.r + labelOffset)
+						  .attr("y", d.r + labelOffset);
+					}
+					if(d.x < cx && d.y <= cy) { // top left
+						pt.attr("text-anchor", "end")
+						  .attr("x", -d.r - labelOffset)
+						  .attr("y", -d.r - labelOffset);
+					}
+					if(d.x < cx && d.y > cy) { // bottom left
+						pt.attr("text-anchor", "end")
+						  .attr("dominant-baseline", "hanging")
+						  .attr("x", -d.r - labelOffset)
+						  .attr("y", d.r + labelOffset);
+					}
+				}
+			});
+		
 		// For each node, add it's STUSPS and itself to an object?
 		// This is not needed now.
 		// for(i = 0; i < stateNodes.length; i += 1) {
@@ -976,20 +1007,41 @@ Flox.MapComponent_d3 = function() {
 	 */
 	function getSmallestCircleAroundPolygon(targetStatePolygon) {
 		// Get the points from the polygon somehow?
-		var points = (targetStatePolygon.geometry.coordinates[0]),
+		
+		var points, polygons,
 			formattedPoints = [],
 			i, j, pt, xy, circle, formattedCircle;
 		
-		// convert the points to be compatible with smallest circle algorithm
-		// FIXME this is dumb
-		for(i = 0, j = points.length; i < j; i += 1) {
-			pt = points[i];
+		
+		if(targetStatePolygon.geometry.type === "MultiPolygon") {
+
+			polygons = targetStatePolygon.geometry.coordinates;
 			
-			// convert latLng to pixel coords.
-			xy = projection(pt);
-			// turn the array of xy into an object of xy.
-			// Push the new object into formattedPoints
-			formattedPoints.push({x: xy[0], y: xy[1]});
+			for(i = 0; i < polygons.length; i += 1) {
+				// polygons[0] is an array of one thing. 
+				// polygons[1] is also an array of one thing.
+				// those one things are arrays of point arrays.
+				points = polygons[i][0];
+				for(j = 0; j < points.length; j += 1) {
+					xy = projection(points[j]);
+					formattedPoints.push({x: xy[0], y: xy[1]});
+				}
+				
+			}
+			
+			
+		} else {
+			// do this other thing.
+			points = (targetStatePolygon.geometry.coordinates[0]);
+			for(i = 0, j = points.length; i < j; i += 1) {
+				// convert latLng to pixel coords.
+				xy = projection(points[i]);
+				// turn the array of xy into an object of xy.
+				// Push the new object into formattedPoints
+				// convert the points to be compatible with smallest circle algorithm
+				// FIXME this is dumb
+				formattedPoints.push({x: xy[0], y: xy[1]});
+			}
 		}
 		
 		circle = Flox.GeomUtils.makeCircle(formattedPoints);

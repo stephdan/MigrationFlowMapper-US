@@ -63,7 +63,7 @@ Flox.Model = function() {
 		
 		// Draw Settings
 		drawFlows = true,
-		drawNodes = true,
+		drawNodes = false,
 		drawArrows = true,
 		drawControlPoints = false,
 		drawIntermediateFlowPoints = false,

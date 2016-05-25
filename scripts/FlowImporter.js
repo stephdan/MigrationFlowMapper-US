@@ -15,16 +15,28 @@ Flox.FlowImporter = ( function(d3) {
 	}
 	
 	function findNodeByID(nodes, id) {
-		var i, j;
+		var i, j, nodeID;
+
+		// Can id be converted into a number? If so, do it.
+		if(!isNaN(Number(id))) {
+			id = Number(id);
+		}
 
 		// Loop through the nodes.
 		// If node.id matches id, return the node!
 		for ( i = 0, j = nodes.length; i < j; i += 1) {
-			if (nodes[i].id === id) {
+			nodeID = nodes[i].id;
+			
+			// try converting the nodeID to a number. 
+			if(!isNaN(Number(nodeID))) {
+				nodeID = Number(nodeID);
+			}
+						
+			if (nodeID === id) {
 				return nodes[i];
 			}
 		}
-		//console.log("It's not in there!");
+		console.log(nodeID + " is not in there!");
 		return false;
 		// It's not in there!
 	}

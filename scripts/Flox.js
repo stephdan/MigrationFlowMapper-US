@@ -118,7 +118,7 @@ function layoutFlows(model) {
 	//console.log("layoutFlows called");
 	
 	if (model.getFlows().length < 2) {
-		console.log("there is less than 2 flows, not doing a layout");
+		console.log("there are fewer than 2 flows, not doing a layout");
 		refreshMap(model);
 		return;
 	}

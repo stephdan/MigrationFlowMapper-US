@@ -120,6 +120,7 @@ Flox.ModelFilter = function(model_master) {
 	 */
 	function mergeOutOfStateTotalFlows() {
 		var flows = model_copy.getAllFlows(),
+		nodes = model_copy.getPoints(),
 		i, j,
 		outOfStateFlows = {},
 		selectedStateFIPS = model_copy.getDatasetName(),
@@ -127,19 +128,26 @@ Flox.ModelFilter = function(model_master) {
 		outerStateFIPS,
 		ePt, sPt, f, direction, newFlow, flow, val;
 		
+		for(i = 0; i < nodes.length; i += 1) {
+			nodes[i].incomingFlows = [];
+			nodes[i].outgoingFlows = [];
+		}
+		
 		// loop backwards through flows
 		for (i = flows.length - 1; i >= 0; i -= 1) {
 			f = flows[i];
 			
 			sPt = f.getStartPt();
 			ePt = f.getEndPt();
+			delete f.oppositeFlow; // just do it. Delete them all. They get 
+			// remade later. 
 			// If the start or end point are not inside the selected state
 			if("FIPS" + sPt.STATEFP !== selectedStateFIPS || "FIPS" + ePt.STATEFP !== selectedStateFIPS) {
 				
 				// Delete oppositeFlow parameter. This will no longer be valid
 				// once flows are merged, and will be recalculated when flows
 				// are added to the model. 
-				delete f.oppositeFlow;
+				
 				
 				// Is it the start or end point that is out of state?
 				if ("FIPS" + sPt.STATEFP === selectedStateFIPS) { // end point is out of state.
@@ -323,6 +331,7 @@ Flox.ModelFilter = function(model_master) {
 		var flows = model_copy.getAllFlows(),
 		    netFlows = [],
 		    unopposedFlows = [],
+		    nodes = model_copy.getPoints(),
 		    
 		// TODO is Map available in all recent browsers?
 		    map = new Map(),
@@ -330,6 +339,11 @@ Flox.ModelFilter = function(model_master) {
 		    flow,
 		    id1,
 		    id2;
+	
+		for(i = 0; i < nodes.length; i += 1) {
+			nodes[i].outgoingFlows = [];
+			nodes[i].incomingFlows = [];
+		}
 	
 		// loop through flows
 		for ( i = 0; i < flows.length; i += 1) {
@@ -367,10 +381,16 @@ Flox.ModelFilter = function(model_master) {
 		    unopposedFlows = [],
 		    map = new Map(),
 		    i,
+		    nodes = model_copy.getPoints(),
 		    flow,
 		    id1,
 		    id2;
-		   
+		
+		for(i = 0; i < nodes.length; i += 1) {
+			nodes[i].outgoingFlows = [];
+			nodes[i].incomingFlows = [];
+		}
+		
 		for ( i = 0; i < flows.length; i += 1) {
 			flow = flows[i];
 			// Does it have an opposite flow?
@@ -474,19 +494,13 @@ Flox.ModelFilter = function(model_master) {
 	 */
 	my.filterBySettings = function(settings) {
 		
-		
-		
 		// Net flows if settings.netFlows
 		if(settings.netFlows) {
 			if(!Flox.getDerivedModel("netFlowsModel")) { // if netFlowsModel isn't there yet
 				model_copy = copyModel(model_master); // Copy the master
-				
 				mergeOutOfStateTotalFlows(); 
-				
-				
 				my.getNetFlowsModel();
 				model_copy.updateCachedValues();
-				
 				// Set netFlowsModel to a COPY of the net flows model, so more changes
 				// can be made to it in the filter without messing it up
 				Flox.setDerivedModels( { "netFlowsModel": (copyModel(model_copy)) } );

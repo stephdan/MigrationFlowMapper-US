@@ -31,7 +31,6 @@ Flox.GUI = (function($){
 	});
 	
 	
-	
 	// This works.
 	$("#inStateFlowsToggle").on("click", function() {
 		console.log("inState clicked!");
