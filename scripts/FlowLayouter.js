@@ -731,7 +731,7 @@ Flox.FlowLayouter = function (model) {
 									type: "arrow"});
 			}
 		}
-		return nodeObstacles;//.concat(arrowObstacles);
+		return nodeObstacles.concat(arrowObstacles);
 	}
 
 	function flowIntersectsObstacle(flow, obstacles) {

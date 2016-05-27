@@ -5,11 +5,12 @@ Flox.MapComponent_d3 = function() {
 		model_copy,
 	    selectedColor = "#59A4FF",
 	    defaultColor = "black",
-	    active = d3.select(null),
 	    path,
 	    width = $(window).width(),
 	    height = $(window).height(),
-	   
+	    selectedStateFIPS,
+	    selectedCountyFIPS,
+	    populationDensityColor,
 	   
 	    mapScale = 1,
 	    
@@ -24,6 +25,8 @@ Flox.MapComponent_d3 = function() {
 	    // box of the lower 48 based on the window size. 
 	    zoom = d3.behavior.zoom().translate([width / 2, height / 2]).scale(0.06).scaleExtent([0.05, 80])// change these numbers to be able to zoom in or out further.
 		.on("zoom", zoomed),
+
+		tooltipOffset = {x: 8, y: -38}, // FIXME y is not used.
 
 	    my = {};
 
@@ -86,7 +89,14 @@ Flox.MapComponent_d3 = function() {
 				.attr("class", "feature state")
 				.attr("stroke", "white")
 				.attr("fill", "#ccc")
-				.on("click", stateClicked);
+				.attr("opacity", 0.5)
+				.on("click", stateClicked)
+				.on("mouseover", function(d) {
+					d3.select(this).attr("opacity", 0.6);
+				})
+				.on("mouseout", function(d) {
+					d3.select(this).attr("opacity", 0.5);
+				});
 			// g.append("path")
 			// .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
 			// .attr("class", "mesh")
@@ -98,33 +108,42 @@ Flox.MapComponent_d3 = function() {
 				if (error) {
 					throw error;
 				}
+				var model_master = Flox.getModel();
 				countiesLayer.selectAll("path")
 					.data(topojson.feature(us, us.objects.counties).features)
 					.enter().append("path").attr("d", path)
 					.attr("class", function(d) {
-						return "feature county hidden FIPS" + d.properties.STATEFP;
+						return "feature county hidden FIPS" + Number(d.properties.STATEFP);
 					})
 					.attr("fill", "#ccc")
 					.on("mouseover", function(d) {
 						countyTooltip.style("display", "inline");
-						d3.select(this).attr("fill", "yellow");
-					})
+						d3.select(this)
+							.style("fill", "yellow");
+					})			
 					.on("mousemove", function(d) {
-						var node, outgoingFlow, incomingFlow, model_master;
-						model_master = Flox.getModel();
+						var node, outgoingFlow, incomingFlow;
 						node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
 						outgoingFlow = node.totalOutgoingFlow;
 						incomingFlow = node.totalIncomingFlow;
 						countyTooltip.html(d.properties.NAME + "<br/>" + 
 										   "Total Outflow: " + outgoingFlow + "<br/>" +
-										   "Total Inflow: " + incomingFlow)
-								.style("left", (d3.event.pageX + 4) + "px")
-								.style("top", (d3.event.pageY - 34) + "px");
+										   "Total Inflow: " + incomingFlow + "<br/>" +
+										   "Pop. Density: " + parseFloat(node.populationDensity).toFixed(1))
+								.style("left", (d3.event.pageX + tooltipOffset.x) + "px")
+								.style("top", function() {
+									var tooltipHeight = d3.select(this).node().getBoundingClientRect().height;
+									return (d3.event.pageY - tooltipHeight) + "px";
+						       });
 						
 					})
 					.on("mouseout", function() {
 						countyTooltip.style("display", "none");
-						d3.select(this).attr("fill", "#ccc");
+						d3.select(this)
+							.style("fill", function(d) {
+								var node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
+								return populationDensityColor(Number(node.populationDensity));
+							});
 					})
 					.on("click", function(d) {
 						console.log("county clicked!");
@@ -354,14 +373,17 @@ Flox.MapComponent_d3 = function() {
 				tooltip.html("Total Flow: " + d.getValue() + "<br/>" + 
 			             d.getStartPt().name + " to " + d.getEndPt().name + ": " + d.AtoB + "<br/>" + 
 			             d.getEndPt().name + " to " + d.getStartPt().name + ": " + d.BtoA)
-			       .style("left", (d3.event.pageX + 4) + "px")
-			       .style("top", (d3.event.pageY - 34) + "px");
+			       .style("left", (d3.event.pageX + tooltipOffset.x) + "px")
+			       .style("top", (d3.event.pageY + tooltipOffset.y) + "px");
 			} else {
 				tooltip.html("Net Flow: " + d.getValue() + "<br/>" + 
 			             "From: " + d.getStartPt().name + "<br/>" + 
 			             "To: " + d.getEndPt().name )
-			       .style("left", (d3.event.pageX + 4) + "px")
-			       .style("top", (d3.event.pageY - 34) + "px");
+			       .style("left", (d3.event.pageX + tooltipOffset.x) + "px")
+			       .style("top", function() {
+						var tooltipHeight = d3.select(this).node().getBoundingClientRect().height;
+						return (d3.event.pageY - tooltipHeight) + "px";
+			       });
 			}
 			
         })
@@ -375,9 +397,9 @@ Flox.MapComponent_d3 = function() {
 	function drawPoints() {
 		var points = model_copy.getPoints(),
 		    circles = d3.select("#pointsLayer")
-		    			.selectAll("circle")
-		    			.data(points)
-		    		    .enter().append("circle");
+						.selectAll("circle")
+						.data(points)
+					    .enter().append("circle");
 
 		// Add some attributes to the points
 		circles.style("stroke", "black").style("stroke-width", function(d) {
@@ -433,6 +455,40 @@ Flox.MapComponent_d3 = function() {
 			   });
 	}
 
+
+	function colorCountiesByPopulationDensity() {
+		var stateFIPS, counties, nodes, node, countyNodes = [], i,
+		popDensities, model_master;
+		
+		model_master = Flox.getModel();
+		nodes = model_master.getPoints();
+		stateFIPS = model_copy.getDatasetName().slice(4);
+		counties = d3.selectAll(".FIPS" + stateFIPS);
+		
+		for (i = 0; i < nodes.length; i += 1) {
+			node = nodes[i];
+			if(node.hasOwnProperty("populationDensity")){
+				countyNodes.push(node);
+			}
+		}
+		
+		popDensities = countyNodes.map(function(d) {
+				return Number(d.populationDensity);
+		});
+		
+		// Create a jenks natural breaks scale with 4 classes.
+		// Uses simple_statistics.js
+		populationDensityColor = d3.scale.threshold()
+		    .range(["#dadaeb", "#bcbddc", "#9e9ac8", "#807dba"])
+			.domain(ss.jenks(popDensities, 4).slice(1, -1));
+		
+		counties.style("fill", function(d) {
+			node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
+			var color = populationDensityColor(Number(node.populationDensity));
+			return color;
+		});
+	}
+
 	/**
 	 * @param m : A copy of the model.
 	 */
@@ -443,28 +499,22 @@ Flox.MapComponent_d3 = function() {
 		if(!m) {
 			throw new Error("drawFeatures needs to be passed a copy of the model");
 		}
-
-		// Store m in model_copy
 		model_copy = m;
-
+		colorCountiesByPopulationDensity();
 		var drawArrows = model_copy.isDrawArrows();
-
 		if (model_copy.isDrawFlows()) {
 			drawFlows(drawArrows);
 		}
-
 		if (model_copy.isDrawNodes()) {
 			drawPoints();
 		}
-		
-
 		//drawObstacles();
-
-		
 	}
-
+	
+	// TODO Are counties the only features that have a state fips as a class?
+	// This seems like it will cause conflict later. 
 	function showCountyBordersWithinState(stateFIPS) {
-		d3.selectAll(".FIPS" + stateFIPS).classed("hidden", false);
+		d3.selectAll(".FIPS" + Number(stateFIPS)).classed("hidden", false);
 	}
 
 	function hideAllCountyBorders() {
@@ -710,8 +760,6 @@ Flox.MapComponent_d3 = function() {
 	// Zooms out to full extent, deselects everything, hides all county
 	// boundaries, resets some filter settings.
 	function reset() {
-		active.classed("active", false);
-		active = d3.select(null);
 
 		d3.selectAll(".county").classed("hidden", true);
 		removeAllCircles();
@@ -733,11 +781,7 @@ Flox.MapComponent_d3 = function() {
 	 */
 	function selectState(stateFIPS) {
 		
-		var statePolygon, 
-			stateBoundingBox,
-			outerCircle,
-		    testStates,
-		    stateCircles;
+		var statePolygon, stateBoundingBox, outerCircle, testStates, stateCircles;
 		    
 		Flox.setFilterSettings({county: false, state: false});
 		
@@ -745,9 +789,10 @@ Flox.MapComponent_d3 = function() {
 		removeAllFlows();
 		d3.select("#necklaceMapLayer").remove(); 
 		
-		// get the statePolygon, yes?
+		// get the statePolygon, yes? This is goofy here. You want the data though.
+		// How else would you get it?
 		d3.select("#" + "FIPS" + Number(stateFIPS)).each(function(d) {
-			statePolygon = d; // Yes!
+			statePolygon = d;
 		});
 		
 		// Tell the importer which flows need loadin'
@@ -766,29 +811,11 @@ Flox.MapComponent_d3 = function() {
 	function selectCounty(countyFIPS) {
 		removeAllFlows();
 		d3.select("#necklaceMapLayer").remove();
-		
-		// This is kinda sucky
-		// Flox.showSelectedCountyFlows(countyFIPS);
-		
-		// Instead, change a filter settings and tell Flox to filter flows.
 		Flox.setFilterSettings({county: countyFIPS});
 		Flox.filterBySettings();
-		
 	}
 
-	// Selects the state. 
 	function stateClicked(d) {
-		// If the currently active state was clicked, reset.
-		// TODO this should happen in selectState somehow.
-		// "this" is the SVG path object that was clicked. I think.
-		if (active.node() === this) {
-			return reset();
-		}
-		// Remove active class from currently active state, add active class
-		// to the state that was clicked.
-		active.classed("active", false);
-		active = d3.select(this).classed("active", true);
-		// Select the state
 		selectState(d.properties.STATEFP);
 	}
 
@@ -865,18 +892,15 @@ Flox.MapComponent_d3 = function() {
 			.attr("r", function(d) {
 				return d.r;
 			})
-			.style("fill", "#D6F5FF")
+			.style("fill", "#BCDDE8")
 			.style("stroke", "white")
 			.style("stroke-width", function(d) {
 				return (d.strokeWidth);
-			});
+			})
 			// .call(force.drag)
 			// .on("mousedown", function() {
 				// d3.event.stopPropagation();
 			// });
-
-		
-
 		necklaceNodeTooltip = d3.select("body").append("div")
 								.attr("class", "tooltip-necklaceMapNode")
 								.style("display", "none");
@@ -884,16 +908,21 @@ Flox.MapComponent_d3 = function() {
 		// Add some mouse interactions to the nodes, like tooltips.
 		nodes.on("mouseover", function(d) {
 			necklaceNodeTooltip.style("display", "inline");
+			d3.select(this).selectAll("circle").style("fill", "#A1D3E3");
         })
         .on("mousemove", function(d) {
 			necklaceNodeTooltip.html(d.name + "<br/>" + 
 			             "Outgoing Flow: " + d.totalOutgoingFlow + "<br/>" + 
 			             "Incoming Flow: " + d.totalIncomingFlow )
-			       .style("left", (d3.event.pageX + 4) + "px")
-			       .style("top", (d3.event.pageY - 34) + "px");
+			       .style("left", (d3.event.pageX + tooltipOffset.x) + "px")
+			       .style("top", function() {
+						var tooltipHeight = d3.select(this).node().getBoundingClientRect().height;
+						return (d3.event.pageY - tooltipHeight) + "px";
+			       });
         })
         .on("mouseout", function() {
 			necklaceNodeTooltip.style("display", "none");
+			d3.select(this).selectAll("circle").style("fill", "#BCDDE8");
         })
         .on("click", function(d) {
         	necklaceNodeTooltip.style("display", "none");
@@ -958,7 +987,7 @@ Flox.MapComponent_d3 = function() {
 			})
 			.each(function(d){
 				pt = d3.select(this);
-				if(labelSize < (d.r + (d.r * 0.35))) {
+				if(labelSize < (d.r + (d.r * 0.70))) {
 					pt.attr("text-anchor", "middle")
 					  .attr("dominant-baseline", "central");
 				} else {

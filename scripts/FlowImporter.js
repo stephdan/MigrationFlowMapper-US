@@ -233,7 +233,9 @@ Flox.FlowImporter = ( function(d3) {
 						if (newPt.x && newPt.y) {
 							newPt.STUSPS = row.STUSPS;
 							newPt.STATEFP = row.STATEFP;
-							newPt.name = row.NAME;
+							newPt.name = row.NAME + " " + row.TYPE;
+							newPt.populationDensity = row.POPDENSITYKM2;
+							newPt.population = row.POPESTIMATE2014;
 							newPt.totalIncomingFlow = 0;
 							newPt.totalOutgoingFlow = 0;
 							newPt.netFlow = 0;
@@ -265,8 +267,6 @@ Flox.FlowImporter = ( function(d3) {
 			});
 		});
 	};
-
-
 
 	my.importStateMigrationData = function(nodePath, flowPath) {
 		// Arrays to store the stuff

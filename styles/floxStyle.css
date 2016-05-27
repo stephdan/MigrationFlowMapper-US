@@ -26,51 +26,55 @@ html, body {
 	position: absolute;
 	margin: 10px;
 }
-
 .tooltip-flow {
 	position: absolute;
 	text-align: left;
-	width: 100px;
-	height: 40px;
+	width: auto;
+	height: auto;
 	padding: 3px;
 	margin-top: -10px;
 	font: 10px sans-serif;
-	background: #ddd;
+	background: rgb(255, 255, 255);
+    background: rgba(255, 255, 255, 0.8);
 	pointer-events: none;
 }
-
 .tooltip-county {
 	position: absolute;
 	text-align: left;
-	width: 100px;
-	height: 40px;
+	width: auto;
+	height: auto;
 	padding: 3px;
 	margin-top: -10px;
 	font: 10px sans-serif;
-	background: #ddd;
+	background: white;
+	background: rgb(255, 255, 255);
+    background: rgba(255, 255, 255, 0.8);
 	pointer-events: none;
 }
 .tooltip-state {
 	position: absolute;
 	text-align: left;
-	width: 100px;
-	height: 40px;
-	padding: 3px;
+	width: auto;
+	height: auto;
 	margin-top: -10px;
-	font: 10px sans-serif;
-	background: #ddd;
+	font: 12px sans-serif;
+	background: white;
+	background: rgb(255, 255, 255);
+    background: rgba(255, 255, 255, 0.8);
 	pointer-events: none;
 }
 
 .tooltip-necklaceMapNode {
 	position: absolute;
 	text-align: left;
-	width: 100px;
-	height: 40px;
+	width: auto;
+	height: auto;
 	padding: 3px;
 	margin-top: -10px;
-	font: 10px sans-serif;
-	background: #ddd;
+	font: 12px sans-serif;
+	background: white;
+	background: rgb(255, 255, 255);
+    background: rgba(255, 255, 255, 0.8);
 	pointer-events: none;
 }
 
@@ -86,10 +90,6 @@ html, body {
 .feature.county {
   stroke: #fff;
   cursor: pointer;
-}
-
-.feature.active {
-  fill: orange;
 }
 
 .mesh {
