@@ -179,6 +179,7 @@ function importCensusData() {
 	//mapComponent.setView([39,-95], 4);
 }
 
+// This doesn't work without leaflet. 
 function importTelecomData() {
 	importCSV("data/TeleGeographyMap_flows copy.csv");
 	
