@@ -63,7 +63,7 @@ Flox.Model = function() {
 		
 		// Draw Settings
 		drawFlows = true,
-		drawNodes = false,
+		drawNodes = true,
 		drawArrows = true,
 		drawControlPoints = false,
 		drawIntermediateFlowPoints = false,
@@ -80,7 +80,8 @@ Flox.Model = function() {
 		stateScales = {
 			"FIPS1"  : 1, // Alabama
 			"FIPS48" : 2, // Texas
-			"FIPS54" : 1  // West Virginia
+			"FIPS54" : 1,  // West Virginia
+			"allStates": 0.2
 		},
 		
 		// Public object		

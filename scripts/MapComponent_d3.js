@@ -455,7 +455,6 @@ Flox.MapComponent_d3 = function() {
 			   });
 	}
 
-
 	function colorCountiesByPopulationDensity() {
 		var stateFIPS, counties, nodes, node, countyNodes = [], i,
 		popDensities, model_master;
@@ -500,7 +499,11 @@ Flox.MapComponent_d3 = function() {
 			throw new Error("drawFeatures needs to be passed a copy of the model");
 		}
 		model_copy = m;
-		colorCountiesByPopulationDensity();
+		// if this is county flow data, color the counties by pop density
+		if(Flox.getFilterSettings().state === false){
+			colorCountiesByPopulationDensity();
+		}
+		
 		var drawArrows = model_copy.isDrawArrows();
 		if (model_copy.isDrawFlows()) {
 			drawFlows(drawArrows);
@@ -1016,15 +1019,6 @@ Flox.MapComponent_d3 = function() {
 					}
 				}
 			});
-		
-		// For each node, add it's STUSPS and itself to an object?
-		// This is not needed now.
-		// for(i = 0; i < stateNodes.length; i += 1) {
-			// var FIPS = stateNodes[i].FIPS;
-			// necklaceMapNodes[FIPS] = stateNodes[i];
-		// }
-		//callback(necklaceMapNodes);
-		callback();
 	}
 
 	/**
@@ -1094,7 +1088,7 @@ Flox.MapComponent_d3 = function() {
  * @param {Object} model - FloxModel containing flows
  * @param {Function} callback - Called when finished.
 	 */
-	function configureNecklaceMap(model, callback) {
+	function configureNecklaceMap(model) {
 		
 		var flows = model.getFlows(),
 			outerStates = [],
@@ -1159,11 +1153,10 @@ Flox.MapComponent_d3 = function() {
 		if(stateCircles.length > 0) { 
 			// Create and add the necklace map to the map. 
 			addNecklaceMap(smallerOuterCircle, stateCircles, function(necklaceMapNodes) {				
-				callback();
+				//callback();
 			});
 		} else {
 			console.log("No out of state nodes?");
-			callback();
 		}
 	}
 	
@@ -1179,8 +1172,8 @@ Flox.MapComponent_d3 = function() {
 		drawCircles(circlesArray);
 	};
 
-	my.configureNecklaceMap = function (stateFIPS, model_copy, callback) {
-		configureNecklaceMap(stateFIPS, model_copy, callback);
+	my.configureNecklaceMap = function (model_copy) {
+		configureNecklaceMap(model_copy);
 	};
 
 	// end MapComponent_d3 only-------------------------------------------------

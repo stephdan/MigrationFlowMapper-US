@@ -165,18 +165,23 @@ function layoutFlows(model) {
 	console.log("Layout time in milliseconds: " + Math.round(endTime - startTime));
 }
 
-
-function importCensusData() {
+function importStateToStateMigrationFlows() {
 	// clear the model
-    model.deleteAllFlows();
-	
+    model_master.deleteAllFlows();
+    derivedModels = {};
+	filterSettings.state = true;
+	filterSettings.county = false;
+	model_master.setMapScale(5);
 	var nodePath = "data/census/state_latLng.csv",
 		flowPath = "data/census/US_State_migration_2014_flows.csv";
 	
-	Flox.FlowImporter.importStateMigrationData(nodePath, flowPath);
-	
-	// move and zoom to the correct location
-	//mapComponent.setView([39,-95], 4);
+	Flox.FlowImporter.importStateToStateMigrationFlows(flowPath, function(flows, stateNodes) {
+		model_master.initNodes(stateNodes);
+		model_master.addFlows(flows);
+		//model_master.updateCachedValues();
+		model_master.setDatasetName("states");
+		my.filterBySettings();
+	});
 }
 
 // This doesn't work without leaflet. 
@@ -186,7 +191,6 @@ function importTelecomData() {
 	// move and zoom to the correct location
 	mapComponent.setView([50,10], 4);
 }
-
 
 // PUBLIC =====================================================================
 
@@ -324,8 +328,8 @@ my.runLayoutWorker = function () {
 	runLayoutWorker();
 };
 
-my.importCensusData = function () {
-	importCensusData();
+my.importStateToStateMigrationFlows = function () {
+	importStateToStateMigrationFlows();
 };
 
 my.loadTestFlows = function () {
@@ -349,11 +353,8 @@ my.importTotalCountyFlowData = function(stateFIPS) {
 		// flows are the imported flows!
 		model_master.initNodes(countyNodes);
 		model_master.addFlows(flows);
-		model_master.updateCachedValues();
+		//model_master.updateCachedValues(); // this gets done after filtering
 		model_master.setDatasetName("FIPS" + Number(stateFIPS));
-		console.log("data imported");
-		
-		//my.logFlows(model_master);
 		
 		my.filterBySettings();		
 	});
@@ -373,22 +374,23 @@ my.rotateProjection = function(lat, lng, roll) {
 my.filterBySettings = function() {
 	// so...
 	var filteredModel;
-	
+	//my.logFlows(model_master);
 	filteredModel = new Flox.ModelFilter(model_master)
 								  .filterBySettings(filterSettings);
-	
 	//my.logFlows(filteredModel);
-								  
-	mapComponent.configureNecklaceMap(filteredModel, function() {
-		//new Flox.FlowLayouter(filteredModel).straightenFlows();
+
+	if(filterSettings.state === false) {
+		mapComponent.configureNecklaceMap(filteredModel);
+	}
+	
+	new Flox.FlowLayouter(filteredModel).straightenFlows();
+	
+	layoutFlows(filteredModel);
+	refreshMap(filteredModel);
 		
-		layoutFlows(filteredModel);
-		refreshMap(filteredModel);
-		
-		// runLayoutWorker(filteredModel, function() {
-			// refreshMap(filteredModel);
-		// });
-	});							  
+	// runLayoutWorker(filteredModel, function() {
+		// refreshMap(filteredModel);
+	// });						  
 };
 
 my.getFilterSettings = function() {

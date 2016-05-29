@@ -3,6 +3,36 @@ Flox.FlowImporter = ( function(d3) {
 
 	var my = {};
 
+	function importStateNodes(callback) {
+		var stateNodePath = "data/geometry/centroids_states.csv",
+			stateNodes = [],
+			newStNode,
+			stateNodeData,
+			row, i; 
+			
+		d3.csv(stateNodePath, function(d) {
+			for (i = 0; i < d.length; i += 1) {
+				row = d[i];
+				newStNode = new Flox.Point(Number(row.latitude), Number(row.longitude), 1, row.FIPS);
+				// Verifying that the node can be projected before adding
+				if (newStNode.x && newStNode.y) {
+					newStNode.STUSPS = row.STUSPS;
+					newStNode.FIPS = row.FIPS;
+					newStNode.STATEFP = row.FIPS;
+					newStNode.id = row.FIPS; // don't like this. But it's used later.
+					newStNode.name = row.name;
+					newStNode.totalIncomingFlow = 0;
+					newStNode.totalOutgoingFlow = 0;
+					newStNode.netFlow = 0;
+					newStNode.type = "state";
+					stateNodes.push(newStNode);
+				} else {
+					console.log("State node " + row.name + " could not be projected");
+				}
+			}
+			callback(stateNodes);
+		});
+	}
 
 	function findStateNode(nodes, stateFIPS) {
 		var i, j;
@@ -175,6 +205,7 @@ Flox.FlowImporter = ( function(d3) {
 	/**
 	 * Imports a CSV file containing formatted US Census county centroids to
 	 * be used as nodes for county-to-county flow data.
+	 * Only imports county nodes for the state designated by stateFIPS. 
  * @param {Object} nodePath : Path to CSV
  * @param {Object} callback : Called after CSV is fully imported, with the 
  * imported nodes as an argument.
@@ -184,34 +215,14 @@ Flox.FlowImporter = ( function(d3) {
 		// import state nodes. Will be used to replace nodes outside of the
 		// target state (stateFIPS).
 		var stateNodePath = "data/census/state_latLng.csv",
-			nodes = [],
+			//nodes = [],
 			newStNode,
 			stateNodeData,
-			row;
-		
-		d3.csv(stateNodePath, function(stateNodesData) {
+			row, i;
 			
-			var newStateNode, i;
-			
-			for (i = 0; i < stateNodesData.length; i += 1) {
-				row = stateNodesData[i];
-				
-				// Add it to the state nodes if it's not the current state.
-				if(Number(row.FIPS) !== Number(stateFIPS)) {
-					newStNode = new Flox.Point(Number(row.latitude), Number(row.longitude), 1, row.FIPS);
-					if (newStNode.x && newStNode.y) {
-						newStNode.STUSPS = row.id;
-						newStNode.FIPS = row.FIPS;
-						newStNode.STATEFP = row.FIPS;
-						newStNode.name = row.name;
-						newStNode.totalIncomingFlow = 0;
-						newStNode.totalOutgoingFlow = 0;
-						newStNode.netFlow = 0;
-						nodes.push(newStNode);
-					} 
-				}
-			}
-			
+		// Import state nodes first. State nodes will replace county nodes that
+		// are out side of the target state.
+		importStateNodes(function(nodes) {
 			// Import county nodes.
 			d3.csv(nodePath, function(nodeData) {
 				var newPt;
@@ -239,6 +250,7 @@ Flox.FlowImporter = ( function(d3) {
 							newPt.totalIncomingFlow = 0;
 							newPt.totalOutgoingFlow = 0;
 							newPt.netFlow = 0;
+							newPt.type = "county";
 							nodes.push(newPt);
 						}	
 					}
@@ -268,53 +280,32 @@ Flox.FlowImporter = ( function(d3) {
 		});
 	};
 
-	my.importStateMigrationData = function(nodePath, flowPath) {
+	my.importStateToStateMigrationFlows = function(flowPath, callback) {
 		// Arrays to store the stuff
-		var nodes = [],
-		    flows = [];
+		var flows = [];
 
-		// The node data is easy.
-		d3.csv(nodePath, function(nodeData) {
-
-			var i,
-			    lat,
-			    lng,
-			    id,
-			    val,
-			    propt,
-			    startPt,
-			    endPt,
-			    nodes = [];
-
-			for ( i = 0; i < nodeData.length; i += 1) {
-				if (!nodeData[i].value) {
-					val = 1;
-				} else {
-					val = nodeData[i].val;
-				}
-				nodes.push(new Flox.Point(Number(nodeData[i].latitude), Number(nodeData[i].longitude), 1, nodeData[i].id));
-			}
-
-			//console.log(nodes);
-
+		// Import state nodes
+		importStateNodes(function(nodes){
+			
+			// Import the state flows data, link it to the nodes.
 			d3.csv(flowPath, function(flowData) {
 
 				var endID,
 				    startID,
-				    flow,
-				    j;
+				    flow, val, endPt, startPt,
+				    i;
 
 				// For each row in the table...
-				for ( j = 0; j < flowData.length; j += 1) {
+				for ( i = 0; i < flowData.length; i += 1) {
 
 					// destination is the id of the endPt
-					endID = flowData[j].destination;
+					endID = flowData[i].destination;
 
 					// Find the node with the same ID
 					endPt = findNodeByID(nodes, endID);
 
 					// For each column in the table...
-					for (startID in flowData[j]) {
+					for (startID in flowData[i]) {
 
 						// if originID matches one if the ids in nodes
 						startPt = findNodeByID(nodes, startID);
@@ -322,29 +313,15 @@ Flox.FlowImporter = ( function(d3) {
 						if (startPt && endPt && (startPt && endID !== startID)) {
 
 							// get the value!
-							val = Number(flowData[j][startID]);
-
-							// Make a flow out of the start point and end point!
-							//flows.push(new Flow(startPt, endPt, val));
+							val = Number(flowData[i][startID]);
 							if (val > 0) {
-								Flox.addFlow(new Flow(startPt, endPt, val));
+								flows.push(new Flox.Flow(startPt, endPt, val));
 							}
 						}
 					}
 				}
-
-				Flox.setUseNetFlows(true);
-
-				Flox.layoutFlows();
-
-				Flox.refreshMap(); // FIXME this should happen in a callback.
-				//console.log(flows);
-				//return flows;
-
-				// Add the flows to the model and render them!
-
+				callback(flows, nodes);
 			});
-
 		});
 	};
 

@@ -498,8 +498,15 @@ Flox.ModelFilter = function(model_master) {
 		if(settings.netFlows) {
 			if(!Flox.getDerivedModel("netFlowsModel")) { // if netFlowsModel isn't there yet
 				model_copy = copyModel(model_master); // Copy the master
-				mergeOutOfStateTotalFlows(); 
+				
+				
+				
+				if(settings.state===false) {
+					mergeOutOfStateTotalFlows(); 
+				}
+				
 				my.getNetFlowsModel();
+				
 				model_copy.updateCachedValues();
 				// Set netFlowsModel to a COPY of the net flows model, so more changes
 				// can be made to it in the filter without messing it up
@@ -511,7 +518,9 @@ Flox.ModelFilter = function(model_master) {
 		} else { // same as above, but with totalFlowsModel
 			if(!Flox.getDerivedModel("totalFlowsModel")){
 				model_copy = copyModel(model_master);
-				mergeOutOfStateTotalFlows();
+				if(settings.state===false) {
+					mergeOutOfStateTotalFlows(); 
+				}
 				my.getTotalFlowsModel();
 				model_copy.updateCachedValues();
 				model_copy.setDrawArrows(false); // total flows are bi-directional, so no arrows
@@ -526,9 +535,13 @@ Flox.ModelFilter = function(model_master) {
 			getSelectedCountyModel(settings.county, settings);
 		}		
 		
-		if(!settings.outerStateFlows) {
+		
+		
+		if(!settings.outerStateFlows && !settings.state) {
 			my.removeOuterStateFlows();
 		}
+		
+		Flox.logFlows(model_copy);
 		
 		if(settings.inStateFlows === false) {
 			// filter out in state flows

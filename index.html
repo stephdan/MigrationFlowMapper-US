@@ -36,18 +36,35 @@
     <!-- Module for adding toolbars to the leaflet map 
     <script src="node_modules/leaflet-toolbar/dist/leaflet.toolbar-src.js"></script>-->
     <!-- Leaflet sidebar module from https://github.com/turbo87/sidebar-v2/ 
-    <script src="node_modules/sidebar-v2/js/leaflet-sidebar.js"></script> -->
+    <script src="node_modules/sidebar-v2/js/leaflet-sidebar.js"></script> 
+    <script src="lib/leaflet-providers.js"></script>-->
     
-	<script src="lib/DataTables/datatables.js" ></script>
 	<script src="lib/simple_statistics.js"></script>
 	<script src="lib/bootstrap.js"></script>
-	<script src="lib/leaflet-providers.js"></script>
 	<script src="lib/topojson.js"></script>
 </head>
 
 <body>
 
 	<div id="filterGUI">
+		
+		<div class="btn-group" data-toggle="buttons">
+			
+		  <label class="btn btn-primary active" id="stateFlowsRadioLabel">
+		    <input type="radio" name="filterRadio" id="stateFlowsRadio" 
+		     autocomplete="off" checked> 
+		     State Flows
+		  </label>
+		  
+		  <label class="btn btn-primary" id="countyFlowsRadioLabel">
+		    <input type="radio" name="filterRadio" id="countyFlowsRadio" 
+		     autocomplete="off"> 
+		     County Flows
+		  </label>
+		</div>
+		
+		<br />
+		
 		<div class="btn-group" data-toggle="buttons">
 			
 		  <label class="btn btn-primary active" id="netFlowRadioLabel">
@@ -65,7 +82,7 @@
 		
 		<br />
 		
-		<div class="btn-group" data-toggle="buttons" style="margin-top: 5px">
+		<div class="btn-group" data-toggle="buttons">
 			
 		  <label class="btn btn-primary active" id="inStateFlowsToggle">
 		    <input type="checkbox" checked autocomplete="off"> In-state Flows
