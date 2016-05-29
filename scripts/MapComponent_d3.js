@@ -26,8 +26,10 @@ Flox.MapComponent_d3 = function() {
 	    zoom = d3.behavior.zoom().translate([width / 2, height / 2]).scale(0.06).scaleExtent([0.05, 80])// change these numbers to be able to zoom in or out further.
 		.on("zoom", zoomed),
 
-		tooltipOffset = {x: 8, y: -38}, // FIXME y is not used.
-
+		tooltipOffset = {x: 8, y: -38}, // FIXME y is not used
+		tooltip = d3.select("body").append("div")
+					.attr("class", "floxTooltip")
+					.style("display", "none"),
 	    my = {};
 
 	// Create a map! Add a baselayer, initialize all the panning and zooming
@@ -66,15 +68,6 @@ Flox.MapComponent_d3 = function() {
 
 		svg.call(zoom)// delete this line to disable free zooming
 		.call(zoom.event);
-
-		// Custom tool tips
-		countyTooltip = d3.select("body").append("div")
-						  .attr("class", "tooltip-county")
-						  .style("display", "none");
-
-		stateTooltip = d3.select("body").append("div")
-						  .attr("class", "tooltip-state")
-						  .style("display", "none");
 
 		d3.json("data/geometry/states_census_2015.json", function(error, us) {
 			if (error) {
@@ -117,7 +110,7 @@ Flox.MapComponent_d3 = function() {
 					})
 					.attr("fill", "#ccc")
 					.on("mouseover", function(d) {
-						countyTooltip.style("display", "inline");
+						tooltip.style("display", "inline");
 						d3.select(this)
 							.style("fill", "yellow");
 					})			
@@ -126,7 +119,7 @@ Flox.MapComponent_d3 = function() {
 						node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
 						outgoingFlow = node.totalOutgoingFlow;
 						incomingFlow = node.totalIncomingFlow;
-						countyTooltip.html(d.properties.NAME + "<br/>" + 
+						tooltip.html(d.properties.NAME + "<br/>" + 
 										   "Total Outflow: " + outgoingFlow + "<br/>" +
 										   "Total Inflow: " + incomingFlow + "<br/>" +
 										   "Pop. Density: " + parseFloat(node.populationDensity).toFixed(1))
@@ -138,7 +131,7 @@ Flox.MapComponent_d3 = function() {
 						
 					})
 					.on("mouseout", function() {
-						countyTooltip.style("display", "none");
+						tooltip.style("display", "none");
 						d3.select(this)
 							.style("fill", function(d) {
 								var node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
@@ -286,17 +279,12 @@ Flox.MapComponent_d3 = function() {
 		    f,
 		    rs,
 		    re,
-		    svgFlows,
-		    tooltip;
+		    svgFlows;
 	
 		// if(drawArrows) {
 			// configureArrowsWithActiveModel(activeModel);
 		// }
-	
-		tooltip = d3.select("body").append("div")
-					.attr("class", "tooltip-flow")
-					.style("display", "none");
-
+		
 		flows.sort(function(a, b){ return b.getValue() - a.getValue(); });
 
 		// called svgFlows because flows is already taken!
@@ -869,7 +857,6 @@ Flox.MapComponent_d3 = function() {
 		    // nodes are arranged around. Radius of the nodes is added to keep
 		    // them from overlapping outer counties. 
 			force, necklaceMap, nodes, i,
-			necklaceNodeTooltip,
 			labelSize = (outerCircle.r * 0.07),	// in pixels
 			pt,
 			labelOffset = 0;
@@ -904,17 +891,14 @@ Flox.MapComponent_d3 = function() {
 			// .on("mousedown", function() {
 				// d3.event.stopPropagation();
 			// });
-		necklaceNodeTooltip = d3.select("body").append("div")
-								.attr("class", "tooltip-necklaceMapNode")
-								.style("display", "none");
 
 		// Add some mouse interactions to the nodes, like tooltips.
 		nodes.on("mouseover", function(d) {
-			necklaceNodeTooltip.style("display", "inline");
+			tooltip.style("display", "inline");
 			d3.select(this).selectAll("circle").style("fill", "#A1D3E3");
         })
         .on("mousemove", function(d) {
-			necklaceNodeTooltip.html(d.name + "<br/>" + 
+			tooltip.html(d.name + "<br/>" + 
 			             "Outgoing Flow: " + d.totalOutgoingFlow + "<br/>" + 
 			             "Incoming Flow: " + d.totalIncomingFlow )
 			       .style("left", (d3.event.pageX + tooltipOffset.x) + "px")
@@ -924,11 +908,11 @@ Flox.MapComponent_d3 = function() {
 			       });
         })
         .on("mouseout", function() {
-			necklaceNodeTooltip.style("display", "none");
+			tooltip.style("display", "none");
 			d3.select(this).selectAll("circle").style("fill", "#BCDDE8");
         })
         .on("click", function(d) {
-        	necklaceNodeTooltip.style("display", "none");
+			tooltip.style("display", "none");
 			necklaceNodeClicked(d);
         });
 		
@@ -948,22 +932,6 @@ Flox.MapComponent_d3 = function() {
 				
 				return "translate(" + d.x + "," + d.y + ")";
 			})
-			
-			// This only moves the g, not the circles inside the g.
-			// nodes.attr("cx", function(d) {
-				// dx = d.x - cx;
-				// dy = d.y - cy;
-				// dist = Math.sqrt(dx * dx + dy * dy);
-				// d.x = dx * r / dist + cx;
-				// return d.x;
-			// });
-			// nodes.attr("cy", function(d) {
-				// dx = d.x - cx;
-				// dy = d.y - cy;
-				// dist = Math.sqrt(dx * dx + dy * dy);
-				// d.y = dy * r / dist + cy;
-				// return d.y;
-			// });
 		}
 
 		// On each tick of the force layout,

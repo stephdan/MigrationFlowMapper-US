@@ -541,7 +541,7 @@ Flox.ModelFilter = function(model_master) {
 			my.removeOuterStateFlows();
 		}
 		
-		Flox.logFlows(model_copy);
+		//Flox.logFlows(model_copy);
 		
 		if(settings.inStateFlows === false) {
 			// filter out in state flows

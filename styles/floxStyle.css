@@ -29,7 +29,7 @@ html, body {
 	margin: 10px;
 }
 
-.tooltip-flow {
+.floxTooltip {
 	position: absolute;
 	text-align: left;
 	width: auto;
@@ -41,46 +41,6 @@ html, body {
     background: rgba(255, 255, 255, 0.8);
 	pointer-events: none;
 }
-.tooltip-county {
-	position: absolute;
-	text-align: left;
-	width: auto;
-	height: auto;
-	padding: 3px;
-	margin-top: -10px;
-	font: 10px sans-serif;
-	background: white;
-	background: rgb(255, 255, 255);
-    background: rgba(255, 255, 255, 0.8);
-	pointer-events: none;
-}
-.tooltip-state {
-	position: absolute;
-	text-align: left;
-	width: auto;
-	height: auto;
-	margin-top: -10px;
-	font: 12px sans-serif;
-	background: white;
-	background: rgb(255, 255, 255);
-    background: rgba(255, 255, 255, 0.8);
-	pointer-events: none;
-}
-.tooltip-necklaceMapNode {
-	position: absolute;
-	text-align: left;
-	width: auto;
-	height: auto;
-	padding: 3px;
-	margin-top: -10px;
-	font: 12px sans-serif;
-	background: white;
-	background: rgb(255, 255, 255);
-    background: rgba(255, 255, 255, 0.8);
-	pointer-events: none;
-}
-
-
 
 .feature {
   cursor: pointer;
