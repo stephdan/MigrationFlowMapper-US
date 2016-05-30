@@ -25,7 +25,12 @@ Flox.GUI = (function($){
 			
 			// if a state is selected, show the county flows in that state.
 			if(settings.selectedState !== false) {
-				Flox.selectStatePolygon(settings.selectedState);
+				Flox.selectState(settings.selectedState);
+			} else if (settings.selectedState === false) {
+				// need to change the color of the states to gray...
+				// No layout will occur. This is kindof a special case. 
+				console.log("CountyFlows was clicked while no state is selected");
+				Flox.enterClickAStateMode();
 			}
 
 			//Flox.importTotalCountyFlowData(settings.selectedState);
@@ -68,8 +73,10 @@ Flox.GUI = (function($){
 		
 		var settings = Flox.getFilterSettings();
 		settings.inStateFlows = !settings.inStateFlows;
-		Flox.filterBySettings();
-
+		// Only do something if it's not in state mode
+		if(settings.stateMode === false) {
+			Flox.filterBySettings();
+		}
 	});
 
 	$("#outOfStateFlowsToggle").on("click", function() {
@@ -77,8 +84,10 @@ Flox.GUI = (function($){
 		
 		var settings = Flox.getFilterSettings();
 		settings.outerStateFlows = !settings.outerStateFlows;
-		Flox.filterBySettings();
-
+		// Only do something if it's not in state mode
+		if(settings.stateMode === false) {
+			Flox.filterBySettings();
+		}
 	});
 
 

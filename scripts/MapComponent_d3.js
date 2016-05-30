@@ -553,8 +553,9 @@ Flox.MapComponent_d3 = function() {
 			colorCountiesByPopulationDensity();
 			// and make the states a neutral color.
 			d3.selectAll(".feature.state")
+			  .transition()
 			  .style("fill", function(d) {
-			  	return "#ccc";
+				return "#ccc";
 			  })
 			  .attr("opacity", 0.4);
 		} else {
@@ -826,8 +827,22 @@ Flox.MapComponent_d3 = function() {
 
 		d3.selectAll(".county").classed("hidden", true);
 		removeAllCircles();
-		removeAllFlows();
 		
+		var settings = Flox.getFilterSettings();
+		
+		// Remove flows if a state is selected, or if there is no state
+		// selected but it's in county mode (to get rid of state to state
+		// flows when the County Flows button is pushed)
+		if(settings.selectedState !== false || (settings.selectedState === false && settings.countyMode)) {
+			removeAllFlows();
+			my.resetStateFillColor();
+		}
+		
+		// If it's in state mode, and a state is selected, need to get
+		// rid of them flows and add the state to state ones. 
+		if(settings.stateMode && settings.selectedState !== false) {
+			Flox.importStateToStateMigrationFlows();
+		}
 		// Also remove all necklace maps.
 		d3.select("#necklaceMapLayer").remove(); 
 		
@@ -1324,6 +1339,20 @@ Flox.MapComponent_d3 = function() {
 		selectState(stateFIPS);
 	};
 
+	my.reset = function() {
+		console.log("resetting");
+		reset();
+	};
+
+	my.resetStateFillColor = function() {
+		// select the states
+		var statePolygons = d3.selectAll(".feature.state");
+		statePolygons.transition()
+			.duration(500)
+			.style("fill", "#ccc")
+			.attr("opacity", 1);
+	};
+	
 	return my;
 };
 

@@ -206,17 +206,9 @@ Flox.Model = function() {
     function findPoint(target) {
 
 		var i, j, pt;
-
-		// If the target has an id, get it from the nodesMap. It should be in 
-		// the nodes map.
-		if(target.hasOwnProperty("id")) {
-			// If it is in the nodesMap, get it
-			if(nodesMap.get(target.id)) {
-				return [true, nodesMap.get(target.id)];
-			} // if its not in the nodes map...either none of the existing nodes
-			  // have ids, or it was never added.
-		}
-		
+		// Loop through the existing nodes. If the coordinates match the current point, 
+		// return the existing point.
+		// If they don't match any of them, return the provided point.
 		for (i = 0, j = nodes.length; i < j; i += 1) {
 			pt = nodes[i];
 			
@@ -357,7 +349,9 @@ Flox.Model = function() {
 			
 		for( i= 0, j = newFlows.length; i < j; i += 1) {
 			flow = newFlows[i];
-						
+			
+			// if the node has an id
+			
 			startPoint = findPoint(flow.getStartPt());
 			endPoint = findPoint(flow.getEndPt());
 			flow.setStartPt(startPoint[1]);
@@ -854,7 +848,6 @@ Flox.Model = function() {
     my.getPoints = function() {
         //return nodes; 
         if(Array.from(nodesMap.values()).length > 0) {
-			console.log("getting points from nodesMap")
 			return Array.from(nodesMap.values())
         }
         // this only happens if nodes don't have an id parameter.
@@ -1331,11 +1324,8 @@ Flox.Model = function() {
 		flows = [];
 		nodes = newNodes;
 		
-		// Make a nodesMap, but only if the nodes have ids. 
 		for(i = 0; i < nodes.length; i += 1) {
-			if(nodes[i].hasOwnProperty("id")) {
-				nodesMap.set(nodes[i].id, nodes[i]);
-			}
+			nodesMap.set(nodes[i].id, nodes[i]);
 		}
 	};
 

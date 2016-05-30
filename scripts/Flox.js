@@ -460,10 +460,16 @@ my.getAllDerivedModels = function() {
 	return derivedModels;
 };
 
-my.selectStatePolygon = function(stateFIPS) {
+my.selectState = function(stateFIPS) {
 	mapComponent.selectState(stateFIPS);
 };
 
+
+my.enterClickAStateMode = function() {
+	// Turn all the polygons gray
+	mapComponent.reset();
+	mapComponent.resetStateFillColor();
+};
 
 my.initFlox = function() {
 	model_master = new Flox.Model();
