@@ -8,6 +8,8 @@ Flox.Model = function() {
 	var nodes = [],
 		flows = [],
 	
+		nodesMap = new Map(),
+	
 		// Layout Settings
 		maxFlowPoints = 20,
 		distanceWeightExponent = 3,
@@ -22,7 +24,7 @@ Flox.Model = function() {
 		angularDistributionWeight = 0.5,
 		nodeWeight = 0.0,
 		nodeTolerancePx = 0,
-		moveFlowsIntersectingNodes = false,
+		moveFlowsIntersectingNodes = true,
 		multipleIterations = true,
 		NBR_ITERATIONS = 100,
 		showForceAnimation = false,
@@ -63,7 +65,7 @@ Flox.Model = function() {
 		
 		// Draw Settings
 		drawFlows = true,
-		drawNodes = true,
+		drawNodes = false,
 		drawArrows = true,
 		drawControlPoints = false,
 		drawIntermediateFlowPoints = false,
@@ -204,9 +206,17 @@ Flox.Model = function() {
     function findPoint(target) {
 
 		var i, j, pt;
-		// Loop through the existing nodes. If the coordinates match the current point, 
-		// return the existing point.
-		// If they don't match any of them, return the provided point.
+
+		// If the target has an id, get it from the nodesMap. It should be in 
+		// the nodes map.
+		if(target.hasOwnProperty("id")) {
+			// If it is in the nodesMap, get it
+			if(nodesMap.get(target.id)) {
+				return [true, nodesMap.get(target.id)];
+			} // if its not in the nodes map...either none of the existing nodes
+			  // have ids, or it was never added.
+		}
+		
 		for (i = 0, j = nodes.length; i < j; i += 1) {
 			pt = nodes[i];
 			
@@ -243,6 +253,11 @@ Flox.Model = function() {
 			nodes.push(node);
 		}
 		
+		if(!node.id) {
+			console.log("node doesn't have an id! can't be added to nodesMap")
+		} else {
+			nodesMap.set(node.id, node);
+		}
 		//updateCachedValues();
     }
     
@@ -342,30 +357,41 @@ Flox.Model = function() {
 			
 		for( i= 0, j = newFlows.length; i < j; i += 1) {
 			flow = newFlows[i];
-			startPoint = findPoint(flow.getStartPt())[1];
-			endPoint = findPoint(flow.getEndPt())[1];
-			addNode(startPoint); // startPoint is assigned xy coords here.
-	        addNode(endPoint); // endPoint is assigned xy coords here.
-			flow.setStartPt(startPoint);
-			flow.setEndPt(endPoint);
+						
+			startPoint = findPoint(flow.getStartPt());
+			endPoint = findPoint(flow.getEndPt());
+			flow.setStartPt(startPoint[1]);
+			flow.setEndPt(endPoint[1]);
+			
+			// The point is verified to not currently exist in nodes.
+			// You can safely push it into nodes without fear of duplication.
+			// It might not have xy though? You should make sure it has xy elsewhere. 
+			if(startPoint[0]===false) {
+				nodes.push(startPoint[1]);
+			}
+			if(endPoint[0]===false) {
+				nodes.push(endPoint[1]);
+			}
+						
 	        flows.push(flow);
 	        
 			// If the start and end points don't have incomingFlows and 
 			// outgoingFlows as properties, add them here. 
-			if(!startPoint.hasOwnProperty("outgoingFlows")) {
-				startPoint.outgoingFlows = [];
+			// This is needed after copying the model. 
+			if(!startPoint[1].hasOwnProperty("outgoingFlows")) {
+				startPoint[1].outgoingFlows = [];
 			}
-			if(!startPoint.hasOwnProperty("incomingFlows")) {
-				startPoint.incomingFlows = [];
+			if(!startPoint[1].hasOwnProperty("incomingFlows")) {
+				startPoint[1].incomingFlows = [];
 			}
-			if(!endPoint.hasOwnProperty("outgoingFlows")) {
-				endPoint.outgoingFlows = [];
+			if(!endPoint[1].hasOwnProperty("outgoingFlows")) {
+				endPoint[1].outgoingFlows = [];
 			}
-			if(!endPoint.hasOwnProperty("incomingFlows")) {
-				endPoint.incomingFlows = [];
+			if(!endPoint[1].hasOwnProperty("incomingFlows")) {
+				endPoint[1].incomingFlows = [];
 			}
-	        startPoint.outgoingFlows.push(flow);
-	        endPoint.incomingFlows.push(flow);
+	        startPoint[1].outgoingFlows.push(flow);
+	        endPoint[1].incomingFlows.push(flow);
 	        
 	        assignOppositeFlow(flow);
 		}
@@ -584,6 +610,7 @@ Flox.Model = function() {
 		//console.log("It's not in there!");
 		return false;
 		// It's not in there!
+		
 	}
 
 // PUBLIC ======================================================================
@@ -624,126 +651,7 @@ Flox.Model = function() {
 		}
 	};
 
-	my.toJSON = function(){
-		
-		var JSON = {
-				flows: [],
-				nodes: []
-		    },
-
-			i, j, flow, node, sPt, ePt, cPt, val, nodeCopy, prop;
-		
-		JSON.settings = {
-			maxFlowPoints : maxFlowPoints,
-			distanceWeightExponent : distanceWeightExponent,
-			peripheralStiffnessFactor : peripheralStiffnessFactor,
-			maxFlowLengthSpringConstant : maxFlowLengthSpringConstant,
-			minFlowLengthSpringConstant : minFlowLengthSpringConstant,
-			enforceRangebox : enforceRangebox,
-			flowRangeboxHeight : flowRangeboxHeight,
-			maxFlowWidth : maxFlowWidth,
-			maxNodeRadius : maxNodeRadius,
-			antiTorsionWeight : antiTorsionWeight,
-			angularDistributionWeight : angularDistributionWeight,
-			nodeWeight : nodeWeight,
-			nodeTolerancePx : nodeTolerancePx,
-			moveFlowsIntersectingNodes : moveFlowsIntersectingNodes,
-			multipleIterations : multipleIterations,
-			isShowLockedFlows : isShowLockedFlows,
-			NODE_STROKE_WIDTH : NODE_STROKE_WIDTH,
-			NBR_ITERATIONS: NBR_ITERATIONS,
-			showForceAnimation: showForceAnimation,
-			FLOW_DISTANCE_THRESHOLD : FLOW_DISTANCE_THRESHOLD,
-			flowDistanceFromStartPointPixel : flowDistanceFromStartPointPixel,
-			flowDistanceFromEndPointPixel : flowDistanceFromEndPointPixel,
-			checkFlowBoundingBoxes: checkFlowBoundingBoxes,
-			maxFlows : maxFlows,
-			mapScale: mapScale,
-			datasetName: datasetName,
-			
-			drawFlows: drawFlows,
-			drawNodes: drawNodes,
-			drawArrows: drawArrows,
-			drawControlPoints: drawControlPoints,
-			drawIntermediateFlowPoints: drawIntermediateFlowPoints,
-			drawRangeboxes: drawRangeboxes,
-			
-			minFlowValue: minFlowValue,
-			maxFlowValue: maxFlowValue,
-			meanFlowValue: meanFlowValue, // used for anything? Adding flows during editing?
-			minFlowLength: minFlowLength,
-			maxFlowLength: maxFlowLength,
-			minNodeValue: minNodeValue,
-			maxNodeValue: maxNodeValue,
-			meanNodeValue: meanNodeValue
-		};
-		
-		for(i = 0, j = nodes.length; i < j; i += 1) {
-			node = nodes[i];
-			nodeCopy = {};
-			
-			for (prop in node) {
-			    if (node.hasOwnProperty(prop)
-			        && prop !== "incomingFlows"
-			        && prop !== "outgoingFlows") {
-			        nodeCopy[prop] = node[prop];
-			    }
-			}
-			JSON.nodes.push(nodeCopy);
-		}
-		
-		for(i = 0, j = flows.length; i < j; i += 1) {
-			flow = flows[i];
-			sPt = flow.getStartPt();
-			ePt = flow.getEndPt();
-			cPt = flow.getCtrlPt();
-			
-			JSON.flows.push(
-				{
-					startPt: 
-						{
-							x: sPt.x,
-							y: sPt.y,
-							lat: sPt.lat,
-							lng: sPt.lng,
-							id: sPt.id
-							
-						},
-					endPt: 
-						{
-							x: ePt.x, 
-							y: ePt.y,
-							lat: ePt.lat,
-							lng: ePt.lng,
-							id: ePt.id
-						},
-					cPt:
-						{
-							x: cPt.x,
-							y: cPt.y
-						},
-					value: flow.getValue(),
-					
-					AtoB: flow.AtoB,
-					BtoA: flow.BtoA
-				}
-			);
-		}
-		
-		// Add the nodes to the json. Commented out because, so far, there
-		// is no use for these. The node info is in the flows. 
-		// for (i = 0, j = nodes.length; i < j; i += 1) {
-			// node = nodes[i];
-			// JSON.nodes.push(
-				// {
-					// x: node.x,
-					// y: node.y,
-					// value: node.value
-				// }
-			// );
-		// }
-		return JSON;
-	};
+	
 
 	// Convert the nodes into json readable by the editableTable.js library
 	/**
@@ -944,7 +852,13 @@ Flox.Model = function() {
 	};
 
     my.getPoints = function() {
-        return nodes; 
+        //return nodes; 
+        if(Array.from(nodesMap.values()).length > 0) {
+			console.log("getting points from nodesMap")
+			return Array.from(nodesMap.values())
+        }
+        // this only happens if nodes don't have an id parameter.
+		return nodes;
     };
 
     my.addFlow = function(flow) {
@@ -1411,12 +1325,143 @@ Flox.Model = function() {
  * @param {Array} newNodes - Nodes to add. 
 	 */
 	my.initNodes = function(newNodes) {
+		
+		var node, i;
+		
 		flows = [];
 		nodes = newNodes;
+		
+		// Make a nodesMap, but only if the nodes have ids. 
+		for(i = 0; i < nodes.length; i += 1) {
+			if(nodes[i].hasOwnProperty("id")) {
+				nodesMap.set(nodes[i].id, nodes[i]);
+			}
+		}
 	};
 
 	my.getArrowSettings = function(flow) {
 		return getArrowSettings(flow);
+	};
+
+	my.toJSON = function(){
+		
+		var JSON = {
+				flows: [],
+				nodes: []
+		    },
+
+			i, j, flow, node, sPt, ePt, cPt, val, nodeCopy, prop;
+		
+		JSON.settings = {
+			maxFlowPoints : maxFlowPoints,
+			distanceWeightExponent : distanceWeightExponent,
+			peripheralStiffnessFactor : peripheralStiffnessFactor,
+			maxFlowLengthSpringConstant : maxFlowLengthSpringConstant,
+			minFlowLengthSpringConstant : minFlowLengthSpringConstant,
+			enforceRangebox : enforceRangebox,
+			flowRangeboxHeight : flowRangeboxHeight,
+			maxFlowWidth : maxFlowWidth,
+			maxNodeRadius : maxNodeRadius,
+			antiTorsionWeight : antiTorsionWeight,
+			angularDistributionWeight : angularDistributionWeight,
+			nodeWeight : nodeWeight,
+			nodeTolerancePx : nodeTolerancePx,
+			moveFlowsIntersectingNodes : moveFlowsIntersectingNodes,
+			multipleIterations : multipleIterations,
+			isShowLockedFlows : isShowLockedFlows,
+			NODE_STROKE_WIDTH : NODE_STROKE_WIDTH,
+			NBR_ITERATIONS: NBR_ITERATIONS,
+			showForceAnimation: showForceAnimation,
+			FLOW_DISTANCE_THRESHOLD : FLOW_DISTANCE_THRESHOLD,
+			flowDistanceFromStartPointPixel : flowDistanceFromStartPointPixel,
+			flowDistanceFromEndPointPixel : flowDistanceFromEndPointPixel,
+			checkFlowBoundingBoxes: checkFlowBoundingBoxes,
+			maxFlows : maxFlows,
+			mapScale: mapScale,
+			datasetName: datasetName,
+			
+			drawFlows: drawFlows,
+			drawNodes: drawNodes,
+			drawArrows: drawArrows,
+			drawControlPoints: drawControlPoints,
+			drawIntermediateFlowPoints: drawIntermediateFlowPoints,
+			drawRangeboxes: drawRangeboxes,
+			
+			minFlowValue: minFlowValue,
+			maxFlowValue: maxFlowValue,
+			meanFlowValue: meanFlowValue, // used for anything? Adding flows during editing?
+			minFlowLength: minFlowLength,
+			maxFlowLength: maxFlowLength,
+			minNodeValue: minNodeValue,
+			maxNodeValue: maxNodeValue,
+			meanNodeValue: meanNodeValue
+		};
+		
+		for(i = 0, j = nodes.length; i < j; i += 1) {
+			node = nodes[i];
+			nodeCopy = {};
+			
+			for (prop in node) {
+			    if (node.hasOwnProperty(prop)
+			        && prop !== "incomingFlows"
+			        && prop !== "outgoingFlows") {
+			        nodeCopy[prop] = node[prop];
+			    }
+			}
+			JSON.nodes.push(nodeCopy);
+		}
+		
+		for(i = 0, j = flows.length; i < j; i += 1) {
+			flow = flows[i];
+			sPt = flow.getStartPt();
+			ePt = flow.getEndPt();
+			cPt = flow.getCtrlPt();
+			
+			JSON.flows.push(
+				{
+					startPt: 
+						{
+							x: sPt.x,
+							y: sPt.y,
+							lat: sPt.lat,
+							lng: sPt.lng,
+							id: sPt.id
+							
+						},
+					endPt: 
+						{
+							x: ePt.x, 
+							y: ePt.y,
+							lat: ePt.lat,
+							lng: ePt.lng,
+							id: ePt.id
+						},
+					cPt:
+						{
+							x: cPt.x,
+							y: cPt.y
+						},
+					value: flow.getValue(),
+					
+					AtoB: flow.AtoB,
+					BtoA: flow.BtoA
+				}
+			);
+		}
+		
+		// Add the nodes to the json. Commented out because, so far, there
+		// is no use for these. The node info is in the flows. 
+		// for (i = 0, j = nodes.length; i < j; i += 1) {
+			// node = nodes[i];
+			// JSON.nodes.push(
+				// {
+					// x: node.x,
+					// y: node.y,
+					// value: node.value
+				// }
+			// );
+		// }
+		return JSON;
 	};
 
 	my.deserializeModelJSON = function(modelJSON) {

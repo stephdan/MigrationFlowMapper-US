@@ -70,6 +70,10 @@ p {
 	font-size: 8.5pt;
 }
 
+.btn-group {
+	margin-bottom: 3px;
+}
+
 .menuButton {
 	font-size: 8.5pt;
 	margin-bottom: 3px;

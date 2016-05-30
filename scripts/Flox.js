@@ -19,17 +19,23 @@ var mapComponent,
 		
 		inStateFlows: true,
 		outerStateFlows: false,
-		
 		countyIncoming: true,
 		countyOutgoing: true,
-		county: false,
-		state: false
+		
+		selectedCounty: false,
+		selectedState: false,
+		
+		countyMode: false,
+		stateMode: false
+		
 	},
 	
 	model_master,
 	derivedModels = {},
-	
+	startTimeAll, endTimeAll,
 	my = {};
+    
+    
     
 function refreshMap(model_copy) {
 	if(!model_copy) {
@@ -169,9 +175,12 @@ function importStateToStateMigrationFlows() {
 	// clear the model
     model_master.deleteAllFlows();
     derivedModels = {};
-	filterSettings.state = true;
-	filterSettings.county = false;
-	model_master.setMapScale(5);
+    mapComponent.hideAllCountyBorders();
+    mapComponent.removeAllFlows();
+    mapComponent.removeNecklaceMap();
+	filterSettings.stateMode = true;
+	filterSettings.countyMode = false;
+	model_master.setMapScale(5); // FIXME hardcoded
 	var nodePath = "data/census/state_latLng.csv",
 		flowPath = "data/census/US_State_migration_2014_flows.csv";
 	
@@ -338,8 +347,12 @@ my.loadTestFlows = function () {
 };
 
 my.importTotalCountyFlowData = function(stateFIPS) {		
+	
+	console.log("import total county flows FLOX: " + stateFIPS)
 	// erase all flows from the model.
 	model_master.deleteAllFlows();
+	
+	filterSettings.selectedState = stateFIPS;
 	
 	derivedModels = {};
 	// Set the mapScale in the model to the appropriate scale for this map.
@@ -356,7 +369,8 @@ my.importTotalCountyFlowData = function(stateFIPS) {
 		//model_master.updateCachedValues(); // this gets done after filtering
 		model_master.setDatasetName("FIPS" + Number(stateFIPS));
 		
-		my.filterBySettings();		
+		my.filterBySettings();	
+		
 	});
 };
 
@@ -379,11 +393,11 @@ my.filterBySettings = function() {
 								  .filterBySettings(filterSettings);
 	//my.logFlows(filteredModel);
 
-	if(filterSettings.state === false) {
+	if(filterSettings.stateMode === false) {
 		mapComponent.configureNecklaceMap(filteredModel);
 	}
 	
-	new Flox.FlowLayouter(filteredModel).straightenFlows();
+	//new Flox.FlowLayouter(filteredModel).straightenFlows();
 	
 	layoutFlows(filteredModel);
 	refreshMap(filteredModel);
@@ -446,12 +460,20 @@ my.getAllDerivedModels = function() {
 	return derivedModels;
 };
 
+my.selectStatePolygon = function(stateFIPS) {
+	mapComponent.selectState(stateFIPS);
+};
 
 
 my.initFlox = function() {
 	model_master = new Flox.Model();
 	mapComponent = new Flox.MapComponent_d3();
 	mapComponent.initMap();
+	
+	
+	//importStateToStateMigrationFlows();
+	
+	
 	//mapComponent.drawFeatures();
 	//initGUI(); // no GUI yet!
 	
@@ -516,7 +538,14 @@ my.layoutFlows = function(m) {
 	layoutFlows(m);
 };
 
+my.startTimer = function() {
+	startTimeAll = performance.now();
+};
 
+my.endTimer = function() {
+	endTimeAll = performance.now();
+	console.log("TOTAL time in milliseconds: " + Math.round(endTimeAll - startTimeAll));
+};
 // END DEBUG STUFF-------------------------------------
 
 return my;

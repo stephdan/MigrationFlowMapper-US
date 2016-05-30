@@ -383,31 +383,31 @@ Flox.FlowLayouter = function (model) {
 
 		// Get the subset of flows that will exert force on targetFlow
 		flows = model.getFlows();
-		for (i = 0, j = flows.length; i < j; i += 1) {
-			
-			if (flows[i] !== targetFlow) { // Don't add the targetFlow
-			
-				flowDistance = getLongestAxisDistanceBetweenFlowBoundingBoxes(targetFlow, flows[i]);
-				//console.log("Longest distance between " + targetFlow.getId() + " and " + flows[i].getId() + ": " + flowDistance);	
-				
-				flowDistW = 1/geometricSeriesPower(flowDistance * flowDistance, distWeightExponent);
-				//console.log("flowDistW: " + flowDistW);
-				
-				// if flowDistW is high, that means they are close together. 
-				// If it's high enough, add the current flow to the subset
-				if (true){//(flowDistance > 0 && flowDistW > threshold) {
-					//console.log("close together!")
-					flowSubset.push(flows[i]);
-				}
-			}
-		}
+		// for (i = 0, j = flows.length; i < j; i += 1) {
+// 			
+			// if (flows[i] !== targetFlow) { // Don't add the targetFlow
+// 			
+				// flowDistance = getLongestAxisDistanceBetweenFlowBoundingBoxes(targetFlow, flows[i]);
+				// //console.log("Longest distance between " + targetFlow.getId() + " and " + flows[i].getId() + ": " + flowDistance);	
+// 				
+				// flowDistW = 1/geometricSeriesPower(flowDistance * flowDistance, distWeightExponent);
+				// //console.log("flowDistW: " + flowDistW);
+// 				
+				// // if flowDistW is high, that means they are close together. 
+				// // If it's high enough, add the current flow to the subset
+				// if (true){//(flowDistance > 0 && flowDistW > threshold) {
+					// //console.log("close together!")
+					// flowSubset.push(flows[i]);
+				// }
+			// }
+		// }
 
         // Iterate through the points along targetFlow
         for (i=0, j = flowPoints.length; i < j; i += 1) {
 
             pt = flowPoints[i];
 
-            f = computeForceOnPoint(pt, targetFlow, flowSubset);
+            f = computeForceOnPoint(pt, targetFlow, flows);
 
             // add f to totals
             externalF.addForce(f);
@@ -438,9 +438,6 @@ Flox.FlowLayouter = function (model) {
         
         springF = computeSpringForce(basePt, cPt, flowSpringConstant);
 
-		// FIXME This doesn't work right. Results in NaN. 
-		// Bad things happen in Flow.distance() probably. 
-		// Also, _pow() is weird. 
 		nodeF = computeNodeForceOnFlow(targetFlow);
 
         // Add up the forces, return a new force

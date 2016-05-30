@@ -19,6 +19,8 @@ Flox.FlowImporter = ( function(d3) {
 					newStNode.STUSPS = row.STUSPS;
 					newStNode.FIPS = row.FIPS;
 					newStNode.STATEFP = row.FIPS;
+					newStNode.populationDensity = row.POPDENSITYKM2;
+					newStNode.population = row.POP2014;
 					newStNode.id = row.FIPS; // don't like this. But it's used later.
 					newStNode.name = row.name;
 					newStNode.totalIncomingFlow = 0;
@@ -267,6 +269,9 @@ Flox.FlowImporter = ( function(d3) {
  * @param {Object} callback : Called after all CSVs are loaded.
 	 */
 	my.importTotalCountyFlowData = function(stateFIPS, callback) {	
+		
+		console.log("import total county flows IMPORTER: " + stateFIPS)
+		
 		var nodePath = "data/geometry/centroids_counties_all.csv",
 			flowPath = "data/census/flows/" + stateFIPS + "_net.csv";
 			

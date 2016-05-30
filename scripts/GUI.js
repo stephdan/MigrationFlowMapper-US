@@ -2,6 +2,37 @@ Flox.GUI = (function($){
 	
 	"use strict";
 	
+	$("#stateFlowsRadioLabel").on("click", function() {
+
+		var settings = Flox.getFilterSettings();
+		if(settings.stateMode === false) {
+			// do stuff			
+			Flox.importStateToStateMigrationFlows();
+		}
+		// Flox does all this stuff
+			// Clear all flows
+			// Load state to state flows.
+			// zoom out. exept this.
+			// change filter settings 
+		console.log("state flows button clicked");
+	});
+	
+	$("#countyFlowsRadioLabel").on("click", function() {
+		var settings = Flox.getFilterSettings();
+		if(settings.countyMode === false) {
+			settings.stateMode = false;
+			settings.countyMode = true;
+			
+			// if a state is selected, show the county flows in that state.
+			if(settings.selectedState !== false) {
+				Flox.selectStatePolygon(settings.selectedState);
+			}
+
+			//Flox.importTotalCountyFlowData(settings.selectedState);
+		}
+		console.log("county flows button clicked");
+	});
+	
 	// This works.
 	$("#netFlowRadioLabel").on("click", function() {
 		console.log("net clicked!");

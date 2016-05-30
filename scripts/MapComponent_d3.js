@@ -30,6 +30,22 @@ Flox.MapComponent_d3 = function() {
 		tooltip = d3.select("body").append("div")
 					.attr("class", "floxTooltip")
 					.style("display", "none"),
+		
+		colorGradients = {
+			"purple": {
+				"4": ["#dadaeb", "#bcbddc", "#9e9ac8", "#807dba"],
+				"5": ["#efedf5", "#dadaeb", "#bcbddc", "#9e9ac8", "#807dba"],
+				"6": ["#efedf5", "#dadaeb", "#bcbddc", "#9e9ac8", "#807dba", "#6a51a3"],
+				"7": ["#efedf5", "#dadaeb", "#bcbddc", "#9e9ac8", "#807dba", "#6a51a3", "#54278f"]
+			},
+			"orange": {
+				"5": ["#fee6ce", "#fdd0a2", "#fdae6b", "#fd8d3c", "#f16913"],
+				"7": ["#fee6ce", "#fdd0a2", "#fdae6b", "#fd8d3c", "#f16913", "#d94801", "#a63603"]
+			}
+		},
+		colorPick = "orange",
+		numberOfClasses = "7",
+					
 	    my = {};
 
 	// Create a map! Add a baselayer, initialize all the panning and zooming
@@ -73,6 +89,7 @@ Flox.MapComponent_d3 = function() {
 			if (error) {
 				throw error;
 			}
+			var model_master = Flox.getModel();
 			statesLayer.selectAll("path").data(topojson.feature(us, us.objects.states)
 				.features).enter().append("path")
 				.attr("d", path)
@@ -82,13 +99,21 @@ Flox.MapComponent_d3 = function() {
 				.attr("class", "feature state")
 				.attr("stroke", "white")
 				.attr("fill", "#ccc")
-				.attr("opacity", 0.5)
 				.on("click", stateClicked)
 				.on("mouseover", function(d) {
-					d3.select(this).attr("opacity", 0.6);
+					d3.select(this).style("fill", "yellow");
 				})
 				.on("mouseout", function(d) {
-					d3.select(this).attr("opacity", 0.5);
+					
+					d3.select(this).style("fill", function(d) {
+						if (Flox.getFilterSettings().stateMode) {
+							var node = model_master.findNodeByID(String(Number(d.properties.STATEFP)));
+							return populationDensityColor(Number(node.populationDensity));
+						}
+						d3.select(this).style("fill", "#ccc");
+					})
+					
+					
 				});
 			// g.append("path")
 			// .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
@@ -101,7 +126,6 @@ Flox.MapComponent_d3 = function() {
 				if (error) {
 					throw error;
 				}
-				var model_master = Flox.getModel();
 				countiesLayer.selectAll("path")
 					.data(topojson.feature(us, us.objects.counties).features)
 					.enter().append("path").attr("d", path)
@@ -152,6 +176,10 @@ Flox.MapComponent_d3 = function() {
 	function removeAllFlows() {
 		d3.select("#flowsLayer").selectAll("g").remove();
 		d3.select("#pointsLayer").selectAll("circle").remove();
+	}
+
+	function removeNecklaceMap() {
+		d3.select("#necklaceMapLayer").remove();
 	}
 
 	function removeAllCircles() {
@@ -466,14 +494,44 @@ Flox.MapComponent_d3 = function() {
 		// Create a jenks natural breaks scale with 4 classes.
 		// Uses simple_statistics.js
 		populationDensityColor = d3.scale.threshold()
-		    .range(["#dadaeb", "#bcbddc", "#9e9ac8", "#807dba"])
-			.domain(ss.jenks(popDensities, 4).slice(1, -1));
+		    .range(colorGradients[colorPick][numberOfClasses])
+			.domain(ss.jenks(popDensities, Number(numberOfClasses)).slice(1, -1));
 		
 		counties.style("fill", function(d) {
 			node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
 			var color = populationDensityColor(Number(node.populationDensity));
 			return color;
 		});
+	}
+
+	
+
+	function colorStatesByPopulationDensity() {
+		// Select the state polygons somehow. 
+		var statePolygons, model_master, nodes, node, i, popDensities, STATEFP;
+		
+		statePolygons = d3.selectAll(".feature.state");
+		model_master = Flox.getModel();
+		nodes = model_master.getPoints();
+		
+		popDensities = nodes.map(function(d){
+			return Number(d.populationDensity);
+		});
+		
+		// Create a jenks natural breaks scale with 4 classes.
+		// Uses simple_statistics.js
+		populationDensityColor = d3.scale.threshold()
+		    .range(colorGradients[colorPick][numberOfClasses])
+			.domain(ss.jenks(popDensities, Number(numberOfClasses)).slice(1, -1));
+		
+		statePolygons.style("fill", function(d) {
+			STATEFP = d.properties.STATEFP;
+			node = model_master.findNodeByID(String(Number(STATEFP)));
+			var color = populationDensityColor(Number(node.populationDensity));
+			return color;
+		})
+		.attr("opacity", 1);
+		
 	}
 
 	/**
@@ -487,10 +545,24 @@ Flox.MapComponent_d3 = function() {
 			throw new Error("drawFeatures needs to be passed a copy of the model");
 		}
 		model_copy = m;
+		
+		var filterSettings = Flox.getFilterSettings();
+		
 		// if this is county flow data, color the counties by pop density
-		if(Flox.getFilterSettings().state === false){
+		if(filterSettings.countyMode && filterSettings.selectedState !== false){
 			colorCountiesByPopulationDensity();
+			// and make the states a neutral color.
+			d3.selectAll(".feature.state")
+			  .style("fill", function(d) {
+			  	return "#ccc";
+			  })
+			  .attr("opacity", 0.4);
+		} else {
+			// color the states by population density
+			colorStatesByPopulationDensity();
 		}
+		
+		
 		
 		var drawArrows = model_copy.isDrawArrows();
 		if (model_copy.isDrawFlows()) {
@@ -759,7 +831,8 @@ Flox.MapComponent_d3 = function() {
 		// Also remove all necklace maps.
 		d3.select("#necklaceMapLayer").remove(); 
 		
-		Flox.setFilterSettings({county: false, state: false});
+		// Deselect countys and states
+		Flox.setFilterSettings({selectedState: false, selectedCounty: false});
 		
 		svg.transition().duration(750).call(zoom.translate([width / 2, height / 2]).scale(0.06).event);
 	}
@@ -772,9 +845,8 @@ Flox.MapComponent_d3 = function() {
 	 */
 	function selectState(stateFIPS) {
 		
-		var statePolygon, stateBoundingBox, outerCircle, testStates, stateCircles;
-		    
-		Flox.setFilterSettings({county: false, state: false});
+		var statePolygon, stateBoundingBox, outerCircle, testStates, 
+		stateCircles, filterSettings;
 		
 		// Clear out all flows and necklace maps.
 		removeAllFlows();
@@ -786,28 +858,49 @@ Flox.MapComponent_d3 = function() {
 			statePolygon = d;
 		});
 		
-		// Tell the importer which flows need loadin'
-		Flox.importTotalCountyFlowData(statePolygon.properties.STATEFP);
+		// Behavior should be different if it's in stateMode vs countyMode.
+		filterSettings = Flox.getFilterSettings();
+		
+		// Deselect the selected county if there is one
+		filterSettings.selectedCounty = false;
+		filterSettings.selectedState = stateFIPS;
+		
+		// County mode?
+		if(filterSettings.countyMode) {
+			// Load the county flow data for that state
+			Flox.importTotalCountyFlowData(statePolygon.properties.STATEFP);
+			// Hide county boundaries
+			hideAllCountyBorders();
+			// Show just the county boundaries for the selected state
+			showCountyBordersWithinState(statePolygon.properties.STATEFP);
+		} else if (filterSettings.stateMode) {
+			// Load the state flow data for that state.
+			// Because it's in state mode, the state flows should already be
+			// loaded. So all it has to do is show the flows. 
+			Flox.filterBySettings();
+		}
 		
 		zoomToPolygon(statePolygon); // Zoom in! FIXME Usually gets stuck 
 		// due to UI freeze.
-		
-		// Hide county boundaries
-		hideAllCountyBorders();
 
-		// Show just the county boundaries for the selected state
-		showCountyBordersWithinState(statePolygon.properties.STATEFP);
 	}
 
 	function selectCounty(countyFIPS) {
 		removeAllFlows();
 		d3.select("#necklaceMapLayer").remove();
-		Flox.setFilterSettings({county: countyFIPS});
+		Flox.setFilterSettings({selectedCounty: countyFIPS});
 		Flox.filterBySettings();
 	}
 
 	function stateClicked(d) {
-		selectState(d.properties.STATEFP);
+		// If it's in state mode, and this state is already selected...reset?
+		if(Number(Flox.getFilterSettings().selectedState) === Number(d.properties.STATEFP)) {
+			reset();
+			// load the state to state flows?
+			Flox.importStateToStateMigrationFlows();
+		} else {
+			selectState(d.properties.STATEFP);
+		}
 	}
 
 	function countyClicked(d) {
@@ -1170,6 +1263,10 @@ Flox.MapComponent_d3 = function() {
 		removeAllFlows();
 	};
 
+	my.removeNecklaceMap = function() {
+		removeNecklaceMap();
+	};
+
 	my.resizeFlows = function() {
 
 	};
@@ -1214,9 +1311,17 @@ Flox.MapComponent_d3 = function() {
 	my.setView = function(latLng, zoom) {
 
 	};
+	
+	my.hideAllCountyBorders = function() {
+		hideAllCountyBorders();
+	};
 
 	my.rotateProjection = function(lat, lng, roll) {
 		projection.rotate([lat, lng, roll]);
+	};
+
+	my.selectState = function(stateFIPS) {
+		selectState(stateFIPS);
 	};
 
 	return my;

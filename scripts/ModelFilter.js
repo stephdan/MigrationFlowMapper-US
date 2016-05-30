@@ -19,100 +19,6 @@ Flox.ModelFilter = function(model_master) {
 		modelCopy.deserializeModelJSON(modelJSON);
 		return modelCopy;
 	}
-
-	// Create a copy of the provided model.
-	//model_copy = copyModel();
-
-	/**
-	 * Merge all flows going between the same county and state.
-	 */
-	function mergeOutOfStateNetFlows() {
-		
-		var flows = model_copy.getAllFlows(),
-		i, j,
-		outOfStateFlows = {},
-		selectedStateFIPS = model_copy.getDatasetName(),
-		countyFIPS,
-		outerStateFIPS,
-		ePt, sPt, f, direction, newFlow, flow, val;
-		
-		// loop backwards through flows
-		for (i = flows.length - 1; i >= 0; i -= 1) {
-			f = flows[i];
-			sPt = f.getStartPt();
-			ePt = f.getEndPt();
-			// If the start or end point are not inside the selected state
-			if("FIPS" + sPt.STATEFP !== selectedStateFIPS || 
-			   "FIPS" + ePt.STATEFP !== selectedStateFIPS) {
-				// Add the county of the node that is in state to outOfStateFlows
-				// Is it the start or end point that is out of state?
-				if ("FIPS" + sPt.STATEFP === selectedStateFIPS) {
-					countyFIPS = sPt.id;
-					outerStateFIPS = ePt.STATEFP;
-					direction = -1; 
-				} else {
-					countyFIPS = ePt.id;
-					outerStateFIPS = sPt.STATEFP;
-					direction = 1;
-				}
-				// If it's not there already, add the in-state county fips of 
-				// this flow as a property of outOfStateFlows
-				if(!outOfStateFlows.hasOwnProperty(countyFIPS)) {
-					outOfStateFlows[countyFIPS] = {};
-				}
-				// If it's not there already
-				// add the state of the flow as a property of the county in 
-				// outOfStateFlows, and set it's value to f, and change f's 
-				// value to 0.
-				if(!outOfStateFlows[countyFIPS].hasOwnProperty(outerStateFIPS)) {
-					f.setValue(f.getValue() * direction);
-					outOfStateFlows[countyFIPS][outerStateFIPS] = f;
-				} else {
-					// Add the total flow to that state for that county
-					outOfStateFlows[countyFIPS][outerStateFIPS].addValue(f.getValue() * direction);
-				}
-				
-				// DELETE this flow from flows
-				flows.splice(i, 1);
-			}
-		}
-		
-		// TODO add polyfill for Object.keys
-		// Loop through the properties of outOfStateFlows, which are are county
-		// FIPS
-		Object.keys(outOfStateFlows).forEach(function(county, i) {
-			// Loop through the properties of each county, which are state
-			// FIPS. Each state has a flow. Get that flow!
-		    Object.keys(outOfStateFlows[county]).forEach(function(state, j) {
-				flow = outOfStateFlows[county][state];
-				val = flow.getValue();
-				// The direction of the flow may be incorrect.
-				// If val is negative && end point is NOT state, reverse it. 
-				if(val < 0 && flow.getEndPt.STUSPS !== state) {
-					flow.reverseFlow();
-				}
-				// If val is positive and end point IS state, reverse it.
-				if(val > 0 && flow.getEndPt.STUSPS === state) {
-					flow.reverseFlow();
-				}
-				// make sure the value is not negative.
-				flow.setValue(Math.abs(flow.getValue()));
-				// if the value is greater than zero, add it to flows.
-				if(flow.getValue() > 0) {
-					flows.push(flow);
-				}
-		    });
-		});
-		
-		// Remove all flows from the old model?
-		model_copy.deleteAllFlows();
-		
-		// add flows to the new model
-		model_copy.addFlows(flows);
-		
-		// return the new model
-		return model_copy;
-	}
 	
 	/**
 	 * Merge all flows going from a county to the same outer state.
@@ -241,7 +147,7 @@ Flox.ModelFilter = function(model_master) {
 		return model_copy;
 	}
 
-	function getSelectedCountyModel(countyFIPS, settings) {
+	function getSelectedCountyModel(settings) {
 		var incomingFlows = [], 
 			outgoingFlows = [], 
 			countyFlows,
@@ -252,7 +158,7 @@ Flox.ModelFilter = function(model_master) {
 		
 		for(i = 0, j = nodes.length; i < j; i += 1) {
 			node = nodes[i];
-			if(Number(node.id) === Number(countyFIPS)) {
+			if(Number(node.id) === Number(settings.selectedCounty)) {
 				if(settings.countyIncoming) {
 					incomingFlows = node.incomingFlows;
 				}
@@ -268,6 +174,31 @@ Flox.ModelFilter = function(model_master) {
 		model_copy.addFlows(countyFlows);
 	}
 
+	function getSelectedStateModel(settings) {
+		var incomingFlows = [], 
+			outgoingFlows = [], 
+			stateFlows,
+			nodes, node, i, j;
+			
+		nodes = model_copy.getPoints();
+		
+		for(i = 0, j = nodes.length; i < j; i += 1) {
+			node = nodes[i];
+			if(Number(node.FIPS) === Number(settings.selectedState)) {
+				if(settings.countyIncoming) {
+					incomingFlows = node.incomingFlows;
+				}
+				if(settings.countyOutgoing) {
+					outgoingFlows = node.outgoingFlows;
+				}
+				break;
+			}
+		}
+		stateFlows = incomingFlows.concat(outgoingFlows);
+		model_copy.deleteAllFlows();
+		model_copy.addFlows(stateFlows);
+	}
+
 
 	// PUBLIC ---------------------------------------------------------------------
 
@@ -275,9 +206,6 @@ Flox.ModelFilter = function(model_master) {
 		return model_copy;
 	};
 
-	my.mergeOutOfStateNetFlows = function() {
-		return mergeOutOfStateNetFlows();
-	};
 
 	my.mergeOutOfStateTotalFlows = function() {
 		return mergeOutOfStateTotalFlows();
@@ -471,7 +399,7 @@ Flox.ModelFilter = function(model_master) {
 	};
 	
 	my.removeOuterStateFlows = function() {
-		var selectedState = model_copy.getDatasetName(),
+		var selectedState = model_copy.getDatasetName(), // FIXME use settings.selectedstate
 			flows = model_copy.getFlows(), 
 			f, i, j, nodes;
 			
@@ -498,10 +426,8 @@ Flox.ModelFilter = function(model_master) {
 		if(settings.netFlows) {
 			if(!Flox.getDerivedModel("netFlowsModel")) { // if netFlowsModel isn't there yet
 				model_copy = copyModel(model_master); // Copy the master
-				
-				
-				
-				if(settings.state===false) {
+
+				if(settings.stateMode===false) {
 					mergeOutOfStateTotalFlows(); 
 				}
 				
@@ -518,7 +444,7 @@ Flox.ModelFilter = function(model_master) {
 		} else { // same as above, but with totalFlowsModel
 			if(!Flox.getDerivedModel("totalFlowsModel")){
 				model_copy = copyModel(model_master);
-				if(settings.state===false) {
+				if(settings.stateMode===false) {
 					mergeOutOfStateTotalFlows(); 
 				}
 				my.getTotalFlowsModel();
@@ -531,19 +457,24 @@ Flox.ModelFilter = function(model_master) {
 			}
 		}
 		
-		if(settings.county) {
-			getSelectedCountyModel(settings.county, settings);
+		// If a county is selected, get the model for just that county.
+		if(settings.selectedCounty !== false) {
+			getSelectedCountyModel(settings);
 		}		
 		
+		// It it's in state mode, and a state is selected, filter out all
+		// flows not connected to that state.
+		if(settings.stateMode && settings.selectedState !== false) {
+			getSelectedStateModel(settings);
+		}
 		
-		
-		if(!settings.outerStateFlows && !settings.state) {
+		if(!settings.outerStateFlows && !settings.stateMode) {
 			my.removeOuterStateFlows();
 		}
 		
 		//Flox.logFlows(model_copy);
 		
-		if(settings.inStateFlows === false) {
+		if(settings.inStateFlows === false && settings.countyMode) {
 			// filter out in state flows
 			my.removeInStateFlows();
 		}		
