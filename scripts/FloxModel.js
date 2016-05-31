@@ -46,8 +46,8 @@ Flox.Model = function() {
 		// TODO Add arrowstuff to settings export and Flox.initGUI
 		arrowSizeRatio = 0.1,
 		arrowLengthRatio = 0.2,
-		arrowLengthScaleFactor = 1.6,
-		arrowWidthScaleFactor = 0.8,
+		arrowLengthScaleFactor = 1.8,
+		arrowWidthScaleFactor = 1,
 		arrowEdgeCtrlLength = 0.5,
 		arrowEdgeCtrlWidth = 0.5,
 		arrowCornerPosition = 0.0,
@@ -449,7 +449,11 @@ Flox.Model = function() {
 			ratio, 
 			area,
 			radius;
-			
+		
+		if(node.hasOwnProperty("r")) {
+			return node.r * mapScale;
+		}
+		
 		if (!maxNodeValue) { // There are not nodes yet
 			ratio = maxNodeArea;
 		} else {

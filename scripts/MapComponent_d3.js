@@ -182,12 +182,6 @@ Flox.MapComponent_d3 = function() {
 		d3.select("#necklaceMapLayer").remove();
 	}
 
-	function removeAllCircles() {
-		// Select and remove the circles layer?
-		var circlesLayer = d3.select("#circlesLayer").remove();
-	}
-
-
 	function getNodeRadius(node) {
 		return model_copy.getNodeRadius(node);
 	}
@@ -416,7 +410,8 @@ Flox.MapComponent_d3 = function() {
 	}
 
 	function drawPoints() {
-		var points = model_copy.getPoints(),
+		var //points = model_copy.getPoints(),
+			points = Flox.getActiveFullModel().getPoints(),
 		    circles = d3.select("#pointsLayer")
 						.selectAll("circle")
 						.data(points)
@@ -429,13 +424,15 @@ Flox.MapComponent_d3 = function() {
 		.attr("class", function(d) {
 			return "node FIPS" + d.id; // FIXME id is really FIPS
 		})
-		.style("fill", "white").style("stroke", function(d) {// adjust the color
+		.style("fill", "white")
+		.style("stroke", function(d) {// adjust the color
 			if (d.selected) {
 				return "#59A4FF";
 			}
 			return "black";
 		})
-		.style("cursor", "default").attr("r", function(d) {
+		.style("cursor", "default")
+		.attr("r", function(d) {
 			return model_copy.getNodeRadius(d);
 		})
 		.attr("cx", function(d) {
@@ -584,8 +581,12 @@ Flox.MapComponent_d3 = function() {
 			drawFlows(drawArrows);
 		}
 		if (model_copy.isDrawNodes()) {
+			console.log("The model says to draw nodes, so I'm drawing nodes.");
 			drawPoints();
+		} else {
+			console.log("No nodes!");
 		}
+
 		//drawObstacles();
 	}
 	
@@ -599,22 +600,6 @@ Flox.MapComponent_d3 = function() {
 		d3.selectAll(".county").classed("hidden", true);
 	}
 
-	function drawCircles(circlesArray) {
-		// Add a circles layer for drawing necklace map circles
-		d3.select("#mapFeaturesLayer").append("g").attr("id", "circlesLayer");
-
-		// Create svg circles
-		var circles = d3.select("#circlesLayer").selectAll("circle").data(circlesArray).enter().append("circle");
-
-		// Attribute the circles
-		circles.style("stroke", "black").style("stroke-width", 8).style("fill", "none").attr("r", function(d) {
-			return d.r;
-		}).attr("cx", function(d) {
-			return d.x;
-		}).attr("cy", function(d) {
-			return d.y;
-		});
-	}
 
 	// Returns x, y, and radius of a circle containing a bounding box.
 	function getCircleAroundBoundingBox(bb) {
@@ -845,7 +830,6 @@ Flox.MapComponent_d3 = function() {
 	function reset() {
 
 		d3.selectAll(".county").classed("hidden", true);
-		removeAllCircles();
 		
 		var settings = Flox.getFilterSettings();
 		
@@ -1261,19 +1245,12 @@ Flox.MapComponent_d3 = function() {
 	
 	// PUBLIC ---------------------------------------------------------------------
 
-	// start MapComponent_d3 only-----------------------------------------------
 
-	// Circles are an array of point objects like this:
-	// { x, y, r } where r is the radius.
-	my.drawCircles = function(circlesArray) {
-		drawCircles(circlesArray);
-	};
 
 	my.configureNecklaceMap = function (model_copy) {
 		configureNecklaceMap(model_copy);
 	};
 
-	// end MapComponent_d3 only-------------------------------------------------
 
 	my.drawFeatures = function(m) {
 		drawFeatures(m);
