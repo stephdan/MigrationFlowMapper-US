@@ -583,9 +583,7 @@ Flox.MapComponent_d3 = function() {
 		if (model_copy.isDrawNodes()) {
 			console.log("The model says to draw nodes, so I'm drawing nodes.");
 			drawPoints();
-		} else {
-			console.log("No nodes!");
-		}
+		} 
 
 		//drawObstacles();
 	}
@@ -838,7 +836,9 @@ Flox.MapComponent_d3 = function() {
 		// flows when the County Flows button is pushed)
 		if(settings.selectedState !== false || (settings.selectedState === false && settings.countyMode)) {
 			removeAllFlows();
-			my.resetStateFillColor();
+			if(settings.countyMode){
+				my.resetStateFillColor();
+			}
 		}
 		
 		// If it's in state mode, and a state is selected, need to get
