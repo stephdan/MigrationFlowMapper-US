@@ -178,6 +178,7 @@ function importStateToStateMigrationFlows() {
     mapComponent.hideAllCountyBorders();
     mapComponent.removeAllFlows();
     mapComponent.removeNecklaceMap();
+    mapComponent.zoomToFullExtent();
 	filterSettings.stateMode = true;
 	filterSettings.countyMode = false;
 	model_master.setMapScale(5); // FIXME hardcoded
@@ -189,7 +190,7 @@ function importStateToStateMigrationFlows() {
 		model_master.addFlows(flows);
 		//model_master.updateCachedValues();
 		model_master.setDatasetName("states");
-		my.filterBySettings();
+		my.updateMap();
 	});
 }
 
@@ -369,7 +370,7 @@ my.importTotalCountyFlowData = function(stateFIPS) {
 		//model_master.updateCachedValues(); // this gets done after filtering
 		model_master.setDatasetName("FIPS" + Number(stateFIPS));
 		
-		my.filterBySettings();	
+		my.updateMap();	
 		
 	});
 };
@@ -383,28 +384,32 @@ my.rotateProjection = function(lat, lng, roll) {
 };
 
 /**
- * Filter, layout, and display the model according to filterSettings.
+ * Filter the provided model according to the current filterSettings
  */
-my.filterBySettings = function() {
-	// so...
+my.filterBySettings = function(m) {
 	var filteredModel;
 	//my.logFlows(model_master);
-	filteredModel = new Flox.ModelFilter(model_master)
-								  .filterBySettings(filterSettings);
-	//my.logFlows(filteredModel);
+	filteredModel = new Flox.ModelFilter(m).filterBySettings(filterSettings);
+	
+	return filteredModel;  
+};
 
+/**
+ * Filters, performs layout, and displays the model according to current settings.
+ */
+my.updateMap = function() {
+	
+	var filteredModel;
+	filteredModel = my.filterBySettings(model_master);
 	if(filterSettings.stateMode === false) {
 		mapComponent.configureNecklaceMap(filteredModel);
 	}
-	
 	//new Flox.FlowLayouter(filteredModel).straightenFlows();
-	
 	layoutFlows(filteredModel);
 	refreshMap(filteredModel);
-		
 	// runLayoutWorker(filteredModel, function() {
 		// refreshMap(filteredModel);
-	// });						  
+	// });	
 };
 
 my.getFilterSettings = function() {
@@ -472,38 +477,34 @@ my.enterClickAStateMode = function() {
 };
 
 my.initFlox = function() {
+	
+	var starterModel = new Flox.Model(), 
+		jsonPath = "data/JSON/stateToStateFlowsLayout.json",
+		flowPath = "data/census/US_State_migration_2014_flows.csv";
+	
 	model_master = new Flox.Model();
 	mapComponent = new Flox.MapComponent_d3();
 	mapComponent.initMap();
 	
+	filterSettings.stateMode = true;
 	
-	//importStateToStateMigrationFlows();
-	
-	
-	//mapComponent.drawFeatures();
-	//initGUI(); // no GUI yet!
-	
-	// var p1 = {lat: 10, lng: 10},
-		// p2 = {lat: 20, lng: 20},
-		// p3 = {lat: 30, lng: 30},
-		// p4 = {lat: 40, lng: 40},
-		// xy1 = Flox.latLngToLayerPt(p1),
-		// xy2 = Flox.latLngToLayerPt(p2),
-		// xy3 = Flox.latLngToLayerPt(p3),
-		// xy4 = Flox.latLngToLayerPt(p4),
-		// flow1, flow2;
-		// p1.x = xy1.x;
-		// p1.y = xy1.y;
-		// p2.x = xy2.x;
-		// p2.y = xy2.y;
-		// p3.x = xy3.x;
-		// p3.y = xy3.y;
-		// p4.x = xy4.x;
-		// p4.y = xy4.y;
-		// flow1 = new Flow(p1, p2, 10);
-		// flow2 = new Flow(p3, p4, 10);
-	// model.addFlow(flow1);
-	// model.addFlow(flow2);
+	// Load the entire state-to-state dataset.
+	// Wouldn't it be better to have some premade JSON of this model?
+	Flox.FlowImporter.importStateToStateMigrationFlows(flowPath, function(flows, stateNodes) {
+		model_master.initNodes(stateNodes);
+		model_master.addFlows(flows);
+		model_master.updateCachedValues();
+		model_master.setMapScale(5);
+		model_master.setDatasetName("states");
+		my.filterBySettings(model_master);
+		
+		d3.json(jsonPath, function(d) {
+			starterModel.deserializeModelJSON(d);
+			
+			starterModel.configureArrows();
+			mapComponent.drawFeatures(starterModel);
+		});
+	});
 };
 
 

@@ -284,18 +284,19 @@ Flox.MapComponent_d3 = function() {
 	 * allows arrows to be drawn the correct size when viewing individual
 	 * county flows. 
 	 */
-	// function configureArrowsWithActiveModel(activeModel) {
-// 		
-		// var flows, flow, arrowSettings, i, j;
-// 		
-		// // get the flows from the model_copy
-		// flows = model_copy.getFlows();
-		// for(i = 0, j = flows.length; i < j; i += 1) {
-			// flow = flows[i];
-			// arrowSettings = activeModel.getArrowSettings(flow);
-			// flow.configureArrow(arrowSettings);
-		// }
-	// }
+	function configureArrowsWithActiveModel(activeModel) {
+		var flows, flow, arrowSettings, i, j;
+		// get the flows from the model_copy...
+		flows = model_copy.getFlows();
+		for(i = 0, j = flows.length; i < j; i += 1) {
+			flow = flows[i];
+			// ...but get the settings from the activeModel.
+			// This allows for proper sizing of arrows even though not all
+			// flows are present in the model_copy
+			arrowSettings = activeModel.getArrowSettings(flow);
+			flow.configureArrow(arrowSettings);
+		}
+	}
 
 
 	function drawFlows(drawArrows) {
@@ -309,10 +310,14 @@ Flox.MapComponent_d3 = function() {
 		    re,
 		    svgFlows;
 	
-		// if(drawArrows) {
-			// configureArrowsWithActiveModel(activeModel);
-		// }
+		// If there are supposed to be arrows, but there are no arrows, 
+		// configure arrows.
+		if(drawArrows && flows[0].getArrow()===false) {
+			configureArrowsWithActiveModel(activeModel);
+		}
 		
+		// sort the flows in descending order so that big flows are drawn under
+		// small flows (big flows will be drawn first)
 		flows.sort(function(a, b){ return b.getValue() - a.getValue(); });
 
 		// called svgFlows because flows is already taken!
@@ -539,6 +544,16 @@ Flox.MapComponent_d3 = function() {
 	 */
 	function drawFeatures(m) {
 	
+		var filterSettings = Flox.getFilterSettings(), modelJSON, 
+			drawArrows, modelJSONString;
+		
+		// Stringify the model! This is just for grabbing pre-sets for quick 
+		// loading at startup. 
+		// TODO could make this a funcion in the model.
+		// modelJSON = m.toJSON();
+		// modelJSONString= JSON.stringify(modelJSON);
+		// console.log(modelJSONString);
+		
 		removeAllFlows();
 	
 		if(!m) {
@@ -546,7 +561,7 @@ Flox.MapComponent_d3 = function() {
 		}
 		model_copy = m;
 		
-		var filterSettings = Flox.getFilterSettings();
+		
 		
 		// if this is county flow data, color the counties by pop density
 		if(filterSettings.countyMode && filterSettings.selectedState !== false){
@@ -563,9 +578,8 @@ Flox.MapComponent_d3 = function() {
 			colorStatesByPopulationDensity();
 		}
 		
+		drawArrows = model_copy.isDrawArrows();
 		
-		
-		var drawArrows = model_copy.isDrawArrows();
 		if (model_copy.isDrawFlows()) {
 			drawFlows(drawArrows);
 		}
@@ -820,6 +834,11 @@ Flox.MapComponent_d3 = function() {
 		.duration(750) // TODO long zoom for testing asynchronous stuff.
 		.call(zoom.translate(translate).scale(scale).event);
 	}
+	
+	// FIXME Hardcoded scale. Calculate scale from feature extent somehow.
+	function zoomToFullExtent() {
+		svg.transition().duration(750).call(zoom.translate([width / 2, height / 2]).scale(0.06).event);
+	}
 
 	// Zooms out to full extent, deselects everything, hides all county
 	// boundaries, resets some filter settings.
@@ -849,7 +868,7 @@ Flox.MapComponent_d3 = function() {
 		// Deselect countys and states
 		Flox.setFilterSettings({selectedState: false, selectedCounty: false});
 		
-		svg.transition().duration(750).call(zoom.translate([width / 2, height / 2]).scale(0.06).event);
+		zoomToFullExtent();
 	}
 
 	/**
@@ -888,14 +907,16 @@ Flox.MapComponent_d3 = function() {
 			hideAllCountyBorders();
 			// Show just the county boundaries for the selected state
 			showCountyBordersWithinState(statePolygon.properties.STATEFP);
+			zoomToPolygon(statePolygon); 
+			
 		} else if (filterSettings.stateMode) {
 			// Load the state flow data for that state.
 			// Because it's in state mode, the state flows should already be
 			// loaded. So all it has to do is show the flows. 
-			Flox.filterBySettings();
+			Flox.updateMap();
 		}
 		
-		zoomToPolygon(statePolygon); // Zoom in! FIXME Usually gets stuck 
+		// Zoom in! FIXME Usually gets stuck 
 		// due to UI freeze.
 
 	}
@@ -904,7 +925,7 @@ Flox.MapComponent_d3 = function() {
 		removeAllFlows();
 		d3.select("#necklaceMapLayer").remove();
 		Flox.setFilterSettings({selectedCounty: countyFIPS});
-		Flox.filterBySettings();
+		Flox.updateMap();
 	}
 
 	function stateClicked(d) {
@@ -1351,6 +1372,10 @@ Flox.MapComponent_d3 = function() {
 			.duration(500)
 			.style("fill", "#ccc")
 			.attr("opacity", 1);
+	};
+	
+	my.zoomToFullExtent = function() {
+		zoomToFullExtent();
 	};
 	
 	return my;

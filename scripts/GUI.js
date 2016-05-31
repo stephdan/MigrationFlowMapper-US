@@ -9,11 +9,6 @@ Flox.GUI = (function($){
 			// do stuff			
 			Flox.importStateToStateMigrationFlows();
 		}
-		// Flox does all this stuff
-			// Clear all flows
-			// Load state to state flows.
-			// zoom out. exept this.
-			// change filter settings 
 		console.log("state flows button clicked");
 	});
 	
@@ -48,7 +43,7 @@ Flox.GUI = (function($){
 		// If netFlows is false, change to true, filter, layout, draw
 		if(settings.netFlows === false) {
 			settings.netFlows = true;
-			Flox.filterBySettings();
+			Flox.updateMap();
 		}
 	});
 	
@@ -62,7 +57,7 @@ Flox.GUI = (function($){
 		// If netFlows is false, change to true, filter, layout, draw
 		if(settings.netFlows === true) {
 			settings.netFlows = false;
-			Flox.filterBySettings();
+			Flox.updateMap();
 		}
 	});
 	
@@ -75,7 +70,7 @@ Flox.GUI = (function($){
 		settings.inStateFlows = !settings.inStateFlows;
 		// Only do something if it's not in state mode
 		if(settings.stateMode === false) {
-			Flox.filterBySettings();
+			Flox.updateMap();
 		}
 	});
 
@@ -86,7 +81,7 @@ Flox.GUI = (function($){
 		settings.outerStateFlows = !settings.outerStateFlows;
 		// Only do something if it's not in state mode
 		if(settings.stateMode === false) {
-			Flox.filterBySettings();
+			Flox.updateMap();
 		}
 	});
 
