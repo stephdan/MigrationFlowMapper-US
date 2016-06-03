@@ -35,7 +35,13 @@ var mapComponent,
 	startTimeAll, endTimeAll,
 	my = {};
     
-    
+
+d3.selection.prototype.moveToFront = function() {
+  return this.each(function(){
+    this.parentNode.appendChild(this);
+  });
+};
+
     
 function refreshMap(model_copy) {
 	if(!model_copy) {
@@ -121,7 +127,7 @@ function importCSV(path) {
  */
 function layoutFlows(model) {
 
-	//console.log("layoutFlows called");
+	console.log("Laying out flows...");
 	
 	if (model.getFlows().length < 2) {
 		console.log("there are fewer than 2 flows, not doing a layout");
@@ -400,10 +406,12 @@ my.filterBySettings = function(m) {
 my.updateMap = function() {
 	
 	var filteredModel;
+	//my.logFlows(model_master);
 	filteredModel = my.filterBySettings(model_master);
 	if(filterSettings.stateMode === false) {
 		mapComponent.configureNecklaceMap(filteredModel);
 	}
+	//my.logFlows(filteredModel);
 	//new Flox.FlowLayouter(filteredModel).straightenFlows();
 	layoutFlows(filteredModel);
 	refreshMap(filteredModel);
@@ -490,6 +498,7 @@ my.initFlox = function() {
 	
 	// Load the entire state-to-state dataset.
 	// Wouldn't it be better to have some premade JSON of this model?
+	// FIXME this is resulting in the start and end points being askew somehow.
 	Flox.FlowImporter.importStateToStateMigrationFlows(flowPath, function(flows, stateNodes) {
 		model_master.initNodes(stateNodes);
 		model_master.addFlows(flows);
@@ -502,9 +511,11 @@ my.initFlox = function() {
 			starterModel.deserializeModelJSON(d);
 			
 			starterModel.configureArrows();
+			//layoutFlows(starterModel);
 			mapComponent.drawFeatures(starterModel);
 		});
 	});
+	//importStateToStateMigrationFlows();
 };
 
 

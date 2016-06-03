@@ -19,6 +19,11 @@ Flox.FlowImporter = ( function(d3) {
 					newStNode.STUSPS = row.STUSPS;
 					newStNode.FIPS = row.FIPS;
 					newStNode.STATEFP = row.FIPS;
+					if(isNaN(Number(row.POPDENSITYKM2))) {
+						newStNode.populationDensity = "unknown";
+					} else {
+						newStNode.populationDensity = row.POPDENSITYKM2;
+					}
 					newStNode.populationDensity = row.POPDENSITYKM2;
 					newStNode.population = row.POP2014;
 					newStNode.id = row.FIPS;
@@ -88,25 +93,28 @@ Flox.FlowImporter = ( function(d3) {
 			    AtoB,
 			    flowAB,
 			    flowBA,
-			    row;
+			    row,
+			    A_stateFIPS,
+			    B_stateFIPS;
 
 			// For each row in the table...
 			for ( i = 0, j = flowData.length; i < j; i += 1) {
 				row = flowData[i];
-
+				A_stateFIPS = row.placeA_FIPS.slice(0, -3);
+				B_stateFIPS = row.placeB_FIPS.slice(0, -3);
 				// First check if see if this flow has out of state nodes.
-				if(Number(row.placeA_STATEFP) !== Number(stateFIPS)) {
+				if(Number(A_stateFIPS) !== Number(stateFIPS)) {
 					// Place A is out of state.
 					// Get the state node for place A.
-					aPt = findStateNode(countyNodes, row.placeA_STATEFP);
+					aPt = findStateNode(countyNodes, B_stateFIPS);
 				} else { // Not out of state. Use the full fips.
 					aPt = findNodeByID(countyNodes, row.placeA_FIPS);
 				}
 				
-				if(Number(row.placeB_STATEFP) !== Number(stateFIPS)) {
+				if(Number(B_stateFIPS) !== Number(stateFIPS)) {
 					// Place B is out of state.
 					// Get the state node for place B.
-					bPt = findStateNode(countyNodes, row.placeB_STATEFP);
+					bPt = findStateNode(countyNodes, B_stateFIPS);
 				} else { // Not out of state. Use the full fips.
 					bPt = findNodeByID(countyNodes, row.placeB_FIPS);
 				}
@@ -144,6 +152,7 @@ Flox.FlowImporter = ( function(d3) {
 					}
 				}
 			}
+			console.log(flows.length + " flows imported!");
 			callback(flows, countyNodes);
 		});
 	}

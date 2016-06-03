@@ -8,7 +8,7 @@ Flox.Model = function() {
 	var nodes = [],
 		flows = [],
 	
-		nodesMap = new Map(),
+		//nodesMap = new Map(),
 	
 		// Layout Settings
 		maxFlowPoints = 20,
@@ -81,6 +81,9 @@ Flox.Model = function() {
 		// determine an appropriate distance flows should be moved off nodes. 
 		stateScales = {
 			"FIPS1"  : 1, // Alabama
+			"FIPS34" : 0.5, // New Jersey
+			"FIPS36" : 0.35, // New York
+			"FIPS44" : 0.5, // Rhode Island
 			"FIPS48" : 2, // Texas
 			"FIPS54" : 1,  // West Virginia
 			"allStates": 0.2
@@ -245,11 +248,11 @@ Flox.Model = function() {
 			nodes.push(node);
 		}
 		
-		if(!node.id) {
-			console.log("node doesn't have an id! can't be added to nodesMap")
-		} else {
-			nodesMap.set(node.id, node);
-		}
+		// if(!node.id) {
+			// console.log("node doesn't have an id! can't be added to nodesMap")
+		// } else {
+			// nodesMap.set(node.id, node);
+		// }
 		//updateCachedValues();
     }
     
@@ -851,9 +854,9 @@ Flox.Model = function() {
 
     my.getPoints = function() {
         //return nodes; 
-        if(Array.from(nodesMap.values()).length > 0) {
-			return Array.from(nodesMap.values())
-        }
+        // if(Array.from(nodesMap.values()).length > 0) {
+			// return Array.from(nodesMap.values())
+        // }
         // this only happens if nodes don't have an id parameter.
 		return nodes;
     };
@@ -1328,9 +1331,9 @@ Flox.Model = function() {
 		flows = [];
 		nodes = newNodes;
 		
-		for(i = 0; i < nodes.length; i += 1) {
-			nodesMap.set(nodes[i].id, nodes[i]);
-		}
+		// for(i = 0; i < nodes.length; i += 1) {
+			// nodesMap.set(nodes[i].id, nodes[i]);
+		// }
 	};
 
 	my.getArrowSettings = function(flow) {
@@ -1463,8 +1466,10 @@ Flox.Model = function() {
 		var flowData = modelJSON.flows,
 			newFlows = [],
 			flow, i, j, sPt, ePt, cPt;
-			
+		
+		// Assign new xy coordinates to the nodes.	
 		nodes = modelJSON.nodes;
+		
 		// Delete this model's flows and nodes
 		//my.deleteAllFlows();		
 		
@@ -1481,6 +1486,12 @@ Flox.Model = function() {
 		}
 		addFlows(newFlows);
 		updateSettings(modelJSON.settings);
+	};
+	
+	my.stringifyModel = function() {
+		var modelJSON = my.toJSON(),
+			modelJSONString = JSON.stringify(modelJSON);
+		console.log(modelJSONString);
 	};
 	
 	return my;

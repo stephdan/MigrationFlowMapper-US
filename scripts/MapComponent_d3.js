@@ -90,8 +90,8 @@ Flox.MapComponent_d3 = function() {
 				throw error;
 			}
 			var model_master = Flox.getModel();
-			statesLayer.selectAll("path").data(topojson.feature(us, us.objects.states)
-				.features).enter().append("path")
+			statesLayer.selectAll("path").data(topojson.feature(us, us.objects.states).features, function(d) { return d.properties.STATEFP})
+				.enter().append("path")
 				.attr("d", path)
 				.attr("id", function(d) {
 					return "FIPS" + Number(d.properties.STATEFP);
@@ -101,7 +101,8 @@ Flox.MapComponent_d3 = function() {
 				.attr("fill", "#ccc")
 				.on("click", stateClicked)
 				.on("mouseover", function(d) {
-					d3.select(this).style("fill", "yellow");
+					
+					d3.select(this).style("stroke", "gray").moveToFront();
 				})
 				.on("mouseout", function(d) {
 					
@@ -110,12 +111,13 @@ Flox.MapComponent_d3 = function() {
 							var node = model_master.findNodeByID(String(Number(d.properties.STATEFP)));
 							return populationDensityColor(Number(node.populationDensity));
 						}
-						d3.select(this).style("fill", "#ccc");
+						d3.select(this)
 					})
+					.style("stroke", "white");
 					
 					
 				});
-			// g.append("path")
+			// statesLayer.append("path")
 			// .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
 			// .attr("class", "mesh")
 			// .attr("id", "basemapMesh")
@@ -127,7 +129,7 @@ Flox.MapComponent_d3 = function() {
 					throw error;
 				}
 				countiesLayer.selectAll("path")
-					.data(topojson.feature(us, us.objects.counties).features)
+					.data(topojson.feature(us, us.objects.counties).features, function(d) {return (Number(d.properties.STATEFP) + d.properties.COUNTYFP);})
 					.enter().append("path").attr("d", path)
 					.attr("class", function(d) {
 						return "feature county hidden FIPS" + Number(d.properties.STATEFP);
@@ -136,17 +138,23 @@ Flox.MapComponent_d3 = function() {
 					.on("mouseover", function(d) {
 						tooltip.style("display", "inline");
 						d3.select(this)
-							.style("fill", "yellow");
+							.moveToFront()
+							.style("stroke", "gray");
 					})			
 					.on("mousemove", function(d) {
-						var node, outgoingFlow, incomingFlow;
+						var node, outgoingFlow, incomingFlow, popDensity;
 						node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
 						outgoingFlow = node.totalOutgoingFlow;
 						incomingFlow = node.totalIncomingFlow;
+						if(isNaN(Number(node.populationDensity))) {
+							popDensity = "unknown";
+						} else {
+							popDensity = parseFloat(node.populationDensity).toFixed(0);
+						}
 						tooltip.html(d.properties.NAME + "<br/>" + 
 										   "Total Outflow: " + outgoingFlow + "<br/>" +
 										   "Total Inflow: " + incomingFlow + "<br/>" +
-										   "Pop. Density: " + parseFloat(node.populationDensity).toFixed(1))
+										   "Pop. Density: " + popDensity)
 								.style("left", (d3.event.pageX + tooltipOffset.x) + "px")
 								.style("top", function() {
 									var tooltipHeight = d3.select(this).node().getBoundingClientRect().height;
@@ -157,6 +165,8 @@ Flox.MapComponent_d3 = function() {
 					.on("mouseout", function() {
 						tooltip.style("display", "none");
 						d3.select(this)
+							.moveToFront()
+							.style("stroke", "white")
 							.style("fill", function(d) {
 								var node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
 								return populationDensityColor(Number(node.populationDensity));
@@ -306,9 +316,9 @@ Flox.MapComponent_d3 = function() {
 	
 		// If there are supposed to be arrows, but there are no arrows, 
 		// configure arrows.
-		if(drawArrows && flows[0].getArrow()===false) {
+		//if(drawArrows && flows[0].getArrow()===false) {
 			configureArrowsWithActiveModel(activeModel);
-		}
+		//}
 		
 		// sort the flows in descending order so that big flows are drawn under
 		// small flows (big flows will be drawn first)
@@ -475,22 +485,27 @@ Flox.MapComponent_d3 = function() {
 
 	function colorCountiesByPopulationDensity() {
 		var stateFIPS, counties, nodes, node, countyNodes = [], i,
-		popDensities, model_master;
+		popDensities, model_master, popDensity;
 		
 		model_master = Flox.getModel();
-		nodes = model_master.getPoints();
+		nodes = model_master.getPoints(); // this gets state and county nodes.
 		stateFIPS = model_copy.getDatasetName().slice(4);
 		counties = d3.selectAll(".FIPS" + stateFIPS);
 		
 		for (i = 0; i < nodes.length; i += 1) {
 			node = nodes[i];
-			if(node.hasOwnProperty("populationDensity")){
+			if(node.type === "county"){ // Even state nodes have this, so the state pop densities are being added.
 				countyNodes.push(node);
 			}
 		}
 		
 		popDensities = countyNodes.map(function(d) {
-				return Number(d.populationDensity);
+				popDensity = Number(d.populationDensity);
+				if(isNaN(popDensity)) {
+					console.log("pop density is NaN!");
+					return 0;
+				}
+				return popDensity;
 		});
 		
 		// Create a jenks natural breaks scale with 4 classes.
@@ -501,8 +516,12 @@ Flox.MapComponent_d3 = function() {
 		
 		counties.style("fill", function(d) {
 			node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
-			var color = populationDensityColor(Number(node.populationDensity));
-			return color;
+			popDensity = Number(node.populationDensity);
+			if(isNaN(popDensity)===false) {
+				var color = populationDensityColor(popDensity);
+				return color;
+			}
+			return "ccc";
 		});
 	}
 
@@ -514,7 +533,7 @@ Flox.MapComponent_d3 = function() {
 		
 		statePolygons = d3.selectAll(".feature.state");
 		model_master = Flox.getModel();
-		nodes = model_master.getPoints();
+		nodes = model_master.getPoints(); // This gets county AND state points.
 		
 		popDensities = nodes.map(function(d){
 			return Number(d.populationDensity);
@@ -544,12 +563,8 @@ Flox.MapComponent_d3 = function() {
 		var filterSettings = Flox.getFilterSettings(), modelJSON, 
 			drawArrows, modelJSONString;
 		
-		// Stringify the model! This is just for grabbing pre-sets for quick 
-		// loading at startup. 
-		// TODO could make this a funcion in the model.
-		// modelJSON = m.toJSON();
-		// modelJSONString= JSON.stringify(modelJSON);
-		// console.log(modelJSONString);
+		// Stringify the model! For debugging. TODO
+		//m.stringifyModel();
 		
 		removeAllFlows();
 	
