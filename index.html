@@ -45,7 +45,27 @@
 </head>
 
 <body>
-
+	
+	<div id="slidingPanel">
+		<div id="slidingPanelTab">
+			
+		</div>
+		<div id="slidingPanelContent">
+			<div class="btn-group" data-toggle="buttons">
+			  <label class="btn btn-primary active" id="netFlowRadioLabel">
+			    <input type="radio" name="filterRadio" id="netFlowRadio" 
+			     autocomplete="off" checked> 
+			     Net Flow
+			  </label>
+			  <label class="btn btn-primary" id="totalFlowRadioLabel">
+			    <input type="radio" name="filterRadio" id="totalFlowRadio" 
+			     autocomplete="off"> 
+			     Total Flow
+			  </label>
+			</div>
+		</div>		
+	</div>
+	
 	<div id="filterGUI">
 		
 		<div class="btn-group" data-toggle="buttons">
@@ -65,20 +85,7 @@
 		
 		<br />
 		
-		<div class="btn-group" data-toggle="buttons">
-			
-		  <label class="btn btn-primary active" id="netFlowRadioLabel">
-		    <input type="radio" name="filterRadio" id="netFlowRadio" 
-		     autocomplete="off" checked> 
-		     Net Flow
-		  </label>
-		  
-		  <label class="btn btn-primary" id="totalFlowRadioLabel">
-		    <input type="radio" name="filterRadio" id="totalFlowRadio" 
-		     autocomplete="off"> 
-		     Total Flow
-		  </label>
-		</div>
+		
 		
 		<br />
 		
@@ -101,7 +108,7 @@
     <!-- This is the div where the map goes. -->
     <div id="map"></div>
     
-    <div id="slidingPanel"></div>
+    
     
     
     <!--   Import Flox scripts  -->

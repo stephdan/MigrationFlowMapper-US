@@ -2,6 +2,8 @@ Flox.GUI = (function($){
 	
 	"use strict";
 	
+	var my = {};
+	
 	$("#stateFlowsRadioLabel").on("click", function() {
 
 		var settings = Flox.getFilterSettings();
@@ -85,5 +87,53 @@ Flox.GUI = (function($){
 		}
 	});
 
+	function toggleSlidingPanel() {
+		var slidingPanel = $("#slidingPanel");
+		if(slidingPanel.hasClass("collapsed")) {
+			slidingPanel.removeClass("collapsed")
+						.animate({
+							height: 70
+						}, 100);
+		} else {
+			slidingPanel.addClass("collapsed")
+						.animate({
+							height: 18
+						}, 100);
+		}
+	}
+
+	$("#slidingPanelTab").on("click", function() {
+		// Change the height of if the slidingPanel
+		toggleSlidingPanel();
+		
+	});
+
+	function openSlidingPanel() {
+		var slidingPanel = $("#slidingPanel");
+		if(slidingPanel.hasClass("collapsed")) {
+			slidingPanel.removeClass("collapsed")
+						.animate({
+							height: 70
+						}, 100);
+		}
+	}
+
+	function collapseSlidingPanel(){
+		var slidingPanel = $("#slidingPanel");
+		if (!slidingPanel.hasClass("collapsed")) {
+			slidingPanel.addClass("collapsed")
+						.animate({
+							height: 18
+						}, 100);
+		}
+	}
+
+	my.openSlidingPanel = function() {
+		openSlidingPanel();
+	};
+	
+	my.collapseSlidingPanel = function() {
+		collapseSlidingPanel();
+	};
 
 }($));

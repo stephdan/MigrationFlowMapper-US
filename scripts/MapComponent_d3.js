@@ -151,10 +151,10 @@ Flox.MapComponent_d3 = function() {
 						} else {
 							popDensity = parseFloat(node.populationDensity).toFixed(0);
 						}
-						tooltip.html(d.properties.NAME + "<br/>" + 
-										   "Total Outflow: " + outgoingFlow + "<br/>" +
-										   "Total Inflow: " + incomingFlow + "<br/>" +
-										   "Pop. Density: " + popDensity)
+						tooltip.html("<h5>" + node.name + "</h5>" + 
+								   outgoingFlow + " moved out<br/>" +
+								   incomingFlow + " moved in<br/>" +
+								   popDensity + " residents per sq.km.")
 								.style("left", (d3.event.pageX + tooltipOffset.x) + "px")
 								.style("top", function() {
 									var tooltipHeight = d3.select(this).node().getBoundingClientRect().height;
@@ -401,9 +401,9 @@ Flox.MapComponent_d3 = function() {
 			       .style("left", (d3.event.pageX + tooltipOffset.x) + "px")
 			       .style("top", (d3.event.pageY + tooltipOffset.y) + "px");
 			} else {
-				tooltip.html("Net Flow: " + d.getValue() + "<br/>" + 
-			             "From: " + d.getStartPt().name + "<br/>" + 
-			             "To: " + d.getEndPt().name )
+				tooltip.html("<span class='tooltipValue'>" + d.getValue() + "</span> Net Movers<br/>" + 
+			             "From " + d.getStartPt().name + "<br/>" + 
+			             "To " + d.getEndPt().name )
 			       .style("left", (d3.event.pageX + tooltipOffset.x) + "px")
 			       .style("top", function() {
 						var tooltipHeight = d3.select(this).node().getBoundingClientRect().height;
@@ -999,10 +999,10 @@ Flox.MapComponent_d3 = function() {
 		// Add an SVG group to hold the necklace map.
 		necklaceMap = d3.select("#mapFeaturesLayer").append("g").attr("id", "necklaceMapLayer");
 
-		nodes = necklaceMap.selectAll(".node")
+		nodes = necklaceMap.selectAll(".necklaceNode")
 					.data(stateNodes)
 					.enter().append("g")
-					.attr("class", "node")
+					.attr("class", "necklaceNode")
 					.style("cursor", "pointer");
 
 		// Load the data.

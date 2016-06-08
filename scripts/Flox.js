@@ -412,7 +412,7 @@ my.updateMap = function() {
 		mapComponent.configureNecklaceMap(filteredModel);
 	}
 	//my.logFlows(filteredModel);
-	//new Flox.FlowLayouter(filteredModel).straightenFlows();
+	new Flox.FlowLayouter(filteredModel).straightenFlows();
 	layoutFlows(filteredModel);
 	refreshMap(filteredModel);
 	// runLayoutWorker(filteredModel, function() {
