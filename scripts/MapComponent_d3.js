@@ -611,7 +611,7 @@ Flox.MapComponent_d3 = function() {
 			drawPoints();
 		} 
 
-		drawObstacles();
+		//drawObstacles();
 	}
 	
 	// TODO Are counties the only features that have a state fips as a class?
