@@ -894,7 +894,7 @@ Flox.Model = function() {
     my.deleteAllFlows = function() {
         flows = [];
         nodes = [];
-        updateCachedValues();
+        //updateCachedValues();
     };
 
     my.getMaxFlowPoints = function() {
@@ -1340,6 +1340,27 @@ Flox.Model = function() {
 		return getArrowSettings(flow);
 	};
 
+	my.getGlobalArrowSettings = function() {
+		var arrowSettings,
+			i, j,
+			minFlowWidth = (maxFlowWidth * minFlowValue / maxFlowValue);
+		
+		return {
+			minFlowWidth: minFlowWidth,
+			maxFlowWidth: maxFlowWidth,
+			maxFlowValue: maxFlowValue,
+			arrowSizeRatio: arrowSizeRatio,
+			arrowLengthRatio: arrowLengthRatio,
+			arrowLengthScaleFactor: arrowLengthScaleFactor,
+			arrowWidthScaleFactor: arrowWidthScaleFactor,
+			arrowCornerPosition: arrowCornerPosition,
+			pointArrowTowardsEndpoint: pointArrowTowardsEndpoint,
+			arrowEdgeCtrlLength: arrowEdgeCtrlLength,
+			arrowEdgeCtrlWidth: arrowEdgeCtrlWidth,
+			mapScale: mapScale
+		};
+	};
+
 	my.toJSON = function(){
 		
 		var JSON = {
@@ -1486,6 +1507,8 @@ Flox.Model = function() {
 		}
 		addFlows(newFlows);
 		updateSettings(modelJSON.settings);
+		
+		return this;
 	};
 	
 	my.stringifyModel = function() {

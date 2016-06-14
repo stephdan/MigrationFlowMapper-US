@@ -2,11 +2,11 @@
 	
 "use strict";
 
-// Import bezier.js for doing curve things
 importScripts("Flox.js",
 			  "Flow.js",
 			  "FloxModel.js",
-			  "ModelFilter.js");
+			  "ModelFilter.js",
+			  "FlowLayouter.js");
 
 var model, Force;
 
@@ -828,38 +828,6 @@ function moveFlowsIntersectingNodes(){
 	}		
 }
 
-
-
-// Instantiate a model, set settings, build flows, add flows
-function buildModel(e){
-		
-	// What did we pass this thing again?
-	var newModel = new Flox.Model();
-	
-	newModel.deserializeModelJSON(e.data);
-	
-	
-		// flowData = e.data.flows,
-		// flows = [], 
-		// flow, i, j, sPt, ePt, cPt;
-// 
-	// // Build flows out of flowData
-	// for(i = 0, j = flowData.length; i < j; i += 1) {
-		// sPt = flowData[i].startPt;
-		// ePt = flowData[i].endPt;
-		// cPt = flowData[i].cPt;
-		// flow = new Flox.Flow(sPt, ePt, flowData[i].value);
-		// flow.setCtrlPt(cPt);
-		// flows.push(flow);
-	// }
-	// newModel.addFlows(flows);
-	// newModel.updateSettings(e.data.settings);
-	console.log(newModel.getAllFlows());
-	return newModel;
-}
-
-
-
 function layoutFlows() {
 	
 	var i, j, weight, 
@@ -868,49 +836,33 @@ function layoutFlows() {
 	initialLocks = model.getLocks(),
 	showForceAnimation = model.isShowForceAnimation(),
 	startTime = performance.now(),
-	endTime;
+	endTime, layouter;
+	
+	layouter = new Flox.FlowLayouter(model);
 	
 	// Straighten the flows.
-	straightenFlows();
+	//straightenFlows();
+	layouter.straightenFlows();
 	
 	// Run the first half of iterations, without MFIN
     for (i = 0, j = Math.floor(iterations/2); i < j; i += 1) {
         weight = 1 - i/iterations;
-        layoutAllFlows(weight);
-        if(i % 5 === 0) {
-			if(showForceAnimation) {
-				//postMessage([model.getCtrlPts(), i + 1]);
-		    } else {
-				//postMessage([false, i + 1]);
-		    }
-		}
+        layouter.layoutAllFlows(weight);
     }
 	
 	// Run second half of iterations, with MFIN
     for (i = Math.floor(iterations/2); i < iterations; i += 1) {
         weight = 1 - i/iterations;
-        layoutAllFlows(weight);
+        layouter.layoutAllFlows(weight);
         if(model.isMoveFlowsIntersectingNodes()) {
-			moveFlowsIntersectingNodes();
-		}
-		
-		if(i % 5 === 0) {
-			if(showForceAnimation) {
-				//postMessage([model.getCtrlPts(), i + 1]);
-		    } else {
-				//postMessage([false, i + 1]);
-		    }
-		}
-		
+			layouter.moveFlowsIntersectingNodes();
+		}		
     }
+    
 	model.applyLocks(initialLocks);
-	
 	endTime = performance.now();
-	
 	console.log("Layout time in milliseconds: " + Math.round(endTime - startTime));
-	
 	return model.getCtrlPts();
-	
 }
 
 
@@ -919,12 +871,13 @@ onmessage = function(e) {
 	
 	var newControlPoints;
 	
-	model = buildModel(e);
+	//model = buildModel(e);
+	model = new Flox.Model().deserializeModelJSON(e.data);
 	
 	// Get new control point coordinates.
 	newControlPoints = layoutFlows();
 	
-	// Send out new control point coordinates.
+	// Send out new control point coordinates when all iterations are complete.
 	postMessage([newControlPoints, model.getIterations()]);
 };
 

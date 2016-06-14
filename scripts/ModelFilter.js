@@ -372,7 +372,7 @@ Flox.ModelFilter = function(model_master) {
 		
 		model_copy.addFlows(maxFlows);
 		
-		model_copy.updateCachedValues();
+		//model_copy.updateCachedValues();
 		
 		return model_copy;
 	};

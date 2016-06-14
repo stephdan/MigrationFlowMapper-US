@@ -40,13 +40,24 @@ Flox.MapComponent_d3 = function() {
 			},
 			"orange": {
 				"5": ["#fee6ce", "#fdd0a2", "#fdae6b", "#fd8d3c", "#f16913"],
+				//
 				"7": ["#fee6ce", "#fdd0a2", "#fdae6b", "#fd8d3c", "#f16913", "#d94801", "#a63603"]
+				//"9": ['rgb(255,245,235)','rgb(254,230,206)','rgb(253,208,162)','rgb(253,174,107)','rgb(253,141,60)','rgb(241,105,19)','rgb(217,72,1)','rgb(166,54,3)','rgb(127,39,4)']
 			}
 		},
 		colorPick = "orange",
 		numberOfClasses = "7",
 					
 	    my = {};
+
+	// Moves the selected svg element to lay on top of other SVG elements under the 
+	// same parent element. Needed for changing the color of polygon stroke
+	// on hover to prevent stroke overlaps. 
+	d3.selection.prototype.moveToFront = function() {
+	  return this.each(function(){
+	    this.parentNode.appendChild(this);
+	  });
+	};
 
 	// Create a map! Add a baselayer, initialize all the panning and zooming
 	// and whatnot, add it all to the map div.
@@ -317,7 +328,7 @@ Flox.MapComponent_d3 = function() {
 		// If there are supposed to be arrows, but there are no arrows, 
 		// configure arrows.
 		//if(drawArrows && flows[0].getArrow()===false) {
-			configureArrowsWithActiveModel(activeModel);
+			configureArrowsWithActiveModel(model_copy);
 		//}
 		
 		// sort the flows in descending order so that big flows are drawn under
@@ -380,7 +391,7 @@ Flox.MapComponent_d3 = function() {
 			.attr("fill", "none")
 			.attr("stroke-width", function(d) {
 				
-				return activeModel.getFlowStrokeWidth(d);
+				return model_copy.getFlowStrokeWidth(d);
 			})
 			.attr("d", function(d) {
 				return buildSvgFlowPath(d, drawArrows);
@@ -600,7 +611,7 @@ Flox.MapComponent_d3 = function() {
 			drawPoints();
 		} 
 
-		//drawObstacles();
+		drawObstacles();
 	}
 	
 	// TODO Are counties the only features that have a state fips as a class?

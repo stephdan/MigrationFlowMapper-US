@@ -36,11 +36,6 @@ var mapComponent,
 	my = {};
     
 
-d3.selection.prototype.moveToFront = function() {
-  return this.each(function(){
-    this.parentNode.appendChild(this);
-  });
-};
 
     
 function refreshMap(model_copy) {
@@ -50,6 +45,7 @@ function refreshMap(model_copy) {
     mapComponent.drawFeatures(model_copy);
 }
 
+// TODO If the browser can't do webworkers, then webworkers shouldn't be used.
 function initLayoutWorker(modelCopy, callback) {
 	
 	var flows,
@@ -59,8 +55,12 @@ function initLayoutWorker(modelCopy, callback) {
 		//progress = document.getElementById("layoutProgressBar");
 		//progress.style.visibility = "visible";
 	
+	// If webworkers are compatible with this browser...
 	if (window.Worker) {
 	
+		// If a layouter worker currently exists, call terminate on it. 
+		// If it was in the middle of something, it'll stop and do this
+		// instead. If it wasn't doing anything, then this won't matter.
 		if(layoutWorker) {
 			layoutWorker.terminate();
 		}
@@ -72,14 +72,21 @@ function initLayoutWorker(modelCopy, callback) {
 		// This happens when layoutWorker sends out a message
 		layoutWorker.onmessage = function(e) {
 			
+			// TODO
+			// Update the progress bar.
 			// progress.value = (e.data[1] / model.getIterations()) * 100;
 			// if(((e.data[1] / model.getIterations()) * 100)===100) {
 				// progress.style.visibility = "hidden";
 			// }
 			
-			ctrlPts = e.data[0];			
+			// Get the new control points
+			ctrlPts = e.data[0];
+			
+			// grab the flows from the same model that was fed to the webworker.	
 			flows = modelCopy.getFlows();
 			
+			// Update the map if the worker is returning new control point
+			// locations (which it won't if it's just giving a progress update)
 			if(ctrlPts) {
 				
 				for (i = 0, j = flows.length; i < j; i += 1) {
@@ -88,11 +95,13 @@ function initLayoutWorker(modelCopy, callback) {
 					flowCPt.y = ctrlPts[i].y;
 					
 					// Also update the latLngs of the cPts
+					// TODO is this needed?
 					latLng = mapComponent.layerPtToLatLng([ctrlPts[i].x, ctrlPts[i].y]);
 					
 					flowCPt.lat = latLng.lat;
 					flowCPt.lng = latLng.lng;
 				}
+				// Run the callback function, which is typically refreshMap();
 				callback();
 			}
 		};	
@@ -103,6 +112,7 @@ function runLayoutWorker(modelCopy, callback) {
 	initLayoutWorker(modelCopy, callback);
 	console.log("running layoutWorker");
 	var modelJSON = modelCopy.toJSON();
+	// Pass the layoutWorker the model. It will then perform the layout.
 	layoutWorker.postMessage(modelJSON);
 }
 
@@ -166,13 +176,6 @@ function layoutFlows(model) {
     }
     
 	model.applyLocks(initialLocks);
-	
-	// update the map
-	// TODO this is called here rather than at the end of each iteration
-	// because it doesn't work at the end of each iteration. 
-	// Maybe because of asynchronous functions in D3?
-	//d3.select("#flowPointLayer").remove();
-	//refreshMap(model);
 	endTime = performance.now();
 	console.log("Layout time in milliseconds: " + Math.round(endTime - startTime));
 }
@@ -412,12 +415,12 @@ my.updateMap = function() {
 		mapComponent.configureNecklaceMap(filteredModel);
 	}
 	//my.logFlows(filteredModel);
-	new Flox.FlowLayouter(filteredModel).straightenFlows();
-	layoutFlows(filteredModel);
-	refreshMap(filteredModel);
-	// runLayoutWorker(filteredModel, function() {
-		// refreshMap(filteredModel);
-	// });	
+	//new Flox.FlowLayouter(filteredModel).straightenFlows();
+	//layoutFlows(filteredModel);
+	//refreshMap(filteredModel);
+	runLayoutWorker(filteredModel, function() {
+		refreshMap(filteredModel);
+	});	
 };
 
 my.getFilterSettings = function() {

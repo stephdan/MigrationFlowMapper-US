@@ -49,14 +49,14 @@ Flox.FlowLayouter = function (model) {
 	 * allows arrows to be drawn the correct size when viewing individual
 	 * county flows. 
 	 */
-	function configureArrowsWithActiveModel(activeModel) {
+	function configureArrows() {
 		var flows, flow, arrowSettings, i, j;
 		// get the flows from the model that was passed into FlowLayouter...
 		flows = model.getFlows();
 		for(i = 0, j = flows.length; i < j; i += 1) {
 			flow = flows[i];
 			// ...but get the settings from activeModel
-			arrowSettings = activeModel.getArrowSettings(flow);
+			arrowSettings = model.getArrowSettings(flow);
 			flow.configureArrow(arrowSettings);
 		}
 	}
@@ -582,9 +582,7 @@ Flox.FlowLayouter = function (model) {
         model.cacheAllFlowBoundingBoxes();
 
 		if(model.isDrawArrows()) {
-			// get the active model
-			activeModel = Flox.getActiveFullModel();
-			configureArrowsWithActiveModel(activeModel);
+			configureArrows();
 		}
 
         // Angular distribution forces
