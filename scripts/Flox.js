@@ -47,6 +47,9 @@ function refreshMap(model_copy) {
 
 // TODO If the browser can't do webworkers, then webworkers shouldn't be used.
 function initLayoutWorker(modelCopy, callback) {
+
+	Flox.GUI.updateLayoutProgressBar(0);
+	Flox.GUI.showLayoutProgressBar();
 	
 	var flows,
 		ctrlPts,
@@ -74,10 +77,7 @@ function initLayoutWorker(modelCopy, callback) {
 			
 			// TODO
 			// Update the progress bar.
-			// progress.value = (e.data[1] / model.getIterations()) * 100;
-			// if(((e.data[1] / model.getIterations()) * 100)===100) {
-				// progress.style.visibility = "hidden";
-			// }
+			Flox.GUI.updateLayoutProgressBar(e.data[1]);
 			
 			// Get the new control points
 			ctrlPts = e.data[0];
@@ -102,8 +102,14 @@ function initLayoutWorker(modelCopy, callback) {
 					flowCPt.lng = latLng.lng;
 				}
 				// Run the callback function, which is typically refreshMap();
+				Flox.GUI.updateLayoutProgressBar(100);
+				Flox.GUI.hideLayoutProgressBar();
 				callback();
 			}
+			
+			//Flox.GUI.hideLayoutProgressBar();
+			
+			
 		};	
 	}
 }
@@ -136,8 +142,6 @@ function importCSV(path) {
  * Calls moveFlowsIntersectingNodes() during second half of iterations.
  */
 function layoutFlows(model) {
-
-	console.log("Laying out flows...");
 	
 	if (model.getFlows().length < 2) {
 		console.log("there are fewer than 2 flows, not doing a layout");
@@ -145,20 +149,17 @@ function layoutFlows(model) {
 		return;
 	}
 	
-    var multipleIterations = model.isMultipleIterations(),
-        //progress = document.getElementById("layoutProgressBar"),
-        initialLocks = model.getLocks(),
-        i, j, weight,
-        layouter,
+    var iterations = model.getIterations(),
+		initialLocks = model.getLocks(),
         startTime = performance.now(),
-        endTime,
-        iterations;
+        layouter, endTime,
+        i, j, weight;
+        
 
 	layouter = new Flox.FlowLayouter(model);
 
 	// Straighten the flows
 	layouter.straightenFlows();
-	iterations = model.getIterations();
 	
 	// Run the first half of iterations, without MFIN
     for (i = 0, j = Math.floor(iterations/2); i < j; i += 1) {
@@ -358,7 +359,6 @@ my.loadTestFlows = function () {
 
 my.importTotalCountyFlowData = function(stateFIPS) {		
 	
-	console.log("import total county flows FLOX: " + stateFIPS)
 	// erase all flows from the model.
 	model_master.deleteAllFlows();
 	

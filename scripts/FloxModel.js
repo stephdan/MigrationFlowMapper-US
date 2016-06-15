@@ -89,6 +89,9 @@ Flox.Model = function() {
 			"allStates": 0.2
 		},
 		
+		minFlowColor = [50,200,50],
+		maxFlowColor = [0,50,0],
+		
 		// Public object		
 		my = {};
     
@@ -612,6 +615,16 @@ Flox.Model = function() {
 		return false;
 		// It's not in there!
 		
+	}
+
+	function getRelativeFlowValue(flow) {
+		return (flow.getValue() - minFlowValue)
+                / (maxFlowValue - minFlowValue);
+	}
+
+	function getFlowColor(flow) {
+		var w = getRelativeFlowValue(flow);
+		return Flox.ColorUtils.blend(minFlowColor, maxFlowColor, w);
 	}
 
 // PUBLIC ======================================================================
@@ -1515,6 +1528,10 @@ Flox.Model = function() {
 		var modelJSON = my.toJSON(),
 			modelJSONString = JSON.stringify(modelJSON);
 		console.log(modelJSONString);
+	};
+	
+	my.getFlowColor = function(flow) {
+		return getFlowColor(flow);
 	};
 	
 	return my;

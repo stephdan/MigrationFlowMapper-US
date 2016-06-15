@@ -68,6 +68,24 @@ html, body {
 	pointer-events: all;
 }
 
+#layoutProgressBar {
+	position: absolute;
+	width: 150px;
+	height: 5px;
+	position: fixed;
+	top: 0;
+	right: 0;
+	margin: 5px;
+}
+
+.progress-bar {
+	-webkit-transition: none;
+    -moz-transition: none;
+    -ms-transition: none;
+    -o-transition: none;
+    transition: none;
+}
+
 .necklaceNode {
 	font-family: Futura, "Trebuchet MS", Arial, sans-serif;
 }

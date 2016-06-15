@@ -136,4 +136,23 @@ Flox.GUI = (function($){
 		collapseSlidingPanel();
 	};
 
+	/**
+	 * 
+ * @param {Number} progress - 0 to 100, percentage complete
+	 */
+	my.updateLayoutProgressBar = function(progress) {
+		var bar = $("#layoutProgress");
+		bar.width(progress + "%");
+	};
+
+	my.showLayoutProgressBar = function() {
+		$("#layoutProgressBar").removeClass("hidden");
+	};
+	
+	my.hideLayoutProgressBar = function() {
+		$("#layoutProgressBar").addClass("hidden");
+	};
+
+	return my;
+
 }($));

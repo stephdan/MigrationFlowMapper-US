@@ -95,7 +95,9 @@ Flox.FlowImporter = ( function(d3) {
 			    flowBA,
 			    row,
 			    A_stateFIPS,
-			    B_stateFIPS;
+			    B_stateFIPS,
+			    startTime = performance.now(),
+			    endTime;
 
 			// For each row in the table...
 			for ( i = 0, j = flowData.length; i < j; i += 1) {
@@ -153,6 +155,8 @@ Flox.FlowImporter = ( function(d3) {
 				}
 			}
 			console.log(flows.length + " flows imported!");
+			endTime = performance.now() - startTime;
+			console.log("import time: " + endTime);
 			callback(flows, countyNodes);
 		});
 	}
@@ -280,8 +284,6 @@ Flox.FlowImporter = ( function(d3) {
 	 */
 	my.importTotalCountyFlowData = function(stateFIPS, callback) {	
 		
-		console.log("import total county flows IMPORTER: " + stateFIPS)
-		
 		var nodePath = "data/geometry/centroids_counties_all.csv",
 			flowPath = "data/census/flows/" + stateFIPS + "_net.csv";
 			
@@ -293,6 +295,7 @@ Flox.FlowImporter = ( function(d3) {
 				callback(flows, countyNodes);
 			});
 		});
+		
 	};
 
 	my.importStateToStateMigrationFlows = function(flowPath, callback) {

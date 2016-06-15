@@ -4,7 +4,7 @@
 <head>
 	
 	<meta charset="UTF-8">
-    <title>Curves on a leaflet map</title>
+    <title>US Migration</title>
     
 
     <!-- Don't know what this does! It was added with the sidebar stuff. -->
@@ -66,6 +66,13 @@
 		</div>		
 	</div>
 	
+	<div class="progress hidden" id="layoutProgressBar">
+		
+		<div class="progress-bar" id="layoutProgress" role="progressbar" style="width:70%">
+		</div>
+		
+	</div>
+	
 	<div id="filterGUI">
 		
 		<div class="btn-group" data-toggle="buttons">
@@ -122,6 +129,7 @@
     <script src="scripts/GeomUtils.js"></script>
     <script src="scripts/ModelFilter.js"></script>
     <script src="scripts/GUI.js"></script>
+    <script src="scripts/ColorUtils.js"></script>
 	<script>Flox.initFlox();</script>
 
 </body>

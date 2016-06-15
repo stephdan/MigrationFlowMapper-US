@@ -5,6 +5,7 @@ Flox.MapComponent_d3 = function() {
 		model_copy,
 	    selectedColor = "#59A4FF",
 	    defaultColor = "black",
+	    lockedColor = "gray",
 	    path,
 	    width = $(window).width(),
 	    height = $(window).height(),
@@ -282,15 +283,22 @@ Flox.MapComponent_d3 = function() {
 		return s;
 	}
 
-	// TODO add checkbox for indicating which flows are locked.
 	function getFlowColor(flow) {
+		
+		var c;
+		
 		if (flow.isSelected()) {
 			return selectedColor;
 		}
 		if (flow.isLocked() && model_copy.isShowLockedFlows()) {
 			return lockedColor;
 		}
-		return defaultColor;
+		
+		//return defaultColor;
+		
+		c = model_copy.getFlowColor(flow);
+		return "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")";
+		
 	}
 
 	/**
@@ -316,8 +324,7 @@ Flox.MapComponent_d3 = function() {
 
 	function drawFlows(drawArrows) {
 
-		var activeModel = Flox.getActiveFullModel(),
-			flows = model_copy.getFlows(),
+		var flows = model_copy.getFlows(),
 		    i,
 		    j,
 		    f,
@@ -425,8 +432,12 @@ Flox.MapComponent_d3 = function() {
         })
         .on("mouseout", function() {
 			tooltip.style("display", "none");
-			d3.select(this).select(".curve").attr("stroke", "black");
-			d3.select(this).select(".arrow").attr("fill", "black");
+			d3.select(this).select(".curve").attr("stroke", function(d) {
+				return getFlowColor(d);
+			});
+			d3.select(this).select(".arrow").attr("fill", function(d) {
+				return getFlowColor(d);
+			});
         });
 	}
 

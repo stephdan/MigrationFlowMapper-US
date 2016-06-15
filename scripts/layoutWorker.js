@@ -33,6 +33,11 @@ function layoutFlows() {
     for (i = 0, j = Math.floor(iterations/2); i < j; i += 1) {
         weight = 1 - i/iterations;
         layouter.layoutAllFlows(weight);
+        
+        if(i % 5 === 0) {
+			postMessage([false, (i/iterations * 100)]);
+        }
+        
     }
 	
 	// Run second half of iterations, with MFIN
@@ -41,7 +46,10 @@ function layoutFlows() {
         layouter.layoutAllFlows(weight);
         if(model.isMoveFlowsIntersectingNodes()) {
 			layouter.moveFlowsIntersectingNodes();
-		}		
+		}
+		if(i % 5 === 0) {
+			postMessage([false, (i/iterations * 100)]);
+        }	
     }
     
 	model.applyLocks(initialLocks);
@@ -63,7 +71,7 @@ onmessage = function(e) {
 	newControlPoints = layoutFlows();
 	
 	// Send out new control point coordinates when all iterations are complete.
-	postMessage([newControlPoints, model.getIterations()]);
+	postMessage([newControlPoints, 100]);
 };
 
 
