@@ -9,6 +9,7 @@ var mapComponent,
     editMode = true,
     // drawIntermediateFlowPoints = false,
     layoutWorker,
+    filterWorker,
     skipEndPoints = false,
     flowGrid = null,
 	nodeGrid = null,
@@ -116,10 +117,38 @@ function initLayoutWorker(modelCopy, callback) {
 
 function runLayoutWorker(modelCopy, callback) {
 	initLayoutWorker(modelCopy, callback);
-	console.log("running layoutWorker");
 	var modelJSON = modelCopy.toJSON();
 	// Pass the layoutWorker the model. It will then perform the layout.
 	layoutWorker.postMessage(modelJSON);
+}
+
+function initFilterWorker() {
+	
+	if (window.Worker) {
+		if(filterWorker) {
+			filterWorker.terminate();
+		}
+		
+		filterWorker = new Worker("scripts/filterWorker.js");
+		
+		filterWorker.onmessage = function(e) {
+			// e is what the worker passes back. What will it be?
+				// Is will be the filtered model in json form. 
+			// What to do with it?
+				// Send it to wherever it needs to go I guess.
+		}
+	}	
+}
+
+
+function runFilterWorker() {
+	var modelJSON = model_master.toJSON();
+	
+	modelJSON.filterSettings = filterSettings;
+		
+	initFilterWorker();
+	
+	filterWorker.postMessage(modelJSON);
 }
 
 
@@ -411,9 +440,11 @@ my.updateMap = function() {
 	var filteredModel;
 	//my.logFlows(model_master);
 	filteredModel = my.filterBySettings(model_master);
+	
 	if(filterSettings.stateMode === false) {
 		mapComponent.configureNecklaceMap(filteredModel);
 	}
+	
 	//my.logFlows(filteredModel);
 	//new Flox.FlowLayouter(filteredModel).straightenFlows();
 	//layoutFlows(filteredModel);

@@ -307,16 +307,16 @@ Flox.MapComponent_d3 = function() {
 	 * allows arrows to be drawn the correct size when viewing individual
 	 * county flows. 
 	 */
-	function configureArrowsWithActiveModel(activeModel) {
+	function configureArrows(model) {
 		var flows, flow, arrowSettings, i, j;
 		// get the flows from the model_copy...
-		flows = model_copy.getFlows();
+		flows = model_copy.getLargestFlows();
 		for(i = 0, j = flows.length; i < j; i += 1) {
 			flow = flows[i];
 			// ...but get the settings from the activeModel.
 			// This allows for proper sizing of arrows even though not all
 			// flows are present in the model_copy
-			arrowSettings = activeModel.getArrowSettings(flow);
+			arrowSettings = model.getArrowSettings(flow);
 			flow.configureArrow(arrowSettings);
 		}
 	}
@@ -324,7 +324,7 @@ Flox.MapComponent_d3 = function() {
 
 	function drawFlows(drawArrows) {
 
-		var flows = model_copy.getFlows(),
+		var flows = model_copy.getLargestFlows(),
 		    i,
 		    j,
 		    f,
@@ -335,7 +335,7 @@ Flox.MapComponent_d3 = function() {
 		// If there are supposed to be arrows, but there are no arrows, 
 		// configure arrows.
 		//if(drawArrows && flows[0].getArrow()===false) {
-			configureArrowsWithActiveModel(model_copy);
+			configureArrows(model_copy);
 		//}
 		
 		// sort the flows in descending order so that big flows are drawn under
@@ -1274,7 +1274,7 @@ Flox.MapComponent_d3 = function() {
 				//callback();
 			});
 		} else {
-			console.log("No out of state nodes?");
+			//console.log("No out of state nodes?");
 		}
 	}
 	

@@ -422,6 +422,13 @@ Flox.ModelFilter = function(model_master) {
 	 */
 	my.filterBySettings = function(settings) {
 		
+		console.log("Running filterBySettings...");
+		
+		var startTime, endTime;
+		
+		
+		startTime = performance.now();
+		
 		// Net flows if settings.netFlows
 		if(settings.netFlows) {
 			if(!Flox.getDerivedModel("netFlowsModel")) { // if netFlowsModel isn't there yet
@@ -481,6 +488,9 @@ Flox.ModelFilter = function(model_master) {
 		
 		// Filter out all but the biggest flows.
 		my.getMaxFlowsModel();		
+		
+		endTime = performance.now() - startTime;
+		console.log("filterBySettings took " + Math.floor(endTime) + "ms");
 		
 		return model_copy;
 	};

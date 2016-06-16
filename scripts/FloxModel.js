@@ -89,8 +89,8 @@ Flox.Model = function() {
 			"allStates": 0.2
 		},
 		
-		minFlowColor = [50,200,50],
-		maxFlowColor = [0,50,0],
+		minFlowColor = [40,170,40],
+		maxFlowColor = [0,40,0],
 		
 		// Public object		
 		my = {};
@@ -1235,6 +1235,18 @@ Flox.Model = function() {
 
 	my.getMaxFlows = function () {
 		return maxFlows;
+	};
+	
+	/**
+	 * Assumes flows are already sorted
+	 * If n is specified, returns that many flows.
+	 * Otherwise, returns the number of flows equal to maxFlows
+	 */
+	my.getLargestFlows = function(n) {
+		if(n){
+			return flows.slice(0,n);
+		}
+		return flows.slice(0, maxFlows);
 	};
 	
 	my.setMaxFlows = function (d) {
