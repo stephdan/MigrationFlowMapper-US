@@ -4,7 +4,7 @@ Flox.FlowImporter = ( function(d3) {
 	var my = {};
 
 	function importStateNodes(callback) {
-		var stateNodePath = "data/geometry/centroids_states.csv",
+		var stateNodePath = "../data/geometry/centroids_states.csv",
 			stateNodes = [],
 			newStNode,
 			stateNodeData,
@@ -15,28 +15,26 @@ Flox.FlowImporter = ( function(d3) {
 				row = d[i];
 				newStNode = new Flox.Point(Number(row.latitude), Number(row.longitude), 1, row.FIPS);
 				// Verifying that the node can be projected before adding
-				if (newStNode.x && newStNode.y) {
-					newStNode.STUSPS = row.STUSPS;
-					newStNode.FIPS = row.FIPS;
-					newStNode.STATEFP = row.FIPS;
-					if(isNaN(Number(row.POPDENSITYKM2))) {
-						newStNode.populationDensity = "unknown";
-					} else {
-						newStNode.populationDensity = row.POPDENSITYKM2;
-					}
-					newStNode.populationDensity = row.POPDENSITYKM2;
-					newStNode.population = row.POP2014;
-					newStNode.id = row.FIPS;
-					newStNode.r = Number(row.radius);
-					newStNode.name = row.name;
-					newStNode.totalIncomingFlow = 0;
-					newStNode.totalOutgoingFlow = 0;
-					newStNode.netFlow = 0;
-					newStNode.type = "state";
-					stateNodes.push(newStNode);
+
+				newStNode.STUSPS = row.STUSPS;
+				newStNode.FIPS = row.FIPS;
+				newStNode.STATEFP = row.FIPS;
+				if(isNaN(Number(row.POPDENSITYKM2))) {
+					newStNode.populationDensity = "unknown";
 				} else {
-					console.log("State node " + row.name + " could not be projected");
+					newStNode.populationDensity = row.POPDENSITYKM2;
 				}
+				newStNode.populationDensity = row.POPDENSITYKM2;
+				newStNode.population = row.POP2014;
+				newStNode.id = row.FIPS;
+				newStNode.r = Number(row.radius);
+				newStNode.name = row.name;
+				newStNode.totalIncomingFlow = 0;
+				newStNode.totalOutgoingFlow = 0;
+				newStNode.netFlow = 0;
+				newStNode.type = "state";
+				stateNodes.push(newStNode);
+				
 			}
 			callback(stateNodes);
 		});
@@ -257,7 +255,7 @@ Flox.FlowImporter = ( function(d3) {
 						// nodes if so. Flows with these point's won't be added to the 
 						// model.
 						// FIXME Use a projection that enables showing everything?
-						if (newPt.x && newPt.y) {
+						//if (newPt.x && newPt.y) {
 							newPt.STUSPS = row.STUSPS;
 							newPt.STATEFP = row.STATEFP;
 							newPt.name = row.NAME + " " + row.TYPE;
@@ -268,7 +266,7 @@ Flox.FlowImporter = ( function(d3) {
 							newPt.netFlow = 0;
 							newPt.type = "county";
 							nodes.push(newPt);
-						}	
+						//}	
 					}
 				}				
 				callback(nodes);
@@ -277,15 +275,14 @@ Flox.FlowImporter = ( function(d3) {
 	};
 
 	/**
-	 * Imports the US Census county to county flows for one state.
- * @param {Object} nodePath : Path to US County centroid CSV file.
- * @param {Object} flowPath : Path to Census flow data for a state.
- * @param {Object} callback : Called after all CSVs are loaded.
+	 * Imports the US Census county to county migration flows for one state.
+ * @param {Object} stateFIPS : FIPS of selected state
+ * @param {Object} callback : Passes along imported flows and nodes.
 	 */
 	my.importTotalCountyFlowData = function(stateFIPS, callback) {	
 		
-		var nodePath = "data/geometry/centroids_counties_all.csv",
-			flowPath = "data/census/flows/" + stateFIPS + "_net.csv";
+		var nodePath = "../data/geometry/centroids_counties_all.csv",
+			flowPath = "../data/census/flows/" + stateFIPS + "_net.csv";
 			
 		// Import nodes for all counties
 		my.importUSCensusCountyNodes(nodePath, stateFIPS, function(countyNodes) {
@@ -298,6 +295,11 @@ Flox.FlowImporter = ( function(d3) {
 		
 	};
 
+	/**
+	 * Imports the US Census state to state migration flows
+ * @param {Object} flowPath
+ * @param {Object} callback
+	 */
 	my.importStateToStateMigrationFlows = function(flowPath, callback) {
 		// Arrays to store the stuff
 		var flows = [];

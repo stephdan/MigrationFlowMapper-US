@@ -4,41 +4,28 @@ var Flox = (function() {
 "use strict";
 
 var mapComponent,
-    drawRangeboxes = false,
-    drawControlPoints = false,
-    editMode = true,
-    // drawIntermediateFlowPoints = false,
     layoutWorker,
     filterWorker,
-    skipEndPoints = false,
-    flowGrid = null,
-	nodeGrid = null,
+    importWorker,
+    model_master,
 	
 	filterSettings = {
-		
 		netFlows : true,
-		
 		inStateFlows: true,
 		outerStateFlows: false,
 		countyIncoming: true,
 		countyOutgoing: true,
-		
 		selectedCounty: false,
 		selectedState: false,
-		
 		countyMode: false,
 		stateMode: false
-		
 	},
 	
-	model_master,
 	derivedModels = {},
-	startTimeAll, endTimeAll,
+	startTimeAll, 
+	endTimeAll,
 	my = {};
-    
 
-
-    
 function refreshMap(model_copy) {
 	if(!model_copy) {
 		throw new Error("refreshMap needs a model passed in");
@@ -56,27 +43,20 @@ function initLayoutWorker(modelCopy, callback) {
 		ctrlPts,
 		flow, flowCPt, 
 		i, j, latLng, progress;
-		//progress = document.getElementById("layoutProgressBar");
-		//progress.style.visibility = "visible";
-	
 	// If webworkers are compatible with this browser...
 	if (window.Worker) {
-	
 		// If a layouter worker currently exists, call terminate on it. 
 		// If it was in the middle of something, it'll stop and do this
 		// instead. If it wasn't doing anything, then this won't matter.
 		if(layoutWorker) {
 			layoutWorker.terminate();
 		}
-	
 		// Web workers take a separate file. Note that the path is relative
 		// to index.html, not Flox.js
 		layoutWorker = new Worker("scripts/layoutWorker.js");
 		
 		// This happens when layoutWorker sends out a message
 		layoutWorker.onmessage = function(e) {
-			
-			// TODO
 			// Update the progress bar.
 			Flox.GUI.updateLayoutProgressBar(e.data[1]);
 			
@@ -85,20 +65,16 @@ function initLayoutWorker(modelCopy, callback) {
 			
 			// grab the flows from the same model that was fed to the webworker.	
 			flows = modelCopy.getLargestFlows();
-			
 			// Update the map if the worker is returning new control point
 			// locations (which it won't if it's just giving a progress update)
 			if(ctrlPts) {
-				
 				for (i = 0, j = flows.length; i < j; i += 1) {
 					flowCPt = flows[i].getCtrlPt();
 					flowCPt.x = ctrlPts[i].x;
 					flowCPt.y = ctrlPts[i].y;
-					
 					// Also update the latLngs of the cPts
 					// TODO is this needed?
 					latLng = mapComponent.layerPtToLatLng([ctrlPts[i].x, ctrlPts[i].y]);
-					
 					flowCPt.lat = latLng.lat;
 					flowCPt.lng = latLng.lng;
 				}
@@ -107,50 +83,33 @@ function initLayoutWorker(modelCopy, callback) {
 				Flox.GUI.hideLayoutProgressBar();
 				callback();
 			}
-			
-			//Flox.GUI.hideLayoutProgressBar();
-			
-			
 		};	
 	}
 }
 
 function runLayoutWorker(modelCopy, callback) {
 	initLayoutWorker(modelCopy, callback);
-	
 	// Need the model json to only be for top 50 flows.	
 	var largestFlowsModel = new Flox.Model(),
 		modelJSON;
-		
 	largestFlowsModel.updateSettings(modelCopy.settings);
 	largestFlowsModel.addFlows(modelCopy.getLargestFlows());
-	
 	modelJSON = largestFlowsModel.toJSON();
-	
 	// Pass the layoutWorker the modelJSON. It will then perform the layout.
 	layoutWorker.postMessage(modelJSON);
 }
 
 function initFilterWorker(callback) {
-	
 	if (window.Worker) {
-		if(filterWorker) {
-			filterWorker.terminate();
-		}
-		
+		if (filterWorker) {filterWorker.terminate();}
 		filterWorker = new Worker("scripts/filterWorker.js");
-		
 		filterWorker.onmessage = function(e) {
-			// e.data is model json, right?
-			var json = e.data,
-				filteredModel = new Flox.Model();
-				
-			filteredModel.deserializeModelJSON(json);	
+			var filteredModel = new Flox.Model();
+			filteredModel.deserializeModelJSON(e.data);	
 			callback(filteredModel);
 		};
 	}	
 }
-
 
 function runFilterWorker(callback) {
 	var modelJSON = model_master.toJSON();
@@ -159,17 +118,22 @@ function runFilterWorker(callback) {
 	filterWorker.postMessage(modelJSON);
 }
 
+function initImportWorker(callback) {
+	if(window.Worker) {
+		if (importWorker) {importWorker.terminate();}
+		importWorker = new Worker("scripts/importWorker.js");
+		importWorker.onmessage = function(e) {	
+			// Send the imported data to whoever called runImportWorker		
+			callback(e.data);
+		}
+	}	
+}
 
+function runImportWorker(stuffImportWorkerNeeds, callback) {
+	initImportWorker(callback);
 
-function importCSV(path) {
-    // clear the model
-    model_master.deleteAllFlows();
-
-    // import the new flows
-    Flox.FlowImporter.importCSV(path);
-    // FlowImporter redraws the map; if it was redrawn here, it would 
-    // redraw before the CSV was read in all the way.
-    // FIXME Could use a callback and draw them here.
+	// post a message to the import worker
+	importWorker.postMessage(stuffImportWorkerNeeds);
 }
 
 /**
@@ -228,24 +192,27 @@ function importStateToStateMigrationFlows() {
 	filterSettings.stateMode = true;
 	filterSettings.countyMode = false;
 	model_master.settings.mapScale = 5; // FIXME hardcoded
-	var nodePath = "data/census/state_latLng.csv",
-		flowPath = "data/census/US_State_migration_2014_flows.csv";
+	model_master.settings.datasetName = "states";
+	var //flowPath = "data/census/US_State_migration_2014_flows.csv",
+		workerFlowPath = "../data/census/US_State_migration_2014_flows.csv",
+		stuffImportWorkerNeeds = {};
 	
-	Flox.FlowImporter.importStateToStateMigrationFlows(flowPath, function(flows, stateNodes) {
-		model_master.initNodes(stateNodes);
-		model_master.addFlows(flows);
-		//model_master.updateCachedValues();
-		model_master.settings.datasetName = "states";
+	
+	stuffImportWorkerNeeds.flowPath = workerFlowPath;
+	stuffImportWorkerNeeds.settings = model_master.settings;
+	
+	// Flox.FlowImporter.importStateToStateMigrationFlows(flowPath, function(flows, stateNodes) {
+		// model_master.initNodes(stateNodes);
+		// model_master.addFlows(flows);
+		// //model_master.updateCachedValues();
+		// my.updateMap();
+	// });
+	
+	// TODO Instead of the above, use importWorker
+	runImportWorker(stuffImportWorkerNeeds, function(d) {
+		model_master.deserializeModelJSON(d);
 		my.updateMap();
-	});
-}
-
-// This doesn't work without leaflet. 
-function importTelecomData() {
-	importCSV("data/TeleGeographyMap_flows copy.csv");
-	
-	// move and zoom to the correct location
-	mapComponent.setView([50,10], 4);
+	})
 }
 
 // PUBLIC =====================================================================
@@ -280,11 +247,6 @@ my.createFlowWithCPt = function(sPt, cPt, ePt, val) {
 	newFlow.setCtrlPt(cPt);
 	return newFlow;
 };
-
-my.importCSV = function(path) {
-    importCSV(path);
-};
-
 
 my.refreshMap = function(model_copy) {
     // redraw the flows
@@ -336,10 +298,6 @@ my.getLineLineIntersection = function(x1, y1, x2, y2, x3, y3, x4, y4) {
     return Flox.GeomUtils.getLineLineIntersection(x1, y1, x2, y2, x3, y3, x4, y4);
 };
 
-my.isDrawRangeboxes = function() {
-	return drawRangeboxes;
-};
-
 my.runLayoutWorker = function() {
 	runLayoutWorker();
 };
@@ -350,6 +308,20 @@ my.runLayoutWorker = function() {
  */
 my.latLngToPoint = function(latLng) {
 	return new Flox.Point(latLng.lng, latLng.lat);
+};
+
+my.assignXYToNodes = function(nodes) {
+	var i, node, xy;
+	for(i = 0; i < nodes.length; i += 1) {
+		node = nodes[i];
+		xy = mapComponent.latLngToLayerPt(node);
+		if(xy) {
+			node.x = xy.x;
+			node.y = xy.y;
+		} else {
+			console.log("Couldn't project one of the nodes, ID :" + node.id);
+		}
+	}
 };
 
 // A quick way of making a simple point object.
@@ -364,13 +336,6 @@ my.Point = function(lat, lng, val, id) {
 	}
 	if(id) {
 		this.id = id;
-	}
-	
-	var xy = mapComponent.latLngToLayerPt(this);
-	
-	if(xy) {
-		this.x = mapComponent.latLngToLayerPt(this).x;
-		this.y = mapComponent.latLngToLayerPt(this).y;
 	}
 	this.incomingFlows = [];
 	this.outgoingFlows = [];
@@ -388,36 +353,40 @@ my.importStateToStateMigrationFlows = function () {
 	importStateToStateMigrationFlows();
 };
 
-my.loadTestFlows = function () {
-	// make a few flows to test 
-	importCSV("data/testFlows.csv");
-};
-
 my.importTotalCountyFlowData = function(stateFIPS) {		
+	
+	var stuffImportWorkerNeeds = {};
 	
 	// erase all flows from the model.
 	model_master.deleteAllFlows();
+	derivedModels = {};
 	
 	filterSettings.selectedState = stateFIPS;
 	
-	derivedModels = {};
 	// Set the mapScale in the model to the appropriate scale for this map.
 	// This scale is used by the layouter!
 	// Could it also be used by the renderer?
 	// FIXME this is goofy
 	model_master.setStateMapScale(stateFIPS);
+	model_master.settings.datasetName = "FIPS" + Number(stateFIPS);
 	
-	Flox.FlowImporter.importTotalCountyFlowData(stateFIPS, function(flows, countyNodes){
-		
-		// flows are the imported flows!
-		model_master.initNodes(countyNodes);
-		model_master.addFlows(flows);
-		//model_master.updateCachedValues(); // this gets done after filtering
-		model_master.settings.datasetName = "FIPS" + Number(stateFIPS);
-		
-		my.updateMap();	
-		
-	});
+	
+	// Flox.FlowImporter.importTotalCountyFlowData(stateFIPS, function(flows, countyNodes){
+		// // flows are the imported flows!
+		// model_master.initNodes(countyNodes);
+		// model_master.addFlows(flows);
+		// my.updateMap();	
+	// });
+	
+	
+	stuffImportWorkerNeeds.settings = model_master.settings;
+	stuffImportWorkerNeeds.stateFIPS = stateFIPS;
+	
+	// TODO Instead of the above, use importWorker.
+	runImportWorker(stuffImportWorkerNeeds, function(d) {
+		model_master.deserializeModelJSON(d);
+		my.updateMap();
+	})
 };
 
 my.getMapScale = function () {
@@ -456,6 +425,9 @@ my.updateMap = function() {
 	//new Flox.FlowLayouter(filteredModel).straightenFlows();
 	//layoutFlows(filteredModel);
 	//refreshMap(filteredModel);
+
+	// Good time to assign xy coordinates to nodes.
+	my.assignXYToNodes(model_master.getPoints());
 
 	runFilterWorker(function(filteredModel) {
 		if(filterSettings.stateMode === false) {
