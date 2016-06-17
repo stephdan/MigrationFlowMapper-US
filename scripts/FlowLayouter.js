@@ -148,7 +148,7 @@ Flox.FlowLayouter = function (model) {
 	   // var flows = model.getFlows(), // Get the flows
 	    
 	        // Get the distance weight exponent
-		var distWeightExponent = model.getDistanceWeightExponent(),
+		var distWeightExponent = model.settings.distanceWeightExponent,
 			fxTotal = 0, // total force along the x axis
 			fyTotal = 0, // total force along the y axis
 			wTotal = 0, // sum of the weight of all forces
@@ -244,7 +244,7 @@ Flox.FlowLayouter = function (model) {
         }
 
         torsionF = Math.sin(diffToBaseNormal) * l;
-        antiTorsionW = model.getAntiTorsionWeight();
+        antiTorsionW = model.settings.antiTorsionWeight;
         torsionFx = Math.cos(baselineAzimuth) * torsionF * antiTorsionW;
         torsionFy = Math.sin(baselineAzimuth) * torsionF * antiTorsionW;
         return new Force(torsionFx, torsionFy);
@@ -260,9 +260,9 @@ Flox.FlowLayouter = function (model) {
     function computeSpringConstant(flowBaseLength, maxFlowLength) {
 
         var relativeFlowLength = flowBaseLength / maxFlowLength,
-        flowSpringConstant = (-model.getMinFlowLengthSpringConstant()
-                + model.getMaxFlowLengthSpringConstant()) * relativeFlowLength
-                + model.getMinFlowLengthSpringConstant();
+        flowSpringConstant = (-model.settings.minFlowLengthSpringConstant
+                + model.settings.maxFlowLengthSpringConstant) * relativeFlowLength
+                + model.settings.minFlowLengthSpringConstant;
         return flowSpringConstant;
     }
 
@@ -297,8 +297,8 @@ Flox.FlowLayouter = function (model) {
 	
 	function computeNodeForceOnFlow(flow) {
 		
-		var nodeWeight = model.getNodeWeight(),
-			distWeightExponent = model.getDistanceWeightExponent(),
+		var nodeWeight = model.settings.nodeWeight,
+			distWeightExponent = model.settings.distanceWeightExponent,
 			xy = {},
 			wTotal = 0,
 			fxTotal = 0,
@@ -378,8 +378,8 @@ Flox.FlowLayouter = function (model) {
 			flows, 
 			flowDistance, // longest axis distance between flow bounding boxes
 			flowDistW,
-			distWeightExponent = model.getDistanceWeightExponent(),
-			threshold = model.getFlowDistanceThreshold();
+			distWeightExponent = model.settings.distanceWeightExponent,
+			threshold = model.settings.flowDistanceThreshold;
 
 		// Get the subset of flows that will exert force on targetFlow
 		flows = model.getFlows();
@@ -434,7 +434,7 @@ Flox.FlowLayouter = function (model) {
 			maxFlowLength); 
 
         flowSpringConstant *= forceRatio * forceRatio 
-                           * model.getPeripheralStiffnessFactor() + 1;
+                           * model.settings.peripheralStiffnessFactor + 1;
         
         springF = computeSpringForce(basePt, cPt, flowSpringConstant);
 
@@ -521,7 +521,7 @@ Flox.FlowLayouter = function (model) {
         endTangentY = endDir[0] * endVectorLength;
 
         // sum the two vectors
-        angularDistributionWeight = model.getAngularDistributionWeight();
+        angularDistributionWeight = model.settings.angularDistributionWeight;
         vectX = startTangentX + endTangentX;
         vectY = startTangentY + endTangentY;
         force = new Force(vectX, vectY);
@@ -561,7 +561,7 @@ Flox.FlowLayouter = function (model) {
 		var forces = [],
 			flows = model.getFlows(),
 			i, j, 
-			maxFlowLength = model.getMaxFlowLength(),
+			maxFlowLength = model.settings.maxFlowLength,
 			angularDistForces = [],
 			flowID, flow, fnew, f, ctrlPt, angularDistWeight, angularDistForce,
 			newCPtX, newCPtY, tempPoint,
@@ -581,7 +581,7 @@ Flox.FlowLayouter = function (model) {
         model.cacheAllFlowLineSegments();
         model.cacheAllFlowBoundingBoxes();
 
-		if(model.isDrawArrows()) {
+		if(model.settings.drawArrows) {
 			configureArrows();
 		}
 
@@ -639,8 +639,8 @@ Flox.FlowLayouter = function (model) {
 	            ctrlPt.y = newCPtY;
 	
 	
-	            if(model.isEnforceRangebox()) {	                
-	                flow.enforceRangebox(model.getFlowRangeboxHeight());
+	            if(model.settings.enforceRangebox) {	                
+	                flow.enforceRangebox(model.settings.flowRangeboxHeight);
 	            }
 	            
 	            // reset the latLng of ctrlPt
@@ -687,8 +687,8 @@ Flox.FlowLayouter = function (model) {
 	function flowIntersectsNode(flow, node) {
 		var flowStrokeWidth = model.getFlowStrokeWidth(flow),
 			nodeRadius = node.r 
-		                     + (model.getNodeTolerancePx() 
-		                     / model.getMapScale()),
+		                     + (model.settings.nodeTolerancePx 
+		                     / model.settings.mapScale),
 			threshDist =  nodeRadius + (flowStrokeWidth/2),
 			// how far is the node from the flow?
 			shortestDist = flow.distance({x: node.x, y: node.y});
@@ -716,7 +716,7 @@ Flox.FlowLayouter = function (model) {
 								type: "node"});
 		}
 		
-		if(model.isDrawArrows()) {
+		if(model.settings.drawArrows) {
 			for(i = 0; i < flows.length; i += 1) {
 				flow = flows[i];
 				arrow = flow.getArrow();
@@ -828,7 +828,7 @@ Flox.FlowLayouter = function (model) {
         
         while(flipCount < 3 && (flowIntersectsObstacle(flow, obstacles))) {
 			distFromBaseline = getDistanceFromCtrlPtToBaseline(flow);
-			if(distFromBaseline > dist * model.getFlowRangeboxHeight()) { // FIXME 2 could equal rangebox height
+			if(distFromBaseline > dist * model.settings.flowRangeboxHeight) { // FIXME 2 could equal rangebox height
 				// move cPt to baseline, reverse polarity
 				cPt.x = flow.getBaselineMidPoint().x;
 	            cPt.y = flow.getBaselineMidPoint().y;
@@ -840,8 +840,8 @@ Flox.FlowLayouter = function (model) {
 				// Add the unitVectors to the control point. Also, multiply the
 		        // unitVectors by 2. This will cut the iterations in half without
 		        // losing significant fidelity. 
-		        newX = cPt.x + ((unitVectorX / model.getMapScale()) * 2);
-		        newY = cPt.y + ((unitVectorY / model.getMapScale()) * 2);
+		        newX = cPt.x + ((unitVectorX / model.settings.mapScale) * 2);
+		        newY = cPt.y + ((unitVectorY / model.settings.mapScale) * 2);
 		        cPt.x = newX;
 		        cPt.y = newY;
 	       }
@@ -852,7 +852,7 @@ Flox.FlowLayouter = function (model) {
         if(!flow.cannotBeMovedOffNodes) {
 			while(flipCount < 5 && (flowIntersectsObstacle(flow, nodeObstacles))) {
 				distFromBaseline = getDistanceFromCtrlPtToBaseline(flow);
-				if(distFromBaseline > dist * model.getFlowRangeboxHeight()) {
+				if(distFromBaseline > dist * model.settings.flowRangeboxHeight) {
 					// move cPt to baseline, reverse polarity
 					cPt.x = flow.getBaselineMidPoint().x;
 		            cPt.y = flow.getBaselineMidPoint().y;
@@ -864,8 +864,8 @@ Flox.FlowLayouter = function (model) {
 					// Add the unitVectors to the control point. Also, multiply the
 			        // unitVectors by 2. This will cut the iterations in half without
 			        // losing significant fidelity. 
-			        newX = cPt.x + ((unitVectorX / model.getMapScale()) * 2);
-			        newY = cPt.y + ((unitVectorY / model.getMapScale()) * 2);
+			        newX = cPt.x + ((unitVectorX / model.settings.mapScale) * 2);
+			        newY = cPt.y + ((unitVectorY / model.settings.mapScale) * 2);
 			        cPt.x = newX;
 			        cPt.y = newY;
 		       }

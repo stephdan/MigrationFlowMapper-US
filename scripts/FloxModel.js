@@ -8,70 +8,72 @@ Flox.Model = function() {
 	var nodes = [],
 		flows = [],
 	
+		// TODO Might want to try storing the nodes in a Map again
 		//nodesMap = new Map(),
 	
-		// Layout Settings
-		maxFlowPoints = 20,
-		distanceWeightExponent = 3,
-		peripheralStiffnessFactor = 0.1,
+		settings = {
+			// Layout Settings
+			maxFlowPoints : 20,
+			distanceWeightExponent : 3,
+			peripheralStiffnessFactor : 0.1,
+			maxFlowLengthSpringConstant : 0.05,
+			minFlowLengthSpringConstant : 0.5,
+			enforceRangebox : true,
+			flowRangeboxHeight : 0.4,
+			antiTorsionWeight : 0.8,
+			angularDistributionWeight : 0.5,
+			nodeWeight : 0.0,
+			nodeTolerancePx : 0,
+			moveFlowsIntersectingNodes : true,
+			multipleIterations : true,
+			NBR_ITERATIONS : 100,
+			showForceAnimation : false,
+			FLOW_DISTANCE_THRESHOLD : 0.00000001, // TODO what should this be??
+			checkFlowBoundingBoxes : true,
+			maxFlows : 50,
+			mapScale : 0.5,
+			
+			// Map Appearance Settings
+			maxFlowWidth : 30,
+			maxNodeRadius : 10,
+			isShowLockedFlows : true,
+			flowDistanceFromStartPointPixel : 5,
+			flowDistanceFromEndPointPixel : 5,
+			NODE_STROKE_WIDTH : 0.5,
+			
+			// arrow settings
+			arrowSizeRatio : 0.1,
+			arrowLengthRatio : 0.2,
+			arrowLengthScaleFactor : 1.8,
+			arrowWidthScaleFactor : 1,
+			arrowEdgeCtrlLength : 0.5,
+			arrowEdgeCtrlWidth : 0.5,
+			arrowCornerPosition : 0.0,
+			pointArrowTowardsEndpoint : true,
+			
+			// cached values cached by updateCachedValues()
+			minFlowValue : 0,
+			maxFlowValue : 0,
+			meanFlowValue : 0, // used for anything? Adding flows during editing?
+			minFlowLength : 0,
+			maxFlowLength : 0,
+			minNodeValue : 0,
+			maxNodeValue : 0,
+			meanNodeValue : 0,	
+			minFlowWidth: 0,
+			
+			// Draw Settings
+			drawFlows : true,
+			drawNodes : false,
+			drawArrows : true,
+			drawControlPoints : false,
+			drawIntermediateFlowPoints : false,
+			drawRangeboxes : false,
+					
+			datasetName : null
+		},
+	
 		
-		maxFlowLengthSpringConstant = 0.05,
-		minFlowLengthSpringConstant = 0.5,
-		
-		enforceRangebox = true,
-		flowRangeboxHeight = 0.4,
-		antiTorsionWeight = 0.8,
-		angularDistributionWeight = 0.5,
-		nodeWeight = 0.0,
-		nodeTolerancePx = 0,
-		moveFlowsIntersectingNodes = true,
-		multipleIterations = true,
-		NBR_ITERATIONS = 100,
-		showForceAnimation = false,
-		FLOW_DISTANCE_THRESHOLD = 0.00000001, // TODO what should this be??
-		checkFlowBoundingBoxes = true,
-		maxFlows = 50,
-		useNetFlows = false,
-		mapScale = 0.5,
-		
-		// Map Appearance Settings
-		maxFlowWidth = 30,
-		maxNodeRadius = 10,
-		isShowLockedFlows = true,
-		flowDistanceFromStartPointPixel = 5,
-		flowDistanceFromEndPointPixel = 5,
-		NODE_STROKE_WIDTH = 0.5,
-		
-		// arrow settings
-		// TODO Add arrowstuff to settings export and Flox.initGUI
-		arrowSizeRatio = 0.1,
-		arrowLengthRatio = 0.2,
-		arrowLengthScaleFactor = 1.8,
-		arrowWidthScaleFactor = 1,
-		arrowEdgeCtrlLength = 0.5,
-		arrowEdgeCtrlWidth = 0.5,
-		arrowCornerPosition = 0.0,
-		pointArrowTowardsEndpoint = true,
-		
-		// cached values cached by updateCachedValues()
-		minFlowValue,
-		maxFlowValue,
-		meanFlowValue, // used for anything? Adding flows during editing?
-		minFlowLength,
-		maxFlowLength,
-		minNodeValue,
-		maxNodeValue,
-		meanNodeValue,	
-		
-		// Draw Settings
-		drawFlows = true,
-		drawNodes = false,
-		drawArrows = true,
-		drawControlPoints = false,
-		drawIntermediateFlowPoints = false,
-		drawRangeboxes = false,
-				
-		datasetName = null,
 
 		// A list of appropriate scales for different US states. 
 		// FIXME this is problematic, and very hard-coded. There is probably
@@ -109,9 +111,9 @@ Flox.Model = function() {
     // returns {min: value, max: value}
     function getMinMaxFlowLength() {
 		    
-		var i, j, flow, l;
+		var i, j, flow, l,
 
-		minFlowLength = Infinity;
+		minFlowLength = Infinity,
 		maxFlowLength = 0;
 
 		for(i = 0, j = flows.length; i < j; i += 1) {
@@ -124,6 +126,8 @@ Flox.Model = function() {
                 minFlowLength = l;
             }
 		}
+		settings.minFlowLength = minFlowLength;
+		settings.maxFlowlength = maxFlowLength;
 		return {min: minFlowLength, max: maxFlowLength};
     }
 
@@ -133,21 +137,29 @@ Flox.Model = function() {
 	// shown.
 	function updateCachedValues() {
 		
+		var flowSum = 0,
+		    flowCounter = 0,
+		    nodeSum = 0,
+			nodeCounter = 0,
+			i, j, v, flow, l,
+		    
+		    // values getting updated
+			minFlowLength = Infinity,
+			maxFlowLength = 0,
+			minFlowValue,
+			maxFlowValue,
+			meanFlowValue,
+			minNodeValue,
+			maxNodeValue,
+			meanNodeValue,
+			minFlowWidth;
+		
 		if (flows.length < 1) {
 			minFlowValue = 0;
 			maxFlowValue = 0;
 		} else {
 			minFlowValue = maxFlowValue = flows[0].getValue();
 		}
-
-		var flowSum = 0,
-		    flowCounter = 0,
-		    nodeSum = 0,
-			nodeCounter = 0,
-			i, j, v, flow, l;
-		    
-		minFlowLength = Infinity;
-		maxFlowLength = 0;
 
 		for(i = 0, j = flows.length; i < j; i += 1) {
 			flow = flows[i];
@@ -202,6 +214,17 @@ Flox.Model = function() {
             nodeCounter += 1;
 		}
 		meanNodeValue = nodeSum / nodeCounter;
+		minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / maxFlowValue);
+		
+		settings.minFlowLength = minFlowLength;
+		settings.maxFlowLength = maxFlowLength;
+		settings.minFlowValue = minFlowValue;
+		settings.maxFlowValue = maxFlowValue;
+		settings.meanFlowValue = meanFlowValue;
+		settings.minNodeValue = minNodeValue;
+		settings.maxNodeValue = maxNodeValue;
+		settings.meanNodeValue = meanNodeValue;
+		settings.minFlowWidth = minFlowWidth;
     }
     
     
@@ -439,31 +462,31 @@ Flox.Model = function() {
         var flowLengthMinMax = getMinMaxFlowLength(),
 			longestFlowLength = flowLengthMinMax.max,
 			shortestFlowLength = flowLengthMinMax.min,
-			tol = shortestFlowLength/(maxFlowPoints+1);
+			tol = shortestFlowLength/(settings.maxFlowPoints+1);
 
         // FIXME Not sure why this conditional statement is used. 
         // When would the first condition ever be true? 
-        if (longestFlowLength / tol <= maxFlowPoints+1) {
+        if (longestFlowLength / tol <= settings.maxFlowPoints+1) {
             return tol;
         } 
-        return longestFlowLength / (maxFlowPoints+1);
+        return longestFlowLength / (settings.maxFlowPoints+1);
     }
 
 	function getNodeRadius (node) {
 		var nodeVal = node.value,
-			maxNodeArea = Math.PI * (maxNodeRadius * maxNodeRadius),
+			maxNodeArea = Math.PI * (settings.maxNodeRadius * settings.maxNodeRadius),
 			ratio, 
 			area,
 			radius;
 		
 		if(node.hasOwnProperty("r")) {
-			return node.r * mapScale;
+			return node.r * settings.mapScale;
 		}
 		
-		if (!maxNodeValue) { // There are not nodes yet
+		if (settings.maxNodeValue === 0) { // There are not nodes yet
 			ratio = maxNodeArea;
 		} else {
-			ratio = maxNodeArea / maxNodeValue;
+			ratio = maxNodeArea / settings.maxNodeValue;
 		}
 		
 		// The area of node will be its value times the ratio
@@ -471,29 +494,32 @@ Flox.Model = function() {
 		
 		// Need the radius to draw the point tho
 		radius = Math.sqrt(area / Math.PI);
-		return radius * mapScale;
+		return radius * settings.mapScale;
 	}
 
 	function getStartClipRadius(startNode) {
-		var startNodeRadius = getNodeRadius(startNode) + (NODE_STROKE_WIDTH/2);
-		return flowDistanceFromStartPointPixel + startNodeRadius;
+		var startNodeRadius = getNodeRadius(startNode) + (settings.NODE_STROKE_WIDTH/2);
+		return settings.flowDistanceFromStartPointPixel + startNodeRadius;
 			
 	}
 
 	function getEndClipRadius(endNode) {
-		var endNodeRadius = getNodeRadius(endNode) + (NODE_STROKE_WIDTH/2);
-		return flowDistanceFromEndPointPixel + endNodeRadius;
+		var endNodeRadius = getNodeRadius(endNode) + (settings.NODE_STROKE_WIDTH/2);
+		return settings.flowDistanceFromEndPointPixel + endNodeRadius;
 	}
 
 	function getFlowStrokeWidth(flow) {
-		var strokeWidth =  (maxFlowWidth * flow.getValue()) / maxFlowValue;
-		return strokeWidth * mapScale;
+		var strokeWidth =  (settings.maxFlowWidth * flow.getValue()) / settings.maxFlowValue;
+		return strokeWidth * settings.mapScale;
 	}
 
+	// TODO Might be able to just pass the flow the model's settings instead
+	// of passing the model a flow. ALSO, this adds endClipRadius to the 
+	// settings, which is kinda bad. FIXME.
 	function getArrowSettings(flow) {
 		var arrowSettings,
 			i, j,
-			minFlowWidth = (maxFlowWidth * minFlowValue / maxFlowValue),
+			minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / settings.maxFlowValue),
 			endClipRadius, startClipRadius, endPt, startPt;
 		
 		endPt = flow.getEndPt();
@@ -511,21 +537,11 @@ Flox.Model = function() {
 			startClipRadius = getStartClipRadius(startPt);	
 		}
 		
-		return {
-			endClipRadius: endClipRadius,
-			minFlowWidth: minFlowWidth,
-			maxFlowWidth: maxFlowWidth,
-			maxFlowValue: maxFlowValue,
-			arrowSizeRatio: arrowSizeRatio,
-			arrowLengthRatio: arrowLengthRatio,
-			arrowLengthScaleFactor: arrowLengthScaleFactor,
-			arrowWidthScaleFactor: arrowWidthScaleFactor,
-			arrowCornerPosition: arrowCornerPosition,
-			pointArrowTowardsEndpoint: pointArrowTowardsEndpoint,
-			arrowEdgeCtrlLength: arrowEdgeCtrlLength,
-			arrowEdgeCtrlWidth: arrowEdgeCtrlWidth,
-			mapScale: mapScale
-		};	
+		arrowSettings = settings;
+		arrowSettings.endClipRadius = endClipRadius;
+		arrowSettings.minFlowWidth = minFlowWidth;
+		
+		return arrowSettings;	
 	}
 
 	// configure arrows for flows 
@@ -552,53 +568,10 @@ Flox.Model = function() {
 	/**
 	 * @param {Object} settings key: value pairs of Model parameters.
 	 */
-	 function updateSettings(settings) {
-		
-		// Layout Settings
-		maxFlowPoints = settings.maxFlowPoints;
-		distanceWeightExponent = settings.distanceWeightExponent;
-		peripheralStiffnessFactor = settings.peripheralStiffnessFactor;
-		maxFlowLengthSpringConstant = settings.maxFlowLengthSpringConstant;
-		minFlowLengthSpringConstant = settings.minFlowLengthSpringConstant;
-		enforceRangebox = settings.enforceRangebox;
-		flowRangeboxHeight = settings.flowRangeboxHeight;
-		antiTorsionWeight = settings.antiTorsionWeight;
-		angularDistributionWeight = settings.angularDistributionWeight;
-		nodeWeight = settings.nodeWeight;
-		nodeTolerancePx = settings.nodeTolerancePx;
-		moveFlowsIntersectingNodes = settings.moveFlowsIntersectingNodes;
-		multipleIterations = settings.multipleIterations;
-		NBR_ITERATIONS = settings.NBR_ITERATIONS;
-		showForceAnimation = settings.showForceAnimation;
-		FLOW_DISTANCE_THRESHOLD = settings.FLOW_DISTANCE_THRESHOLD;
-		checkFlowBoundingBoxes = settings.checkFlowBoundingBoxes;
-		maxFlows = settings.maxFlows;
-		mapScale = settings.mapScale;
-		
-		// Map Appearance Settings
-		maxFlowWidth = settings.maxFlowWidth;
-		maxNodeRadius = settings.maxNodeRadius;
-		isShowLockedFlows = settings.isShowLockedFlows;
-		flowDistanceFromStartPointPixel = settings.flowDistanceFromStartPointPixel;
-		flowDistanceFromEndPointPixel = settings.flowDistanceFromEndPointPixel;
-		NODE_STROKE_WIDTH = settings.NODE_STROKE_WIDTH;
-		datasetName = settings.datasetName;
-		
-		drawFlows = settings.drawFlows;
-		drawNodes = settings.drawNodes;
-		drawArrows = settings.drawArrows;
-		drawControlPoints = settings.drawControlPoints;
-		drawIntermediateFlowPoints = settings.drawIntermediateFlowPoints;
-		drawRangeboxes = settings.drawRangeboxes;
-		
-		minFlowValue = settings.minFlowValue;
-		maxFlowValue = settings.maxFlowValue;
-		meanFlowValue = settings.meanFlowValue; // used for anything? Adding flows during editing?
-		minFlowLength = settings.minFlowLength;
-		maxFlowLength = settings. maxFlowLength;
-		minNodeValue = settings.minNodeValue;
-		maxNodeValue = settings.maxNodeValue;
-		meanNodeValue = settings.meanNodeValue;
+	function updateSettings(newSettings) {
+		// FIXME loop over settings to prevent setting deletion
+		settings = newSettings;
+		my.settings = newSettings;
 	}
 	
 	function findNodeByID(id) {
@@ -618,8 +591,8 @@ Flox.Model = function() {
 	}
 
 	function getRelativeFlowValue(flow) {
-		return (flow.getValue() - minFlowValue)
-                / (maxFlowValue - minFlowValue);
+		return (flow.getValue() - settings.minFlowValue)
+                / (settings.maxFlowValue - settings.minFlowValue);
 	}
 
 	function getFlowColor(flow) {
@@ -649,8 +622,8 @@ Flox.Model = function() {
 		
         for(i = 0, j = flows.length; i < j; i += 1) {
 			flow = flows[i];
-			rs = flowDistanceFromStartPointPixel > 0 ? getStartClipRadius(flow.getStartPt()) : 0;
-			re = flowDistanceFromEndPointPixel > 0 ? getEndClipRadius(flow.getEndPt()) : 0;
+			rs = settings.flowDistanceFromStartPointPixel > 0 ? getStartClipRadius(flow.getStartPt()) : 0;
+			re = settings.flowDistanceFromEndPointPixel > 0 ? getEndClipRadius(flow.getEndPt()) : 0;
 			flow.cacheClippedLineSegments(rs, re, gap);
         }
 	};
@@ -775,22 +748,6 @@ Flox.Model = function() {
 		
 		return {"metadata": metadata, "data": data};
 	};
-
-	my.setNodeWeight = function (d) {
-		nodeWeight = d;
-	};
-
-	my.getFlowDistanceFromEndPointPixel = function() {
-		return flowDistanceFromEndPointPx;
-	};
-	
-	my.getFlowDistanceFromStartPointPixel = function() {
-		return flowDistanceFromStartPointPx;
-	};
-
-	my.getNodeStrokeWidth = function() {
-		return NODE_STROKE_WIDTH;
-	};
 	
 	my.getLocks = function() {
 		var locks = [],
@@ -811,54 +768,9 @@ Flox.Model = function() {
 			console.log("Flows and locks have different lengths");
 		}
 	};
-	
-	my.isMultipleIterations = function() {
-		return multipleIterations;
-	};
-	
-	my.setMultipleIterations = function(boo) {
-		multipleIterations = boo;
-	};
-
-	my.isMoveFlowsIntersectingNodes = function() {
-		return moveFlowsIntersectingNodes;
-	};
-
-	my.setMoveFlowsIntersectingNodes = function(boo) {
-		moveFlowsIntersectingNodes = boo;
-	};
-
-    my.getAngularDistributionWeight =  function() {
-        return angularDistributionWeight;
-    };
-
     
     my.getNbrFlows = function() {
        return flows.length;
-    };
-
-    my.getAntiTorsionWeight = function() {
-        return antiTorsionWeight;
-    };
-    
-    my.setAntiTorsionWeight = function(d) {
-		antiTorsionWeight = d;
-    };
-
-    my.getMaxFlowWidth = function () {
-        return maxFlowWidth;
-    };
-
-	my.getMaxNodeRadius = function() {
-		return maxNodeRadius;
-	};
-
-	my.setMaxNodeRadius = function(d) {
-		maxNodeRadius = d;
-	};
-
-    my.setMaxFlowWidth = function (maxWidth) {
-        maxFlowWidth = maxWidth;
     };
 
 	my.getAllNodes = function() {
@@ -910,160 +822,16 @@ Flox.Model = function() {
         //updateCachedValues();
     };
 
-    my.getMaxFlowPoints = function() {
-        return maxFlowPoints;
-    };
-
-    my.setMaxFlowPoints = function(d) {
-        maxFlowPoints = d;
-    };
-
-    my.getDistanceWeightExponent = function() {
-        return distanceWeightExponent;
-    };
-
-    my.setDistanceWeightExponent = function(d) {
-        distanceWeightExponent = d;
-    };
-
-    my.setMaxFlowLengthSpringConstant = function(d) {
-        maxFlowLengthSpringConstant = d;
-    };
-
-    my.setMinFlowLengthSpringConstant = function(d) {
-        minFlowLengthSpringConstant = d;
-    };
-
-    my.setAngularDistributionWeight = function(d) {
-        angularDistributionWeight = d;
-    };
-
-    my.setPeripheralStiffnessFactor = function(d) {
-        peripheralStiffnessFactor = d;
-    };
-
-    my.getPeripheralStiffnessFactor = function() {
-        return peripheralStiffnessFactor;
-    };
-
-    my.getMinFlowLengthSpringConstant = function() {
-        return minFlowLengthSpringConstant;
-    };
-
-    my.getMaxFlowLengthSpringConstant = function() {
-        return maxFlowLengthSpringConstant;
-    };
-
-    my.isEnforceRangebox = function() {
-        return enforceRangebox;
-    };
-
-    my.setEnforceRangebox = function(bool) {
-        enforceRangebox = bool;
-    };
-
-    my.getFlowRangeboxHeight = function() {
-        return flowRangeboxHeight;
-    };
-
-    my.setFlowRangeboxHeight = function(val) {
-        flowRangeboxHeight = val;
-    };
-
 	my.deletePoint = function(pt) {
 		deletePoint(pt);
-	};
-	
-	my.getNodeWeight = function() {
-		return nodeWeight;
-	};
-	
-	my.getNodeTolerancePx = function() {
-		return nodeTolerancePx;
-	};
-	
-	my.setNodeTolerancePx = function(d) {
-		nodeTolerancePx = d;
-	};
-	
-	my.getMinFlowValue = function() {
-		return minFlowValue;
-	};
-	
-	my.getMaxFlowValue = function() {
-		return maxFlowValue;
-	};
-	
-	my.setMaxFlowValue = function(d) {
-		maxFlowValue = (d);
-	};
-	
-	my.getMeanFlowValue = function() {
-		return meanFlowValue;
-	};
-	
-	my.getMinFlowLength = function() {
-		return minFlowLength;
-	};
-	
-	my.getMaxFlowLength = function() {
-		return maxFlowLength;
-	};
-	
-	my.getMinNodeValue = function() {
-		return minNodeValue;
-	};
-	
-	my.getMaxNodeValue = function() {
-		return maxNodeValue;
-	};
-	
-	my.getMeanNodeValue = function() {
-		return meanNodeValue;
-	};
-	
-	my.isShowLockedFlows = function() {
-		return isShowLockedFlows;
 	};
 
 	my.getMinMaxFlowLength = function() {
 		return getMinMaxFlowLength();
 	};
 
-	my.getIterations = function () {
-		return NBR_ITERATIONS;
-	};
-
 	my.updateCachedValues = function() {
 		updateCachedValues();
-	};
-
-	my.isShowForceAnimation = function () {
-		return showForceAnimation;
-	};
-	
-	my.setShowForceAnimation = function (boo) {
-		showForceAnimation = boo;
-	};
-
-	my.getFlowDistanceThreshold = function() {
-		return FLOW_DISTANCE_THRESHOLD;
-	};
-
-	my.getFlowDistanceFromStartPointPixel = function() {
-		return flowDistanceFromStartPointPixel;
-	};
-	
-	my.setFlowDistanceFromStartPointPixel = function (d) {
-		flowDistanceFromStartPointPixel = d;
-	};
-
-	my.getFlowDistanceFromEndPointPixel = function() {
-		return flowDistanceFromEndPointPixel;
-	};
-	
-	my.setFlowDistanceFromEndPointPixel = function (d) {
-		flowDistanceFromEndPointPixel = d;
 	};
 
 	my.getStartClipRadius = function (startNode) {
@@ -1074,20 +842,8 @@ Flox.Model = function() {
 		return getEndClipRadius(endNode);
 	};
 
-	my.isDrawArrows = function () {
-		return drawArrows;
-	};
-
-	my.setDrawArrows = function (boo) {
-		drawArrows = boo;
-	};
-
 	my.configureArrows = function() {
 		configureArrows();
-	};
-
-	my.getArrowSizeRatio = function() {
-		return arrowSizeRatio;
 	};
 	
 	/**
@@ -1096,7 +852,7 @@ Flox.Model = function() {
 	my.getArrows = function() {
 		var i, arrow,
 			arrows = [];
-		if(drawArrows) {
+		if(settings.drawArrows) {
 			for(i = 0; i < flows.length; i += 1) {
 				if(flows[i].getArrow()) {
 					arrows.push(flows[i].getArrow());
@@ -1106,137 +862,17 @@ Flox.Model = function() {
 		}
 		return arrows;
 	};
-	
-	my.setArrowSizeRatio = function(d) {
-		arrowSizeRatio = d;
-	};
-	
-	my.getArrowLengthRatio = function(d) {
-		return arrowLengthRatio;
-	};
-	
-	my.setArrowLengthRatio = function(d) {
-		arrowLengthRatio = d;
-	};
-	
-	my.getArrowLengthScaleFactor = function() {
-		return arrowLengthScaleFactor;
-	};
-	
-	my.setArrowLengthScaleFactor = function(d) {
-		arrowLengthScaleFactor = d;
-	};
-	
-	my.getArrowWidthScaleFactor = function() {
-		return arrowWidthScaleFactor;
-	};
-	
-	my.setArrowWidthScaleFactor = function(d) {
-		arrowWidthScaleFactor = d;
-	};
-	
-	my.getArrowEdgeCtrlLength = function() {
-		return arrowEdgeCtrlLength;
-	};
-	
-	my.setArrowEdgeCtrlLength = function(d) {
-		arrowEdgeCtrlLength = d;
-	};
-	
-	my.getArrowEdgeCtrlWidth = function() {
-		return arrowEdgeCtrlWidth;
-	};
-	
-	my.setArrowEdgeCtrlWidth = function (d) {
-		arrowEdgeCtrlWidth = d;
-	};
-	
-	my.getArrowCornerPosition = function() {
-		return arrowCornerPosition;
-	};
-
-	my.setArrowCornerPosition = function(d) {
-		arrowCornerPosition = d;
-	};
-	
-	my.getPointArrowTowardsEndpoint = function() {
-		return pointArrowTowardsEndpoint;
-	};
-	
-	my.setPointArrowTowardsEndpoint = function(d) {
-		pointArrowTowardsEndpoint = d;
-	};
-
-	my.getDrawSettings = function () {
-		return {
-			drawFlows : drawFlows,
-			drawNodes : drawNodes,
-			drawArrows : drawArrows,
-			drawControlPoints : drawControlPoints,
-			drawIntermediateFlowPoints : drawIntermediateFlowPoints,
-			drawRangeboxes : drawRangeboxes
-		};
-	};
-	
-	my.isDrawFlows = function() {
-		return drawFlows;
-	};
-	my.setDrawFlows = function(boo) {
-		drawFlows = boo;
-	};
-	my.isDrawNodes = function() {
-		return drawNodes;
-	};
-	my.setDrawNodes = function(boo) {
-		drawNodes = boo;
-	};
-	my.isDrawArrows = function() {
-		return drawArrows;
-	};
-	my.setDrawArrows = function(boo) {
-		drawArrows = boo;
-	};
-	my.isDrawControlPoints = function() {
-		return drawControlPoints;
-	};
-	my.setDrawControlPoints = function(boo) {
-		drawControlPoints = boo;
-	};
-	my.isDrawIntermediateFlowPoints = function() {
-		return drawIntermediateFlowPoints;
-	};
-	my.setDrawIntermediateFlowPoints = function(boo) {
-		drawIntermediateFlowPoints = boo;
-	};
-	my.isDrawRangeboxes = function() {
-		return drawRangeboxes;
-	};
-	my.setDrawRangeboxes = function(boo) {
-		drawRangeboxes = boo;
-	};
-
 
 	my.deselectAllFeatures = function() {
 		deselectAllFeatures();
 	};
 
-	my.setCheckFlowBoundingBoxes = function(boo) {
-		checkFlowBoundingBoxes = boo;
-	};
-
-	my.isCheckFlowBoundingBoxes = function() {
-		return checkFlowBoundingBoxes;
-	};
 
 	// Sort flows by value in descending order, unless otherwise specified.
 	my.sortFlows = function (ascending) {
 		sortFlows(ascending);
 	};
 
-	my.getMaxFlows = function () {
-		return maxFlows;
-	};
-	
 	/**
 	 * Assumes flows are already sorted
 	 * If n is specified, returns that many flows.
@@ -1246,11 +882,7 @@ Flox.Model = function() {
 		if(n){
 			return flows.slice(0,n);
 		}
-		return flows.slice(0, maxFlows);
-	};
-	
-	my.setMaxFlows = function (d) {
-		setMaxFlows(d);
+		return flows.slice(0, settings.maxFlows);
 	};
 
 	my.getSelectedFlows = function () {
@@ -1275,31 +907,12 @@ Flox.Model = function() {
 		return selectedNodes;
 	};
 	
-	my.getDrawSettings = function () {
-		return {
-			drawFlows: drawFlows,
-			drawNodes: drawNodes,
-			drawArrows: drawArrows,
-			drawControlPoints: drawControlPoints,
-			drawIntermediateFlowPoints: drawIntermediateFlowPoints,
-			drawRangeboxes: drawRangeboxes
-		};
-	};
-	
-	my.getMapScale = function () {
-		return mapScale;
-	};
-	
-	my.setMapScale = function (d) {
-		mapScale = d;
-	};
-	
 	my.setStateMapScale = function(stateFIPS) {
 		var stateString = "FIPS" + stateFIPS;
 		if(stateScales.hasOwnProperty(stateString)) {
-			mapScale = stateScales[stateString];
+			settings.mapScale = stateScales[stateString];
 		} else {
-			mapScale = 1;
+			settings.mapScale = 1;
 		}
 	};
 	
@@ -1313,15 +926,8 @@ Flox.Model = function() {
  * e.g. maxFlowPoints: 20
 	 */
 	my.updateSettings = function(settings) {
+		// TODO Can probably delete this function
 		updateSettings(settings);
-	};
-
-	my.setDatasetName = function(nameString) {
-		datasetName = nameString;
-	};
-
-	my.getDatasetName = function() {
-		return datasetName;
 	};
 
 	/**
@@ -1365,25 +971,14 @@ Flox.Model = function() {
 		return getArrowSettings(flow);
 	};
 
+	// TODO probably don't need to update minFlowWidth here.
 	my.getGlobalArrowSettings = function() {
-		var arrowSettings,
-			i, j,
-			minFlowWidth = (maxFlowWidth * minFlowValue / maxFlowValue);
+		var i, j,
+			minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / settings.maxFlowValue);
 		
-		return {
-			minFlowWidth: minFlowWidth,
-			maxFlowWidth: maxFlowWidth,
-			maxFlowValue: maxFlowValue,
-			arrowSizeRatio: arrowSizeRatio,
-			arrowLengthRatio: arrowLengthRatio,
-			arrowLengthScaleFactor: arrowLengthScaleFactor,
-			arrowWidthScaleFactor: arrowWidthScaleFactor,
-			arrowCornerPosition: arrowCornerPosition,
-			pointArrowTowardsEndpoint: pointArrowTowardsEndpoint,
-			arrowEdgeCtrlLength: arrowEdgeCtrlLength,
-			arrowEdgeCtrlWidth: arrowEdgeCtrlWidth,
-			mapScale: mapScale
-		};
+		settings.minFlowWidth = minFlowWidth;
+		
+		return settings;
 	};
 
 	my.toJSON = function(){
@@ -1395,50 +990,7 @@ Flox.Model = function() {
 
 			i, j, flow, node, sPt, ePt, cPt, val, nodeCopy, prop;
 		
-		JSON.settings = {
-			maxFlowPoints : maxFlowPoints,
-			distanceWeightExponent : distanceWeightExponent,
-			peripheralStiffnessFactor : peripheralStiffnessFactor,
-			maxFlowLengthSpringConstant : maxFlowLengthSpringConstant,
-			minFlowLengthSpringConstant : minFlowLengthSpringConstant,
-			enforceRangebox : enforceRangebox,
-			flowRangeboxHeight : flowRangeboxHeight,
-			maxFlowWidth : maxFlowWidth,
-			maxNodeRadius : maxNodeRadius,
-			antiTorsionWeight : antiTorsionWeight,
-			angularDistributionWeight : angularDistributionWeight,
-			nodeWeight : nodeWeight,
-			nodeTolerancePx : nodeTolerancePx,
-			moveFlowsIntersectingNodes : moveFlowsIntersectingNodes,
-			multipleIterations : multipleIterations,
-			isShowLockedFlows : isShowLockedFlows,
-			NODE_STROKE_WIDTH : NODE_STROKE_WIDTH,
-			NBR_ITERATIONS: NBR_ITERATIONS,
-			showForceAnimation: showForceAnimation,
-			FLOW_DISTANCE_THRESHOLD : FLOW_DISTANCE_THRESHOLD,
-			flowDistanceFromStartPointPixel : flowDistanceFromStartPointPixel,
-			flowDistanceFromEndPointPixel : flowDistanceFromEndPointPixel,
-			checkFlowBoundingBoxes: checkFlowBoundingBoxes,
-			maxFlows : maxFlows,
-			mapScale: mapScale,
-			datasetName: datasetName,
-			
-			drawFlows: drawFlows,
-			drawNodes: drawNodes,
-			drawArrows: drawArrows,
-			drawControlPoints: drawControlPoints,
-			drawIntermediateFlowPoints: drawIntermediateFlowPoints,
-			drawRangeboxes: drawRangeboxes,
-			
-			minFlowValue: minFlowValue,
-			maxFlowValue: maxFlowValue,
-			meanFlowValue: meanFlowValue, // used for anything? Adding flows during editing?
-			minFlowLength: minFlowLength,
-			maxFlowLength: maxFlowLength,
-			minNodeValue: minNodeValue,
-			maxNodeValue: maxNodeValue,
-			meanNodeValue: meanNodeValue
-		};
+		JSON.settings = settings;
 		
 		for(i = 0, j = nodes.length; i < j; i += 1) {
 			node = nodes[i];
@@ -1491,19 +1043,6 @@ Flox.Model = function() {
 				}
 			);
 		}
-		
-		// Add the nodes to the json. Commented out because, so far, there
-		// is no use for these. The node info is in the flows. 
-		// for (i = 0, j = nodes.length; i < j; i += 1) {
-			// node = nodes[i];
-			// JSON.nodes.push(
-				// {
-					// x: node.x,
-					// y: node.y,
-					// value: node.value
-				// }
-			// );
-		// }
 		return JSON;
 	};
 
@@ -1532,8 +1071,6 @@ Flox.Model = function() {
 		}
 		addFlows(newFlows);
 		updateSettings(modelJSON.settings);
-		
-		return this;
 	};
 	
 	my.stringifyModel = function() {
@@ -1545,6 +1082,8 @@ Flox.Model = function() {
 	my.getFlowColor = function(flow) {
 		return getFlowColor(flow);
 	};
+	
+	my.settings = settings;
 	
 	return my;
 };

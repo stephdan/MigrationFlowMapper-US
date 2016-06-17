@@ -210,15 +210,15 @@ Flox.MapComponent_d3 = function() {
 
 	function endClipRadius(endNode) {
 		// distance between end of flow and end point
-		var gapDistanceToEndNode = model_copy.getFlowDistanceFromEndPointPixel(),
-		    endNodeRadius = model_copy.getNodeStrokeWidth() / 2 + getNodeRadius(endNode);
+		var gapDistanceToEndNode = model_copy.settings.flowDistanceFromEndPointPixel,
+		    endNodeRadius = model_copy.settings.NODE_STROKE_WIDTH / 2 + getNodeRadius(endNode);
 		return gapDistanceToEndNode + endNodeRadius;
 	}
 	
 	function startClipRadius(startNode) {
 		// distance between end of flow and end point
-		var gapDistanceToStartNode = model_copy.getFlowDistanceFromStartPointPixel(),
-		    startNodeRadius = model_copy.getNodeStrokeWidth() / 2 + getNodeRadius(startNode);
+		var gapDistanceToStartNode = model_copy.settings.flowDistanceFromStartPointPixel,
+		    startNodeRadius = model_copy.settings.NODE_STROKE_WIDTH / 2 + getNodeRadius(startNode);
 		return gapDistanceToStartNode + startNodeRadius;
 	}
 
@@ -245,12 +245,12 @@ Flox.MapComponent_d3 = function() {
 			// not arrows are drawn.
 			//flow = f.getArrow()[6];
 			flow = f.getArrow().outFlow;
-			rs = model_copy.getFlowDistanceFromStartPointPixel() > 0 ? startClipRadius(f.getStartPt()) : 0;
+			rs = model_copy.settings.flowDistanceFromStartPointPixel > 0 ? startClipRadius(f.getStartPt()) : 0;
 			flow = flow.getClippedFlow(rs, 1);
 			// clip the start bit off the arrowed flow
 		} else {
-			rs = model_copy.getFlowDistanceFromStartPointPixel() > 0 ? startClipRadius(f.getStartPt()) : 0;
-			re = model_copy.getFlowDistanceFromEndPointPixel() > 0 ? endClipRadius(f.getEndPt()) : 0;
+			rs = model_copy.settings.flowDistanceFromStartPointPixel > 0 ? startClipRadius(f.getStartPt()) : 0;
+			re = model_copy.settings.flowDistanceFromEndPointPixel > 0 ? endClipRadius(f.getEndPt()) : 0;
 			flow = f.getClippedFlow(rs, re);
 		}
 
@@ -290,7 +290,7 @@ Flox.MapComponent_d3 = function() {
 		if (flow.isSelected()) {
 			return selectedColor;
 		}
-		if (flow.isLocked() && model_copy.isShowLockedFlows()) {
+		if (flow.isLocked() && model_copy.settings.showLockedFlows) {
 			return lockedColor;
 		}
 		
@@ -451,7 +451,7 @@ Flox.MapComponent_d3 = function() {
 
 		// Add some attributes to the points
 		circles.style("stroke", "black").style("stroke-width", function(d) {
-			return model_copy.getNodeStrokeWidth();
+			return model_copy.settings.NODE_STROKE_WIDTH;
 		})
 		.attr("class", function(d) {
 			return "node FIPS" + d.id; // FIXME id is really FIPS
@@ -501,7 +501,7 @@ Flox.MapComponent_d3 = function() {
 					return d.y;
 			   })
 			   .attr("r", function(d) {
-					return (d.r + model_copy.getNodeTolerancePx());
+					return (d.r + model_copy.settings.nodeTolerancePx);
 			   });
 	}
 
@@ -511,7 +511,7 @@ Flox.MapComponent_d3 = function() {
 		
 		model_master = Flox.getModel();
 		nodes = model_master.getPoints(); // this gets state and county nodes.
-		stateFIPS = model_copy.getDatasetName().slice(4);
+		stateFIPS = model_copy.settings.datasetName.slice(4); // FIXME goofy
 		counties = d3.selectAll(".FIPS" + stateFIPS);
 		
 		for (i = 0; i < nodes.length; i += 1) {
@@ -611,13 +611,11 @@ Flox.MapComponent_d3 = function() {
 			// color the states by population density
 			colorStatesByPopulationDensity();
 		}
-		
-		drawArrows = model_copy.isDrawArrows();
-		
-		if (model_copy.isDrawFlows()) {
-			drawFlows(drawArrows);
+
+		if (model_copy.settings.drawFlows) {
+			drawFlows(model_copy.settings.drawArrows);
 		}
-		if (model_copy.isDrawNodes()) {
+		if (model_copy.settings.drawNodes) {
 			console.log("The model says to draw nodes, so I'm drawing nodes.");
 			drawPoints();
 		} 
@@ -1036,7 +1034,7 @@ Flox.MapComponent_d3 = function() {
 			.style("stroke", "white")
 			.style("stroke-width", function(d) {
 				return (d.strokeWidth);
-			})
+			});
 			// .call(force.drag)
 			// .on("mousedown", function() {
 				// d3.event.stopPropagation();
@@ -1219,7 +1217,7 @@ Flox.MapComponent_d3 = function() {
 			i, j, sPt, ePt,
 			necklaceMapNodes,
 			smallerOuterCircle,
-			datasetName = model.getDatasetName(); // FIPS code of selected state
+			datasetName = model.settings.datasetName; // FIPS code of selected state
 			// in the format "FIPS00"
 		
 		// Remove the existing necklace map.

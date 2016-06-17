@@ -143,11 +143,8 @@ function initFilterWorker() {
 
 function runFilterWorker() {
 	var modelJSON = model_master.toJSON();
-	
 	modelJSON.filterSettings = filterSettings;
-		
 	initFilterWorker();
-	
 	filterWorker.postMessage(modelJSON);
 }
 
@@ -178,13 +175,12 @@ function layoutFlows(model) {
 		return;
 	}
 	
-    var iterations = model.getIterations(),
+    var iterations = model.settings.NBR_ITERATIONS,
 		initialLocks = model.getLocks(),
         startTime = performance.now(),
         layouter, endTime,
         i, j, weight;
         
-
 	layouter = new Flox.FlowLayouter(model);
 
 	// Straighten the flows
@@ -200,7 +196,7 @@ function layoutFlows(model) {
     for (i = Math.floor(iterations/2); i < iterations; i += 1) {
         weight = 1 - i/iterations;
         layouter.layoutAllFlows(weight);
-        if(model.isMoveFlowsIntersectingNodes()) {
+        if(model.settings.moveFlowsIntersectingNodes) {
 			layouter.moveFlowsIntersectingNodes();
 		}
     }
@@ -220,7 +216,7 @@ function importStateToStateMigrationFlows() {
     mapComponent.zoomToFullExtent();
 	filterSettings.stateMode = true;
 	filterSettings.countyMode = false;
-	model_master.setMapScale(5); // FIXME hardcoded
+	model_master.settings.mapScale = 5; // FIXME hardcoded
 	var nodePath = "data/census/state_latLng.csv",
 		flowPath = "data/census/US_State_migration_2014_flows.csv";
 	
@@ -228,7 +224,7 @@ function importStateToStateMigrationFlows() {
 		model_master.initNodes(stateNodes);
 		model_master.addFlows(flows);
 		//model_master.updateCachedValues();
-		model_master.setDatasetName("states");
+		model_master.settings.datasetName = "states";
 		my.updateMap();
 	});
 }
@@ -406,7 +402,7 @@ my.importTotalCountyFlowData = function(stateFIPS) {
 		model_master.initNodes(countyNodes);
 		model_master.addFlows(flows);
 		//model_master.updateCachedValues(); // this gets done after filtering
-		model_master.setDatasetName("FIPS" + Number(stateFIPS));
+		model_master.settings.datasetName = "FIPS" + Number(stateFIPS);
 		
 		my.updateMap();	
 		
@@ -537,8 +533,8 @@ my.initFlox = function() {
 		model_master.initNodes(stateNodes);
 		model_master.addFlows(flows);
 		model_master.updateCachedValues();
-		model_master.setMapScale(5);
-		model_master.setDatasetName("states");
+		model_master.settings.mapScale = 5;
+		model_master.settings.datasetName = "states";
 		my.filterBySettings(model_master);
 		
 		d3.json(jsonPath, function(d) {

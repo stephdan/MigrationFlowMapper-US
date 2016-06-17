@@ -17,7 +17,7 @@ function layoutFlows() {
 		return;
 	}
 	
-	var iterations = model.getIterations(),
+	var iterations = model.settings.NBR_ITERATIONS,
 		initialLocks = model.getLocks(),
         startTime = performance.now(),
         layouter, endTime,
@@ -44,7 +44,7 @@ function layoutFlows() {
     for (i = Math.floor(iterations/2); i < iterations; i += 1) {
         weight = 1 - i/iterations;
         layouter.layoutAllFlows(weight);
-        if(model.isMoveFlowsIntersectingNodes()) {
+        if(model.settings.moveFlowsIntersectingNodes) {
 			layouter.moveFlowsIntersectingNodes();
 		}
 		if(i % 5 === 0) {
@@ -65,7 +65,8 @@ onmessage = function(e) {
 	var newControlPoints;
 	
 	//model = buildModel(e);
-	model = new Flox.Model().deserializeModelJSON(e.data);
+	model = new Flox.Model()
+	model.deserializeModelJSON(e.data);
 	
 	// Get new control point coordinates.
 	newControlPoints = layoutFlows();
