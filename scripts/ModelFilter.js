@@ -349,34 +349,7 @@ Flox.ModelFilter = function(model_master) {
 		//Flox.logFlows(model_copy);
 		return model_copy;
 	};
-	
-	
-	
-	/**
-	 * Return a model containing the n largest flows, where n is the value of 
-	 * maxFlows in the model.
-	 */
-	my.getMaxFlowsModel = function() {
-		var maxFlows, i, j, n, allFlows;
-	
-		n = model_copy.settings.maxFlows;
 		
-		model_copy.sortFlows();
-		
-		allFlows = model_copy.getAllFlows();
-
-		
-		maxFlows = allFlows.slice(0, n);
-		
-		model_copy.deleteAllFlows();
-		
-		model_copy.addFlows(maxFlows);
-		
-		//model_copy.updateCachedValues();
-		
-		return model_copy;
-	};
-	
 	/**
 	 * Return a model containing only flows with start and end points
 	 * within the selected state. 
@@ -466,7 +439,7 @@ Flox.ModelFilter = function(model_master) {
 		
 		// If a county is selected, get the model for just that county.
 		if(filterSettings.selectedCounty !== false) {
-			getSelectedCountyModel(settings);
+			getSelectedCountyModel(filterSettings);
 		}		
 		
 		// It it's in state mode, and a state is selected, filter out all
@@ -486,8 +459,8 @@ Flox.ModelFilter = function(model_master) {
 			my.removeInStateFlows();
 		}		
 		
-		// Filter out all but the biggest flows.
-		my.getMaxFlowsModel();		
+		// This is maybe the only time flows are sorted 
+		model_copy.sortFlows();
 		
 		endTime = performance.now() - startTime;
 		console.log("filterBySettings took " + Math.floor(endTime) + "ms");

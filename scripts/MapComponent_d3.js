@@ -796,7 +796,6 @@ Flox.MapComponent_d3 = function() {
 		var stateCircles = [],
 			nodeValue,
 			maxNodeValue,
-			activeFullModel = Flox.getActiveFullModel(),
 			filterSettings = Flox.getFilterSettings(),
 			maxR = outerCircle.r * 0.2,
 			maxArea = Math.PI * maxR * maxR,
@@ -817,13 +816,13 @@ Flox.MapComponent_d3 = function() {
 				// will be displayed, but I need to know the MAX max, of all of them.
 				// Which means I need the activeFullModel. And I need a nice easy
 				// way to get the max out of state node value. 
-				maxNodeValue = getMaxOutOfStateNetFlow(activeFullModel);
+				maxNodeValue = getMaxOutOfStateNetFlow(model_copy);
 				ptArea = (maxArea * Math.abs(pt.netFlow))/maxNodeValue;
 				pt.r = Math.sqrt(ptArea/Math.PI);
 								
 			} else {
 				// us total flow to determine radius
-				maxNodeValue = getMaxOutOfStateTotalFlow(activeFullModel);
+				maxNodeValue = getMaxOutOfStateTotalFlow(model_copy);
 				ptArea = (maxArea * (pt.totalIncomingFlow + pt.totalOutgoingFlow))/maxNodeValue;
 				pt.r = Math.sqrt(ptArea/Math.PI);
 			}

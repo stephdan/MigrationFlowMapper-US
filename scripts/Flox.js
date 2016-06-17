@@ -84,7 +84,7 @@ function initLayoutWorker(modelCopy, callback) {
 			ctrlPts = e.data[0];
 			
 			// grab the flows from the same model that was fed to the webworker.	
-			flows = modelCopy.getFlows();
+			flows = modelCopy.getLargestFlows();
 			
 			// Update the map if the worker is returning new control point
 			// locations (which it won't if it's just giving a progress update)
@@ -117,12 +117,21 @@ function initLayoutWorker(modelCopy, callback) {
 
 function runLayoutWorker(modelCopy, callback) {
 	initLayoutWorker(modelCopy, callback);
-	var modelJSON = modelCopy.toJSON();
-	// Pass the layoutWorker the model. It will then perform the layout.
+	
+	// Need the model json to only be for top 50 flows.	
+	var largestFlowsModel = new Flox.Model(),
+		modelJSON;
+		
+	largestFlowsModel.updateSettings(modelCopy.settings);
+	largestFlowsModel.addFlows(modelCopy.getLargestFlows());
+	
+	modelJSON = largestFlowsModel.toJSON();
+	
+	// Pass the layoutWorker the modelJSON. It will then perform the layout.
 	layoutWorker.postMessage(modelJSON);
 }
 
-function initFilterWorker() {
+function initFilterWorker(callback) {
 	
 	if (window.Worker) {
 		if(filterWorker) {
@@ -132,19 +141,21 @@ function initFilterWorker() {
 		filterWorker = new Worker("scripts/filterWorker.js");
 		
 		filterWorker.onmessage = function(e) {
-			// e is what the worker passes back. What will it be?
-				// Is will be the filtered model in json form. 
-			// What to do with it?
-				// Send it to wherever it needs to go I guess.
-		}
+			// e.data is model json, right?
+			var json = e.data,
+				filteredModel = new Flox.Model();
+				
+			filteredModel.deserializeModelJSON(json);	
+			callback(filteredModel);
+		};
 	}	
 }
 
 
-function runFilterWorker() {
+function runFilterWorker(callback) {
 	var modelJSON = model_master.toJSON();
 	modelJSON.filterSettings = filterSettings;
-	initFilterWorker();
+	initFilterWorker(callback);
 	filterWorker.postMessage(modelJSON);
 }
 
@@ -420,10 +431,10 @@ my.rotateProjection = function(lat, lng, roll) {
 /**
  * Filter the provided model according to the current filterSettings
  */
-my.filterBySettings = function(m) {
+my.filterBySettings = function(m, settings) {
 	var filteredModel;
 	//my.logFlows(model_master);
-	filteredModel = new Flox.ModelFilter(m).filterBySettings(filterSettings);
+	filteredModel = new Flox.ModelFilter(m).filterBySettings(settings);
 	
 	return filteredModel;  
 };
@@ -433,21 +444,27 @@ my.filterBySettings = function(m) {
  */
 my.updateMap = function() {
 	
-	var filteredModel;
-	//my.logFlows(model_master);
-	filteredModel = my.filterBySettings(model_master);
+	// var filteredModel;
+	// filteredModel = my.filterBySettings(model_master, filterSettings);
+	// if(filterSettings.stateMode === false) {
+		// mapComponent.configureNecklaceMap(filteredModel);
+	// }
+	// runLayoutWorker(filteredModel, function() {
+		// refreshMap(filteredModel);
+	// });	
 	
-	if(filterSettings.stateMode === false) {
-		mapComponent.configureNecklaceMap(filteredModel);
-	}
-	
-	//my.logFlows(filteredModel);
 	//new Flox.FlowLayouter(filteredModel).straightenFlows();
 	//layoutFlows(filteredModel);
 	//refreshMap(filteredModel);
-	runLayoutWorker(filteredModel, function() {
-		refreshMap(filteredModel);
-	});	
+
+	runFilterWorker(function(filteredModel) {
+		if(filterSettings.stateMode === false) {
+			mapComponent.configureNecklaceMap(filteredModel);
+		}
+		runLayoutWorker(filteredModel, function() {
+			refreshMap(filteredModel);
+		});	
+	});
 };
 
 my.getFilterSettings = function() {
@@ -535,7 +552,7 @@ my.initFlox = function() {
 		model_master.updateCachedValues();
 		model_master.settings.mapScale = 5;
 		model_master.settings.datasetName = "states";
-		my.filterBySettings(model_master);
+		my.filterBySettings(model_master, filterSettings);
 		
 		d3.json(jsonPath, function(d) {
 			starterModel.deserializeModelJSON(d);
