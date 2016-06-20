@@ -70,7 +70,7 @@ Flox.Model = function() {
 			drawIntermediateFlowPoints : false,
 			drawRangeboxes : false,
 					
-			datasetName : null
+			datasetName : null,
 		},
 	
 		
@@ -602,6 +602,9 @@ Flox.Model = function() {
 
 // PUBLIC ======================================================================
 	
+	my.getRelativeFlowValue = function(flow) {
+		return getRelativeFlowValue(flow);
+	};
 	
 	my.getNodeRadius = function (node) {
 		return getNodeRadius(node);

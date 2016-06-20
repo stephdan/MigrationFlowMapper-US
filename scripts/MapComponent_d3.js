@@ -32,24 +32,36 @@ Flox.MapComponent_d3 = function() {
 					.attr("class", "floxTooltip")
 					.style("display", "none"),
 		
-		colorGradients = {
-			"purple": {
-				"4": ["#dadaeb", "#bcbddc", "#9e9ac8", "#807dba"],
-				"5": ["#efedf5", "#dadaeb", "#bcbddc", "#9e9ac8", "#807dba"],
-				"6": ["#efedf5", "#dadaeb", "#bcbddc", "#9e9ac8", "#807dba", "#6a51a3"],
-				"7": ["#efedf5", "#dadaeb", "#bcbddc", "#9e9ac8", "#807dba", "#6a51a3", "#54278f"]
-			},
-			"orange": {
-				"5": ["#fee6ce", "#fdd0a2", "#fdae6b", "#fd8d3c", "#f16913"],
-				//
-				"7": ["#fee6ce", "#fdd0a2", "#fdae6b", "#fd8d3c", "#f16913", "#d94801", "#a63603"]
-				//"9": ['rgb(255,245,235)','rgb(254,230,206)','rgb(253,208,162)','rgb(253,174,107)','rgb(253,141,60)','rgb(241,105,19)','rgb(217,72,1)','rgb(166,54,3)','rgb(127,39,4)']
-			}
-		},
+
 		colorPick = "orange",
 		numberOfClasses = "7",
-					
+		
+		colors = {
+			backgroundFill: [235,235,242],
+
+			minPopDensityFill: [189,229,187],
+			maxPopDensityFill: [81,154,188],
+
+			minFlowStroke: [174,117,120],
+			maxFlowStroke: [174,49,46],
+
+			necklaceNodeFill: [96,191,191],
+			necklaceNodeStroke: [44,99,99],
+
+			polygonStroke: [59,137,145],
+
+			flowHoverStroke: [255,255,0],
+			necklaceNodeHoverFill: [255,255,0],
+			polygonHoverStroke: [50,50,50]
+		},
+		
+		
 	    my = {};
+
+	// takes an array like [r,g,b] and makes it "rgb(r,g,b)" for use with d3
+	function rgbArrayToString(rgb){
+		return "rgb(" +  rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
+	}
 
 	// Moves the selected svg element to lay on top of other SVG elements under the 
 	// same parent element. Needed for changing the color of polygon stroke
@@ -74,7 +86,11 @@ Flox.MapComponent_d3 = function() {
 
 		// MAP LAYERS ------------------------------------
 		// Add a background layer for detecting pointer events
-		background = svg.append("rect").attr("class", "background").attr("width", "100%").attr("height", "100%").on("click", reset);
+		background = svg.append("rect").attr("class", "background")
+						.attr("width", "100%")
+						.attr("height", "100%")
+						.attr("fill", rgbArrayToString(colors.backgroundFill))
+						.on("click", reset);
 		var mapFeaturesLayer = svg.append("g").attr("id", "mapFeaturesLayer"),
 			statesLayer = mapFeaturesLayer.append("g").attr("id", "statesLayer"),
 			countiesLayer = mapFeaturesLayer.append("g").attr("id", "countieslayer"),
@@ -109,12 +125,15 @@ Flox.MapComponent_d3 = function() {
 					return "FIPS" + Number(d.properties.STATEFP);
 				})
 				.attr("class", "feature state")
-				.attr("stroke", "white")
+				.attr("stroke", function(d){
+					return rgbArrayToString(colors.polygonStroke);
+				})
 				.attr("fill", "#ccc")
 				.on("click", stateClicked)
 				.on("mouseover", function(d) {
-					
-					d3.select(this).style("stroke", "gray").moveToFront();
+					d3.select(this).style("stroke", function(d) {
+						return rgbArrayToString(colors.polygonHoverStroke);
+					}).moveToFront();
 				})
 				.on("mouseout", function(d) {
 					
@@ -125,7 +144,9 @@ Flox.MapComponent_d3 = function() {
 						}
 						d3.select(this)
 					})
-					.style("stroke", "white");
+					.style("stroke", function(d){
+						return rgbArrayToString(colors.polygonStroke);
+					});
 					
 					
 				});
@@ -147,6 +168,9 @@ Flox.MapComponent_d3 = function() {
 						return "feature county hidden FIPS" + Number(d.properties.STATEFP);
 					})
 					.attr("fill", "#ccc")
+					.attr("stroke", function(d){
+						return rgbArrayToString(colors.polygonStroke);
+					})
 					.on("mouseover", function(d) {
 						tooltip.style("display", "inline");
 						d3.select(this)
@@ -178,7 +202,9 @@ Flox.MapComponent_d3 = function() {
 						tooltip.style("display", "none");
 						d3.select(this)
 							.moveToFront()
-							.style("stroke", "white")
+							.style("stroke", function(d){
+								return rgbArrayToString(colors.polygonStroke);
+							})
 							.style("fill", function(d) {
 								var node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
 								return populationDensityColor(Number(node.populationDensity));
@@ -284,21 +310,16 @@ Flox.MapComponent_d3 = function() {
 	}
 
 	function getFlowColor(flow) {
-		
-		var c;
-		
+		var w, c;
 		if (flow.isSelected()) {
 			return selectedColor;
 		}
 		if (flow.isLocked() && model_copy.settings.showLockedFlows) {
 			return lockedColor;
 		}
-		
-		//return defaultColor;
-		
-		c = model_copy.getFlowColor(flow);
+		w = model_copy.getRelativeFlowValue(flow);
+		c = Flox.ColorUtils.blend(colors.minFlowStroke, colors.maxFlowStroke, w);
 		return "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")";
-		
 	}
 
 	/**
@@ -332,11 +353,8 @@ Flox.MapComponent_d3 = function() {
 		    re,
 		    svgFlows;
 	
-		// If there are supposed to be arrows, but there are no arrows, 
-		// configure arrows.
-		//if(drawArrows && flows[0].getArrow()===false) {
-			configureArrows(model_copy);
-		//}
+		configureArrows(model_copy);
+
 		
 		// sort the flows in descending order so that big flows are drawn under
 		// small flows (big flows will be drawn first)
@@ -397,8 +415,12 @@ Flox.MapComponent_d3 = function() {
 			.style("cursor", "default")
 			.attr("fill", "none")
 			.attr("stroke-width", function(d) {
-				
-				return model_copy.getFlowStrokeWidth(d);
+				var strokeWidth = model_copy.getFlowStrokeWidth(d);
+				if(strokeWidth < 1) {
+					d3.select(this).attr("stroke-dasharray", "5,5");
+					return 1;
+				}
+				return strokeWidth;
 			})
 			.attr("d", function(d) {
 				return buildSvgFlowPath(d, drawArrows);
@@ -505,6 +527,19 @@ Flox.MapComponent_d3 = function() {
 			   });
 	}
 
+	// TODO name better
+	function getColorRampForD3() {
+		var colorRamp, d3ColorRamp = [], i;
+		
+		colorRamp = Flox.ColorUtils.getColorRamp(colors.minPopDensityFill,
+			colors.maxPopDensityFill, Number(numberOfClasses));
+		
+		for(i = 0; i < colorRamp.length; i += 1) {
+			d3ColorRamp.push(rgbArrayToString(colorRamp[i]));
+		}
+		return d3ColorRamp;
+	}
+
 	function colorCountiesByPopulationDensity() {
 		var stateFIPS, counties, nodes, node, countyNodes = [], i,
 		popDensities, model_master, popDensity;
@@ -533,7 +568,7 @@ Flox.MapComponent_d3 = function() {
 		// Create a jenks natural breaks scale with 4 classes.
 		// Uses simple_statistics.js
 		populationDensityColor = d3.scale.threshold()
-		    .range(colorGradients[colorPick][numberOfClasses])
+		    .range(getColorRampForD3())
 			.domain(ss.jenks(popDensities, Number(numberOfClasses)).slice(1, -1));
 		
 		counties.style("fill", function(d) {
@@ -547,11 +582,10 @@ Flox.MapComponent_d3 = function() {
 		});
 	}
 
-	
-
 	function colorStatesByPopulationDensity() {
 		// Select the state polygons somehow. 
-		var statePolygons, model_master, nodes, node, i, popDensities, STATEFP;
+		var statePolygons, model_master, nodes, node, i, popDensities, STATEFP,
+			colorRamp;
 		
 		statePolygons = d3.selectAll(".feature.state");
 		model_master = Flox.getModel();
@@ -561,10 +595,12 @@ Flox.MapComponent_d3 = function() {
 			return Number(d.populationDensity);
 		});
 		
-		// Create a jenks natural breaks scale with 4 classes.
+		// Create a jenks natural breaks scale with 7 classes.
 		// Uses simple_statistics.js
+		// TODO build the color gradient from a min and max color rather than
+		// hard coding each color.
 		populationDensityColor = d3.scale.threshold()
-		    .range(colorGradients[colorPick][numberOfClasses])
+		    .range(getColorRampForD3())
 			.domain(ss.jenks(popDensities, Number(numberOfClasses)).slice(1, -1));
 		
 		statePolygons.style("fill", function(d) {
@@ -1029,8 +1065,12 @@ Flox.MapComponent_d3 = function() {
 			.attr("r", function(d) {
 				return d.r;
 			})
-			.style("fill", "#BCDDE8")
-			.style("stroke", "white")
+			.style("fill", function(d) {
+				return rgbArrayToString(colors.necklaceNodeFill);
+			})
+			.style("stroke", function(d) {
+				return rgbArrayToString(colors.necklaceNodeStroke);
+			})
 			.style("stroke-width", function(d) {
 				return (d.strokeWidth);
 			});
@@ -1042,7 +1082,10 @@ Flox.MapComponent_d3 = function() {
 		// Add some mouse interactions to the nodes, like tooltips.
 		nodes.on("mouseover", function(d) {
 			tooltip.style("display", "inline");
-			d3.select(this).selectAll("circle").style("fill", "#A1D3E3");
+			d3.select(this).selectAll("circle")
+			  .style("fill", function(d) {
+				return rgbArrayToString(colors.necklaceNodeHoverFill);
+			  });
         })
         .on("mousemove", function(d) {
 			tooltip.html(d.name + "<br/>" + 
@@ -1056,7 +1099,10 @@ Flox.MapComponent_d3 = function() {
         })
         .on("mouseout", function() {
 			tooltip.style("display", "none");
-			d3.select(this).selectAll("circle").style("fill", "#BCDDE8");
+			d3.select(this).selectAll("circle")
+			  .style("fill", function(d) {
+				return rgbArrayToString(colors.necklaceNodeFill);
+			  });
         })
         .on("click", function(d) {
 			tooltip.style("display", "none");

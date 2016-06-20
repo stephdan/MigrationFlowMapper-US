@@ -29,6 +29,19 @@ Flox.ColorUtils = (function() {
 	
 	};
 	
+	my.getColorRamp = function(c1, c2, breaks) {
+		var ramp = [c1], 
+			i, b, k;
+		k = 1 / (breaks - 1);
+		b = k;
+		for(i = 1; i < (breaks - 1); i += 1) {
+			ramp.push(my.blend(c1, c2, b));
+			b += k;
+		}
+		ramp.push(c2);
+		return ramp;
+	};
+	
 	return my;
 
 }());

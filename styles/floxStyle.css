@@ -6,7 +6,6 @@ html, body {
 .background {
 	padding: 0px;
 	margin: 0px;
-	fill: none;
   	pointer-events: all;
 }
 
@@ -28,6 +27,46 @@ html, body {
 	margin: 10px;
 }
 
+#titleText {
+	position: absolute;
+	width: auto;
+	text-align: center;
+	position: fixed;
+	margin: 0 auto;
+  	left: 0;
+	right: 0;
+	pointer-events: none;
+	font-size: 16pt;
+	font-weight: bold;
+	font-family: Tahoma, Geneva, sans-serif;
+	
+}
+
+#subtitleText {
+	position: absolute;
+	width: auto;
+	text-align: center;
+	left: 0;
+	right: 0;
+	top: 24px;
+	pointer-events: none;
+	font-size: 16pt;
+	font-family: Tahoma, Geneva, sans-serif;
+}
+
+#creditText {
+	position: absolute;
+	width: auto;
+	height: auto;
+	bottom: 0;
+	right: 0;	
+	font-size: 7pt;
+	margin-right: 4px;
+	margin-bottom: 2px;
+	text-align: right;
+	line-height: 100%;
+}
+
 #slidingPanel {
 	position: absolute;
 	width: 400px;
@@ -40,15 +79,15 @@ html, body {
 	pointer-events: none;
 }
 
+
 #slidingPanelTab {
 	margin-left: 15px;
 	width: 40px;
 	height: 18px;
-	background-color: #fff;
-	border-radius: 3px 3px 0px 0px;
-	border-style: solid;
-	border-color: black;
-	border-width: 2px 2px 0px 2px;
+	background: rgb(64, 64, 64);
+    background: rgba(64, 64, 64, 0.9);
+    box-shadow: 3px 3px 3px rgba(64,64,64,0.5);
+	border-radius: 2px 2px 0px 0px;
 	pointer-events: all;
 }
 
@@ -57,17 +96,31 @@ html, body {
 }
 
 #slidingPanelContent {
-	background-color: #fff;
-	background-color: rgba(255, 255, 255, 0.9);
+	background: rgb(64, 64, 64);
+    background: rgba(64, 64, 64, 0.9);
+    box-shadow: 3px 3px 3px rgba(64,64,64,0.5);
 	padding: 5px;
 	height: 52px;
-	border-radius: 6px 6px 0px 0px;
-	border-style: solid;
-	border-color: black;
-	border-width: 2px 2px 0px 2px;
+	border-radius: 2px 2px 0px 0px;
 	pointer-events: all;
 }
 
+.floxTooltip {
+	position: absolute;
+	text-align: left;
+	width: auto;
+	height: auto;
+	padding: 3px;
+	margin-top: -10px;
+	font: 12px sans-serif;
+	background: rgb(64, 64, 64);
+    background: rgba(64, 64, 64, 0.9);
+    box-shadow: 3px 3px 3px rgba(64,64,64,0.5);
+    border-radius: 2px 2px 2px 2px;
+	pointer-events: none;
+	color: white;
+	
+}
 #layoutProgressBar {
 	position: absolute;
 	width: 150px;
@@ -90,22 +143,7 @@ html, body {
 	font-family: Futura, "Trebuchet MS", Arial, sans-serif;
 }
 
-.floxTooltip {
-	position: absolute;
-	text-align: left;
-	width: auto;
-	height: auto;
-	padding: 3px;
-	margin-top: -10px;
-	font: 12px sans-serif;
-	background: #fff;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 6px 6px 6px 6px;
-	border-style: solid;
-	border-width: 2px;
-	border-color: black;
-	pointer-events: none;
-}
+
 
 .tooltipValue {
 	font-weight: bold;
@@ -123,7 +161,6 @@ html, body {
 }
 
 .feature.county {
-  stroke: #fff;
   cursor: pointer;
 }
 
@@ -157,4 +194,5 @@ p {
 	display: block;
 	padding: 2px 6px;
 }
+
 

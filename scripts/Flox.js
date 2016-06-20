@@ -507,7 +507,7 @@ my.initFlox = function() {
 	
 	var starterModel = new Flox.Model(), 
 		jsonPath = "data/JSON/stateToStateFlowsLayout.json",
-		flowPath = "data/census/US_State_migration_2014_flows.csv";
+		flowPath = "../data/census/US_State_migration_2014_flows.csv";
 	
 	model_master = new Flox.Model();
 	mapComponent = new Flox.MapComponent_d3();
@@ -518,23 +518,23 @@ my.initFlox = function() {
 	// Load the entire state-to-state dataset.
 	// Wouldn't it be better to have some premade JSON of this model?
 	// FIXME this is resulting in the start and end points being askew somehow.
-	Flox.FlowImporter.importStateToStateMigrationFlows(flowPath, function(flows, stateNodes) {
-		model_master.initNodes(stateNodes);
-		model_master.addFlows(flows);
-		model_master.updateCachedValues();
-		model_master.settings.mapScale = 5;
-		model_master.settings.datasetName = "states";
-		my.filterBySettings(model_master, filterSettings);
-		
-		d3.json(jsonPath, function(d) {
-			starterModel.deserializeModelJSON(d);
-			
-			starterModel.configureArrows();
-			//layoutFlows(starterModel);
-			mapComponent.drawFeatures(starterModel);
-		});
-	});
-	//importStateToStateMigrationFlows();
+	// Flox.FlowImporter.importStateToStateMigrationFlows(flowPath, function(flows, stateNodes) {
+		// model_master.initNodes(stateNodes);
+		// model_master.addFlows(flows);
+		// model_master.updateCachedValues();
+		// model_master.settings.mapScale = 5;
+		// model_master.settings.datasetName = "states";
+		// my.filterBySettings(model_master, filterSettings);
+// 		
+		// d3.json(jsonPath, function(d) {
+			// starterModel.deserializeModelJSON(d);
+// 			
+			// starterModel.configureArrows();
+			// //layoutFlows(starterModel);
+			// mapComponent.drawFeatures(starterModel);
+		// });
+	// });
+	importStateToStateMigrationFlows();
 };
 
 

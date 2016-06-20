@@ -228,9 +228,7 @@ Flox.FlowImporter = ( function(d3) {
 		
 		// import state nodes. Will be used to replace nodes outside of the
 		// target state (stateFIPS).
-		var stateNodePath = "data/census/state_latLng.csv",
-			//nodes = [],
-			newStNode,
+		var newStNode,
 			stateNodeData,
 			row, i;
 			
