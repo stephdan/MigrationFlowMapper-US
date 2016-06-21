@@ -63,6 +63,55 @@ Flox.MapComponent_d3 = function() {
 		return "rgb(" +  rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
 	}
 
+	function numberWithCommas(x) {
+	    var parts = x.toString().split(".");
+	    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	    return parts.join(".");
+	}
+
+	function buildFlowTooltipText(d) {
+		var moverText = "<span class='tooltipValue'>" + numberWithCommas(d.getValue()) + "</span>",
+			typeText,
+			toFromText;
+		
+		if(d.AtoB) {
+			// it's a total flow
+			typeText = " <div class='tooltipTypeHolder'>TOTAL<br/>MOVERS</div><br/>";
+			toFromText = "<div class='tooltipToFromText'>" + d.getStartPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getEndPt().name + ": " + numberWithCommas(d.AtoB) + "<br/>" + 
+				             d.getEndPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getStartPt().name + ": " + numberWithCommas(d.BtoA); + "</div>"
+		} else {
+			// it's a net flow
+			typeText = " <div class='tooltipTypeHolder'>NET<br/>MOVERS</div><br/>";
+			toFromText = "<div class='tooltipToFromText'><span style='font-size: 8px;'>from </span>" + d.getStartPt().name + "<br/>" + 
+				             "<span style='font-size: 8px;'>to </span>" + d.getEndPt().name + "</div>";
+		}
+		return moverText + typeText + toFromText;
+	}
+	
+	function buildAreaTooltipText(d, model) {
+		var node, outgoingFlow, incomingFlow, areaName, inValue, outValue, inOutText;
+		
+		if(d.properties.COUNTYFP){
+			// it's a county
+			node = model.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
+		} else {
+			// it's a state
+			node = model.findNodeByID(String(Number(d.properties.STATEFP)));
+		}
+		outgoingFlow = node.totalOutgoingFlow;
+		incomingFlow = node.totalIncomingFlow;
+		
+		areaName = "<div class='tooltipAreaName'>" + node.name + "</div>";
+		inValue = "<span class='tooltipValue'>" + numberWithCommas(incomingFlow) + "</span> <div class='tooltipTypeHolder'>MOVED<br/>IN</div><br/>";
+		outValue = "<span class='tooltipValue'>" + numberWithCommas(outgoingFlow) + "</span> <div class='tooltipTypeHolder'>MOVED<br/>OUT</div><br/>";
+		
+		inOutText = "<div class='tooltipInOutText'>" + inValue +
+					outValue + "</div>";
+		
+		return areaName + inOutText;
+		
+	}
+
 	// Moves the selected svg element to lay on top of other SVG elements under the 
 	// same parent element. Needed for changing the color of polygon stroke
 	// on hover to prevent stroke overlaps. 
@@ -131,18 +180,29 @@ Flox.MapComponent_d3 = function() {
 				.attr("fill", "#ccc")
 				.on("click", stateClicked)
 				.on("mouseover", function(d) {
+					tooltip.style("display", "inline");
 					d3.select(this).style("stroke", function(d) {
 						return rgbArrayToString(colors.polygonHoverStroke);
 					}).moveToFront();
 				})
+				.on("mousemove", function(d) {
+					tooltip.html(function(){
+						return buildAreaTooltipText(d, model_master);
+					})
+					.style("left", (d3.event.pageX + tooltipOffset.x) + "px")
+					.style("top", function() {
+						var tooltipHeight = d3.select(this).node().getBoundingClientRect().height;
+						return (d3.event.pageY - tooltipHeight) + "px";
+					});
+				})
 				.on("mouseout", function(d) {
-					
+					tooltip.style("display", "none");
 					d3.select(this).style("fill", function(d) {
 						if (Flox.getFilterSettings().stateMode) {
 							var node = model_master.findNodeByID(String(Number(d.properties.STATEFP)));
 							return populationDensityColor(Number(node.populationDensity));
 						}
-						d3.select(this)
+						d3.select(this);
 					})
 					.style("stroke", function(d){
 						return rgbArrayToString(colors.polygonStroke);
@@ -178,25 +238,14 @@ Flox.MapComponent_d3 = function() {
 							.style("stroke", "gray");
 					})			
 					.on("mousemove", function(d) {
-						var node, outgoingFlow, incomingFlow, popDensity;
-						node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
-						outgoingFlow = node.totalOutgoingFlow;
-						incomingFlow = node.totalIncomingFlow;
-						if(isNaN(Number(node.populationDensity))) {
-							popDensity = "unknown";
-						} else {
-							popDensity = parseFloat(node.populationDensity).toFixed(0);
-						}
-						tooltip.html("<h5>" + node.name + "</h5>" + 
-								   outgoingFlow + " moved out<br/>" +
-								   incomingFlow + " moved in<br/>" +
-								   popDensity + " residents per sq.km.")
-								.style("left", (d3.event.pageX + tooltipOffset.x) + "px")
-								.style("top", function() {
-									var tooltipHeight = d3.select(this).node().getBoundingClientRect().height;
-									return (d3.event.pageY - tooltipHeight) + "px";
-						       });
-						
+						tooltip.html(function(){
+							return buildAreaTooltipText(d, model_master);
+						})
+						.style("left", (d3.event.pageX + tooltipOffset.x) + "px")
+						.style("top", function() {
+							var tooltipHeight = d3.select(this).node().getBoundingClientRect().height;
+							return (d3.event.pageY - tooltipHeight) + "px";
+						});
 					})
 					.on("mouseout", function() {
 						tooltip.style("display", "none");
@@ -342,6 +391,7 @@ Flox.MapComponent_d3 = function() {
 		}
 	}
 
+	
 
 	function drawFlows(drawArrows) {
 
@@ -432,25 +482,15 @@ Flox.MapComponent_d3 = function() {
 			d3.select(this).select(".curve").attr("stroke", "yellow");
 			d3.select(this).select(".arrow").attr("fill", "yellow");
         })
-        .on("mousemove", function(d) {
-			if(d.AtoB) {
-				// It's a total flow.
-				tooltip.html("Total Flow: " + d.getValue() + "<br/>" + 
-			             d.getStartPt().name + " to " + d.getEndPt().name + ": " + d.AtoB + "<br/>" + 
-			             d.getEndPt().name + " to " + d.getStartPt().name + ": " + d.BtoA)
-			       .style("left", (d3.event.pageX + tooltipOffset.x) + "px")
-			       .style("top", (d3.event.pageY + tooltipOffset.y) + "px");
-			} else {
-				tooltip.html("<span class='tooltipValue'>" + d.getValue() + "</span> Net Movers<br/>" + 
-			             "From " + d.getStartPt().name + "<br/>" + 
-			             "To " + d.getEndPt().name )
-			       .style("left", (d3.event.pageX + tooltipOffset.x) + "px")
-			       .style("top", function() {
-						var tooltipHeight = d3.select(this).node().getBoundingClientRect().height;
-						return (d3.event.pageY - tooltipHeight) + "px";
-			       });
-			}
-			
+		.on("mousemove", function(d) {
+			tooltip.html(function() {
+				return buildFlowTooltipText(d);
+			})
+			.style("left", (d3.event.pageX + tooltipOffset.x) + "px")
+			.style("top", function() {
+				var tooltipHeight = d3.select(this).node().getBoundingClientRect().height;
+				return (d3.event.pageY - tooltipHeight) + "px";
+			});
         })
         .on("mouseout", function() {
 			tooltip.style("display", "none");

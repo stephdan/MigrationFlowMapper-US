@@ -64,7 +64,7 @@ html, body {
 	margin-right: 4px;
 	margin-bottom: 2px;
 	text-align: right;
-	line-height: 100%;
+	line-height: 110%;
 }
 
 #slidingPanel {
@@ -110,17 +110,45 @@ html, body {
 	text-align: left;
 	width: auto;
 	height: auto;
-	padding: 3px;
+	padding: 0px 5px 2px 5px;
 	margin-top: -10px;
-	font: 12px sans-serif;
+	font-family: Tahoma,Verdana,Segoe,sans-serif; 
 	background: rgb(64, 64, 64);
     background: rgba(64, 64, 64, 0.9);
     box-shadow: 3px 3px 3px rgba(64,64,64,0.5);
     border-radius: 2px 2px 2px 2px;
 	pointer-events: none;
 	color: white;
-	
 }
+
+.tooltipValue {
+	font-weight: bold;
+	font-size: 21px;
+	display: inline-block;
+}
+
+.tooltipTypeHolder {
+	font-size: 8.5px;
+	display: inline-block;
+	line-height: 110%;
+}
+
+.tooltipToFromText {
+	line-height: 120%;
+	margin-top: -2px;
+}
+
+.tooltipAreaName {
+	font-size: 14px;
+	margin-bottom: 0px;
+}
+
+
+.tooltipInOutText {
+	font-size: 10px;
+	line-height: 200%;
+}
+
 #layoutProgressBar {
 	position: absolute;
 	width: 150px;
@@ -145,16 +173,9 @@ html, body {
 
 
 
-.tooltipValue {
-	font-weight: bold;
-	font-size: 16px;
-}
 
-.floxTooltip h5 {
-	padding: 0px;
-	margin: 0px;
-	font-weight: bold;
-}
+
+
 
 .feature {
   cursor: pointer;

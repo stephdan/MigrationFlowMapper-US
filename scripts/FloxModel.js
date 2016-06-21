@@ -75,7 +75,7 @@ Flox.Model = function() {
 			useSpiralMethod: true,
 			SPIRAL_SPACING_PX: 15,
 			
-			useWebworkers: false
+			useWebworkers: true
 		},
 	
 		

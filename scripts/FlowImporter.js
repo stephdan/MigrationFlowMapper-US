@@ -132,7 +132,6 @@ Flox.FlowImporter = ( function(d3) {
 					
 					// If the value of BA is bigger than 0...
 					if(BtoA > 0) {
-						//flowBA.oppositeFlow = flowAB;
 						flows.push(flowBA);
 						aPt.totalIncomingFlow += BtoA;
 						aPt.netFlow += BtoA;
@@ -142,7 +141,6 @@ Flox.FlowImporter = ( function(d3) {
 					}
 					
 					if(AtoB > 0) {
-						//flowAB.oppositeFlow = flowBA;
 						flows.push(flowAB);
 						aPt.totalOutgoingFlow += AtoB;
 						aPt.netFlow -= AtoB;
@@ -334,6 +332,8 @@ Flox.FlowImporter = ( function(d3) {
 							val = Number(flowData[i][startID]);
 							if (val > 0) {
 								flows.push(new Flox.Flow(startPt, endPt, val));
+								startPt.totalOutgoingFlow += val;
+								endPt.totalIncomingFlow += val;
 							}
 						}
 					}
