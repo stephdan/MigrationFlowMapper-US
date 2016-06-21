@@ -1,11 +1,11 @@
 (function(){
 "use strict";
 
-importScripts("Flox.js",
-			  "Flow.js",
-			  "FloxModel.js",
-			  "../lib/d3.min.js",
-			  "FlowImporter.js");	
+importScripts("scripts/Flox.js",
+			  "scripts/Flow.js",
+			  "scripts/FloxModel.js",
+			  "lib/d3.min.js",
+			  "scripts/FlowImporter.js");	
 
 
 onmessage = function(e) {

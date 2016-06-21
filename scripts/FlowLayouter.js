@@ -701,7 +701,7 @@ Flox.FlowLayouter = function (model) {
 			nodeObstacles = [],
 			arrowObstacles = [],
 			i, j, node, arrow, radius, 
-			flows = model.getFlows(), 
+			flows = model.getLargestFlows(), // Assumed these all have arrows
 			flow;
 			
 		for(i = 0, j = nodes.length; i < j; i += 1) {
@@ -740,6 +740,69 @@ Flox.FlowLayouter = function (model) {
 			}
 		}
 		return false;
+	}
+
+	function longestDistanceSqToCorner(box, x, y) {
+		var maxDistSq = 0,
+			i, corner, dx, dy, distSq;
+			
+		for(i = 0; i < box.length; i += 1) {
+			corner = box[i];
+			dx = x - corner.x;
+			dy = y - corner.y;
+			distSq = dx * dx + dy * dy;
+			if (distSq > maxDistSq) {
+                maxDistSq = distSq;
+            }
+		}
+		return maxDistSq;
+	}
+
+	function isPointInBox(box, x, y) {
+		
+	}
+
+	function moveFlowIntersectingObstaclesSPIRAL(flow, obstacles) {
+		var dist = model.settings.SPIRAL_SPACING_PX * model.settings.mapScale,
+			cPt = flow.getCtrlPt(),
+			originalX = cPt.x,
+			originalY = cPt.y,
+			angleRad = Math.PI,
+			rangeboxHeight = model.settings.flowRangeboxHeight,
+			rangebox = flow.computeRangebox(rangeboxHeight),
+			maxSpiralRSq = longestDistanceSqToCorner(rangebox, cPt.x, cPt.y),
+			spiralR, dx, dy;
+		do {
+            // radius of spiral for the current angle.
+            // The distance between two windings is dist.
+            spiralR = dist * angleRad / Math.PI / 2;
+
+            // new control point location
+            dx = Math.cos(angleRad) * spiralR;
+            dy = Math.sin(angleRad) * spiralR;
+            cPt.x = dx + originalX;
+            cPt.y = dy + originalY;
+
+            // increment rotation angle, such that the next point on the spiral 
+            // has an approximate distance of dist to the current point
+            angleRad += dist / spiralR;
+
+            if (flow.isPointInRangebox(rangeboxHeight, cPt.x, cPt.y)
+                    && flowIntersectsObstacle(flow, obstacles) === false) {
+                // found a new position for the control point that does not 
+                // result in an overlap with any obstacle
+                return;
+            }
+
+        } // move along the spiral until the entire range box is covered
+        while (spiralR * spiralR < maxSpiralRSq);
+
+        // could not find a control point position that does not overlap an 
+        // obstacle. Restore the original coordinates.
+        cPt.x = originalX;
+        cPt.y = originalY;
+        
+        console.log("Spiral Method did not find a solution");
 	}
 
 	function moveFlowIntersectingObstacles(flow, obstacles) {
@@ -918,7 +981,13 @@ Flox.FlowLayouter = function (model) {
 		flowsOverlappingObstacles = getFlowsOverlappingObstacles(obstacles);
 		
 		for(i = 0, j = flowsOverlappingObstacles.length; i < j; i += 1) {
-			moveFlowIntersectingObstacles(flowsOverlappingObstacles[i], obstacles);
+			
+			if(model.settings.useSpiralMethod) {
+				// use the spiral methoid!
+				moveFlowIntersectingObstaclesSPIRAL(flowsOverlappingObstacles[i], obstacles);
+			} else {
+				moveFlowIntersectingObstacles(flowsOverlappingObstacles[i], obstacles);
+			}
 		}		
 	}
 

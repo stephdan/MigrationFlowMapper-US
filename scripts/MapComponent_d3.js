@@ -1009,6 +1009,8 @@ Flox.MapComponent_d3 = function() {
 
 		mapScale = d3.event.scale;
 
+		//console.log(mapScale);
+
 		g.style("stroke-width", 1 / mapScale + "px");
 		g.attr("transform", "translate(" + d3.event.translate + ")scale(" + mapScale + ")");
 	}

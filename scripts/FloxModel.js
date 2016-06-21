@@ -71,6 +71,11 @@ Flox.Model = function() {
 			drawRangeboxes : false,
 					
 			datasetName : null,
+			
+			useSpiralMethod: true,
+			SPIRAL_SPACING_PX: 15,
+			
+			useWebworkers: false
 		},
 	
 		
@@ -90,10 +95,7 @@ Flox.Model = function() {
 			"FIPS54" : 1,  // West Virginia
 			"allStates": 0.2
 		},
-		
-		minFlowColor = [40,170,40],
-		maxFlowColor = [0,40,0],
-		
+				
 		// Public object		
 		my = {};
     
@@ -288,10 +290,7 @@ Flox.Model = function() {
      * Sort flows by value in descending order, unless ascending === true.
      */
     function sortFlows(ascending) {
-		
-		console.log("sorting flows...");
 		var i;
-		
 		if(ascending === true) {
 			flows.sort(function(a,b) {
 				return a.getValue() - b.getValue();
@@ -301,9 +300,7 @@ Flox.Model = function() {
 				return b.getValue() - a.getValue();
 			});
 		}
-		console.log("done sorting flows");
     }
-    
     
 	/**
 	 * Finds opposing flow in the model if there is one.

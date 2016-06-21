@@ -645,6 +645,50 @@ Flox.Flow = function(sPt, ePt, val, newID) {
         return [b1, b2, b3, b4];
     }
     
+    function isPointInRangebox(boxHeight, x, y) {
+		var baseDist = getBaselineLength(),
+			x1 = startPt.x,
+			y1 = startPt.y,
+			x2 = endPt.x,
+			y2 = endPt.y,
+			dx = x2 - x1,
+			dy = y2 - y1,
+			l = Math.sqrt(dx * dx + dy * dy),
+			
+			// unary vector along base line
+			ux = dx / l,
+			uy = dy / l,
+	        // vector from start and end points of base line to corners
+	        vx = -uy * baseDist * boxHeight,
+	        vy = ux * baseDist * boxHeight,
+	
+	        // http://stackoverflow.com/questions/2752725/finding-whether-a-point-lies-inside-a-rectangle-or-not
+	        Ax = x1 - vx,
+	        Ay = y1 - vy,
+	        Bx = x2 - vx,
+	        By = y2 - vy,
+	        Dx = x1 + vx,
+	        Dy = y1 + vy,
+	        bax = Bx - Ax,
+	        bay = By - Ay,
+	        dax = Dx - Ax,
+	        day = Dy - Ay;
+	        
+	    if ((x - Ax) * bax + (y - Ay) * bay < 0.0) {
+            return false;
+        }
+        if ((x - Bx) * bax + (y - By) * bay > 0.0) {
+            return false;
+        }
+        if ((x - Ax) * dax + (y - Ay) * day < 0.0) {
+            return false;
+        }
+        if ((x - Dx) * dax + (y - Dy) * day > 0.0) {
+            return false;
+        }
+        return true;
+    }
+    
     // return a Point
     function getRangeboxEnforcedPt(boxHeight) {
 
@@ -1144,13 +1188,16 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 		return value;
 	};
 	
-	
-	
 	my.reverseFlow = function() {
         var temp = startPt;
         startPt = endPt;
         endPt = temp;
 	};
+	
+	my.isPointInRangebox = function(rangeboxHeight) {
+		return isPointInRangebox(rangeboxHeight);
+	};
+	
 	
 	return my;
 };

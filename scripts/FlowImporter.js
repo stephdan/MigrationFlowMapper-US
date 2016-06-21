@@ -4,7 +4,7 @@ Flox.FlowImporter = ( function(d3) {
 	var my = {};
 
 	function importStateNodes(callback) {
-		var stateNodePath = "../data/geometry/centroids_states.csv",
+		var stateNodePath = "data/geometry/centroids_states.csv",
 			stateNodes = [],
 			newStNode,
 			stateNodeData,
@@ -279,8 +279,8 @@ Flox.FlowImporter = ( function(d3) {
 	 */
 	my.importTotalCountyFlowData = function(stateFIPS, callback) {	
 		
-		var nodePath = "../data/geometry/centroids_counties_all.csv",
-			flowPath = "../data/census/flows/" + stateFIPS + "_net.csv";
+		var nodePath = "data/geometry/centroids_counties_all.csv",
+			flowPath = "data/census/flows/" + stateFIPS + "_net.csv";
 			
 		// Import nodes for all counties
 		my.importUSCensusCountyNodes(nodePath, stateFIPS, function(countyNodes) {

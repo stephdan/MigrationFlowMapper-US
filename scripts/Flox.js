@@ -121,7 +121,7 @@ function runFilterWorker(callback) {
 function initImportWorker(callback) {
 	if(window.Worker) {
 		if (importWorker) {importWorker.terminate();}
-		importWorker = new Worker("scripts/importWorker.js");
+		importWorker = new Worker("importWorker.js");
 		importWorker.onmessage = function(e) {	
 			// Send the imported data to whoever called runImportWorker		
 			callback(e.data);
@@ -144,6 +144,8 @@ function runImportWorker(stuffImportWorkerNeeds, callback) {
  */
 function layoutFlows(model) {
 	
+	console.log("Laying out " + model.getFlows().length + " flows...");
+	
 	if (model.getFlows().length < 2) {
 		console.log("there are fewer than 2 flows, not doing a layout");
 		refreshMap(model);
@@ -161,14 +163,20 @@ function layoutFlows(model) {
 	// Straighten the flows
 	layouter.straightenFlows();
 	
+	console.log("Running layout iterations, please wait...")
+	
 	// Run the first half of iterations, without MFIN
     for (i = 0, j = Math.floor(iterations/2); i < j; i += 1) {
+		//console.log("Layout Iteration " + (i + 1));
         weight = 1 - i/iterations;
         layouter.layoutAllFlows(weight);
     }
     
+    console.log("Half of layout interations complete, keep waiting...")
+    
     // Run second half of iterations, with MFIN
     for (i = Math.floor(iterations/2); i < iterations; i += 1) {
+		//console.log("Layout Iteration " + (i + 1));
         weight = 1 - i/iterations;
         layouter.layoutAllFlows(weight);
         if(model.settings.moveFlowsIntersectingNodes) {
@@ -191,28 +199,29 @@ function importStateToStateMigrationFlows() {
     mapComponent.zoomToFullExtent();
 	filterSettings.stateMode = true;
 	filterSettings.countyMode = false;
-	model_master.settings.mapScale = 5; // FIXME hardcoded
+	model_master.settings.mapScale = 4; // FIXME hardcoded
 	model_master.settings.datasetName = "states";
-	var //flowPath = "data/census/US_State_migration_2014_flows.csv",
-		workerFlowPath = "../data/census/US_State_migration_2014_flows.csv",
+	var flowPath = "data/census/US_State_migration_2014_flows.csv",
 		stuffImportWorkerNeeds = {};
 	
 	
-	stuffImportWorkerNeeds.flowPath = workerFlowPath;
+	stuffImportWorkerNeeds.flowPath = flowPath;
 	stuffImportWorkerNeeds.settings = model_master.settings;
 	
-	// Flox.FlowImporter.importStateToStateMigrationFlows(flowPath, function(flows, stateNodes) {
-		// model_master.initNodes(stateNodes);
-		// model_master.addFlows(flows);
-		// //model_master.updateCachedValues();
-		// my.updateMap();
-	// });
-	
-	// TODO Instead of the above, use importWorker
-	runImportWorker(stuffImportWorkerNeeds, function(d) {
-		model_master.deserializeModelJSON(d);
-		my.updateMap();
-	})
+	if(window.Worker && model_master.settings.useWebworkers) {
+		runImportWorker(stuffImportWorkerNeeds, function(d) {
+			model_master.deserializeModelJSON(d);
+			my.updateMap();
+		})
+	} else {
+		console.log("Browser cannot use webworkers. UI will be locked during computations.");
+		console.log("Importing state-to-state flows...");
+		Flox.FlowImporter.importStateToStateMigrationFlows(flowPath, function(flows, stateNodes) {
+			model_master.initNodes(stateNodes);
+			model_master.addFlows(flows);
+			my.updateMap();
+		});
+	}
 }
 
 // PUBLIC =====================================================================
@@ -370,23 +379,29 @@ my.importTotalCountyFlowData = function(stateFIPS) {
 	model_master.setStateMapScale(stateFIPS);
 	model_master.settings.datasetName = "FIPS" + Number(stateFIPS);
 	
+	if(window.Worker && model_master.settings.useWebworkers) {
+		stuffImportWorkerNeeds.settings = model_master.settings;
+		stuffImportWorkerNeeds.stateFIPS = stateFIPS;
+		
+		// TODO Instead of the above, use importWorker.
+		runImportWorker(stuffImportWorkerNeeds, function(d) {
+			model_master.deserializeModelJSON(d);
+			my.updateMap();
+		});
+	} else {
+		console.log("Browser cannot use webworkers. UI will be locked during computations.");
+		console.log("Importing county flows...");
+		Flox.FlowImporter.importTotalCountyFlowData(stateFIPS, function(flows, countyNodes){
+			model_master.initNodes(countyNodes);
+			model_master.addFlows(flows);
+			my.updateMap();	
+		});
+	}
 	
-	// Flox.FlowImporter.importTotalCountyFlowData(stateFIPS, function(flows, countyNodes){
-		// // flows are the imported flows!
-		// model_master.initNodes(countyNodes);
-		// model_master.addFlows(flows);
-		// my.updateMap();	
-	// });
 	
 	
-	stuffImportWorkerNeeds.settings = model_master.settings;
-	stuffImportWorkerNeeds.stateFIPS = stateFIPS;
 	
-	// TODO Instead of the above, use importWorker.
-	runImportWorker(stuffImportWorkerNeeds, function(d) {
-		model_master.deserializeModelJSON(d);
-		my.updateMap();
-	})
+	
 };
 
 my.getMapScale = function () {
@@ -413,30 +428,51 @@ my.filterBySettings = function(m, settings) {
  */
 my.updateMap = function() {
 	
-	// var filteredModel;
-	// filteredModel = my.filterBySettings(model_master, filterSettings);
-	// if(filterSettings.stateMode === false) {
-		// mapComponent.configureNecklaceMap(filteredModel);
-	// }
-	// runLayoutWorker(filteredModel, function() {
-		// refreshMap(filteredModel);
-	// });	
-	
-	//new Flox.FlowLayouter(filteredModel).straightenFlows();
-	//layoutFlows(filteredModel);
-	//refreshMap(filteredModel);
-
 	// Good time to assign xy coordinates to nodes.
 	my.assignXYToNodes(model_master.getPoints());
 
-	runFilterWorker(function(filteredModel) {
+	// This if statement is here for debug just to make it easier to turn
+	// off webworkers in order to run performace tests. 
+	// TODO Eventually, it might be nice to have the ability to not use 
+	// webworkers if the browser is not compatible with them. 
+	// FIXME Something is broken when not using webworkers. 
+	if(window.Worker && model_master.settings.useWebworkers) {
+		runFilterWorker(function(filteredModel) {
+			if(filterSettings.stateMode === false) {
+				mapComponent.configureNecklaceMap(filteredModel);
+			}
+			runLayoutWorker(filteredModel, function() {
+				refreshMap(filteredModel);
+			});	
+		});
+	} else {
+		
+		// TODO throw up a "please wait" sign
+		var filteredModel, 
+			largestFlowsModel = new Flox.Model(), i, oldFlows, newFlows, oldCPt, 
+			newCPt;
+		filteredModel = my.filterBySettings(model_master, filterSettings);
 		if(filterSettings.stateMode === false) {
 			mapComponent.configureNecklaceMap(filteredModel);
 		}
-		runLayoutWorker(filteredModel, function() {
-			refreshMap(filteredModel);
-		});	
-	});
+		largestFlowsModel.updateSettings(filteredModel.settings);
+		largestFlowsModel.addFlows(filteredModel.getLargestFlows());
+		
+		layoutFlows(largestFlowsModel);
+		
+		oldFlows = filteredModel.getLargestFlows();
+		newFlows = largestFlowsModel.getFlows();
+		
+		// change the locations of the control points in the filtered model.
+		for(i = 0; i < newFlows.length; i += 1) {
+			oldCPt = oldFlows[i].getCtrlPt();
+			newCPt = newFlows[i].getCtrlPt();
+			oldCPt.x = newCPt.x;
+			oldCPt.y = newCPt.y;
+		}
+		// TODO take down the "please wait" sign
+		refreshMap(largestFlowsModel);
+	}
 };
 
 my.getFilterSettings = function() {
@@ -507,7 +543,7 @@ my.initFlox = function() {
 	
 	var starterModel = new Flox.Model(), 
 		jsonPath = "data/JSON/stateToStateFlowsLayout.json",
-		flowPath = "../data/census/US_State_migration_2014_flows.csv";
+		flowPath = "data/census/US_State_migration_2014_flows.csv";
 	
 	model_master = new Flox.Model();
 	mapComponent = new Flox.MapComponent_d3();
@@ -583,6 +619,17 @@ my.endTimer = function() {
 	endTimeAll = performance.now();
 	console.log("TOTAL time in milliseconds: " + Math.round(endTimeAll - startTimeAll));
 };
+
+my.getNodeCoordinates = function() {
+	var nodes = model_master.getPoints(),
+		coords = [], i;
+		
+	for (i = 0; i < nodes.length; i += 1) {
+		coords.push([nodes[i].x, nodes[i].y]);
+	}
+	return coords;
+ };
+
 // END DEBUG STUFF-------------------------------------
 
 return my;
