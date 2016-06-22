@@ -36,6 +36,9 @@ Flox.MapComponent_d3 = function() {
 		colorPick = "orange",
 		numberOfClasses = "7",
 		
+		stateStrokeWidth = 20,
+		stateHoverStrokeWidth = 40,
+		
 		colors = {
 			backgroundFill: [235,235,242],
 
@@ -52,7 +55,11 @@ Flox.MapComponent_d3 = function() {
 
 			flowHoverStroke: [255,255,0],
 			necklaceNodeHoverFill: [255,255,0],
-			polygonHoverStroke: [50,50,50]
+			polygonHoverStroke: [49,127,135],
+			
+			unselectedStateFill : [230, 230, 230],
+			unselectedStateStroke: [215, 215, 215]
+			
 		},
 		
 		
@@ -102,14 +109,14 @@ Flox.MapComponent_d3 = function() {
 		incomingFlow = node.totalIncomingFlow;
 		
 		areaName = "<div class='tooltipAreaName'>" + node.name + "</div>";
-		inValue = "<span class='tooltipValue'>" + numberWithCommas(incomingFlow) + "</span> <div class='tooltipTypeHolder'>MOVED<br/>IN</div><br/>";
-		outValue = "<span class='tooltipValue'>" + numberWithCommas(outgoingFlow) + "</span> <div class='tooltipTypeHolder'>MOVED<br/>OUT</div><br/>";
+		inValue = "<span class='tooltipValue'>" + numberWithCommas(incomingFlow) + 
+				  "</span> <div class='tooltipTypeHolder'>MOVED<br/>IN</div><br/>";
+		outValue = "<span class='tooltipValue'>" + numberWithCommas(outgoingFlow) + 
+			       "</span> <div class='tooltipTypeHolder'>MOVED<br/>OUT</div><br/>";
 		
 		inOutText = "<div class='tooltipInOutText'>" + inValue +
 					outValue + "</div>";
-		
 		return areaName + inOutText;
-		
 	}
 
 	// Moves the selected svg element to lay on top of other SVG elements under the 
@@ -131,7 +138,6 @@ Flox.MapComponent_d3 = function() {
 		
 		// Create the svg element to hold all the map features.
 		svg = d3.select("#map").append("svg").attr("width", "100%").attr("height", "100%").on("click", stopped, true);
-
 
 		// MAP LAYERS ------------------------------------
 		// Add a background layer for detecting pointer events
@@ -177,13 +183,18 @@ Flox.MapComponent_d3 = function() {
 				.attr("stroke", function(d){
 					return rgbArrayToString(colors.polygonStroke);
 				})
+				.style("stroke-width", stateStrokeWidth)
 				.attr("fill", "#ccc")
 				.on("click", stateClicked)
 				.on("mouseover", function(d) {
 					tooltip.style("display", "inline");
-					d3.select(this).style("stroke", function(d) {
+					d3.select(this)
+					  .style("stroke", function(d) {
 						return rgbArrayToString(colors.polygonHoverStroke);
-					}).moveToFront();
+					  })
+					  .style("stroke-width", stateHoverStrokeWidth )
+					  .classed("hovered", true)
+					  .moveToFront();
 				})
 				.on("mousemove", function(d) {
 					tooltip.html(function(){
@@ -206,9 +217,9 @@ Flox.MapComponent_d3 = function() {
 					})
 					.style("stroke", function(d){
 						return rgbArrayToString(colors.polygonStroke);
-					});
-					
-					
+					})
+					.style("stroke-width", stateStrokeWidth )
+					.classed("hovered", false);
 				});
 			// statesLayer.append("path")
 			// .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
@@ -231,11 +242,16 @@ Flox.MapComponent_d3 = function() {
 					.attr("stroke", function(d){
 						return rgbArrayToString(colors.polygonStroke);
 					})
+					.style("stroke-width", 8) // TODO hardcoded value
 					.on("mouseover", function(d) {
 						tooltip.style("display", "inline");
 						d3.select(this)
 							.moveToFront()
-							.style("stroke", "gray");
+							.style("stroke", function(d) {
+								return rgbArrayToString(colors.polygonHoverStroke);
+							})
+							.style("stroke-width", 16 ) // TODO hardcoded value
+							.classed("hovered", true);
 					})			
 					.on("mousemove", function(d) {
 						tooltip.html(function(){
@@ -257,7 +273,9 @@ Flox.MapComponent_d3 = function() {
 							.style("fill", function(d) {
 								var node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
 								return populationDensityColor(Number(node.populationDensity));
-							});
+							})
+							.style("stroke-width", 8 ) // TODO hardcoded value
+							.classed("hovered", false);
 					})
 					.on("click", function(d) {
 						console.log("county clicked!");
@@ -679,10 +697,8 @@ Flox.MapComponent_d3 = function() {
 			// and make the states a neutral color.
 			d3.selectAll(".feature.state")
 			  .transition()
-			  .style("fill", function(d) {
-				return "#ccc";
-			  })
-			  .attr("opacity", 0.4);
+			  .style("fill", rgbArrayToString(colors.unselectedStateFill))
+			  .style("stroke", rgbArrayToString(colors.unselectedStateStroke));
 		} else {
 			// color the states by population density
 			colorStatesByPopulationDensity();
@@ -1010,8 +1026,6 @@ Flox.MapComponent_d3 = function() {
 			Flox.updateMap();
 		}
 		
-		// Zoom in! FIXME Usually gets stuck 
-		// due to UI freeze.
 
 	}
 
@@ -1045,13 +1059,16 @@ Flox.MapComponent_d3 = function() {
 	
 
 	function zoomed() {
-		var g = svg.select("#mapFeaturesLayer");
+		var //features = d3.selectAll(".feature"),
+			//hoveredFeatures = d3.selectAll(".feature.hovered"),
+			
+		g = svg.select("#mapFeaturesLayer");
 
 		mapScale = d3.event.scale;
 
 		//console.log(mapScale);
-
-		g.style("stroke-width", 1 / mapScale + "px");
+		
+		//g.style("stroke-width", 1 / mapScale + "px");
 		g.attr("transform", "translate(" + d3.event.translate + ")scale(" + mapScale + ")");
 	}
 
