@@ -50,7 +50,7 @@
 	<div id="subtitleText">Top 50 state-to-state flows</div>
 	
 	<div id="creditText">
-		Data for this sweet map including state & county boundaries<br />
+		Data for this sweet map including state &amp; county boundaries<br />
 		 are freely available on the US Census website at www.census.gov
 	</div>
 	
@@ -59,18 +59,80 @@
 			
 		</div>
 		<div id="slidingPanelContent">
-			<div class="btn-group" data-toggle="buttons">
-			  <label class="btn btn-primary active" id="netFlowRadioLabel">
-			    <input type="radio" name="filterRadio" id="netFlowRadio" 
-			     autocomplete="off" checked> 
-			     Net Flow
-			  </label>
-			  <label class="btn btn-primary" id="totalFlowRadioLabel">
-			    <input type="radio" name="filterRadio" id="totalFlowRadio" 
-			     autocomplete="off"> 
-			     Total Flow
-			  </label>
+			
+			<!-- <div class="panelButtonContainer" id="but">
+				<img src="resources/icons/buttons/usOutline_white.svg"
+				class="buttonIcon" />
 			</div>
+			
+			
+			<div class="panelButtonContainer" id="buut"></div> 
+			<div class="panelButtonContainer" id="buuuut"></div> 
+			<div class="panelButtonContainer" id="buuuuut"></div> 
+			<div class="panelButtonContainer" id="buuuuuut"></div> 
+			<div class="panelButtonContainer" id="buuuuuuut"></div> 
+			<div class="panelButtonContainer" id="buuuuuuuut"></div> 
+			<div class="panelButtonContainer" id="buuuuuuuuut"></div>  -->
+			
+			
+			<ul>
+		        <li>
+		        	<div class="panelButtonContainer" id="usStateFlowsButton">
+						<img src="resources/icons/buttons/usOutline_white.svg"
+						class="buttonIcon"
+						id="usOutline" />
+					</div>
+		        </li>
+		        
+		        <li>
+		        	<div class="panelButtonContainer" id="stateOrCountyFlowsButton">
+		        		<img src="resources/icons/buttons/counties_white.svg"
+						class="buttonIcon"
+						id="counties" />
+		        	</div> 
+		        </li>
+		        
+		        <li>
+		        	<div class="panelButtonContainer" id="necklaceMapButton">
+		        		<img src="resources/icons/buttons/necklace_white.svg"
+						class="buttonIcon"
+						id="necklace" />
+		        	</div> 
+		        </li>
+		        
+		        <li>
+		        	<div class="panelButtonContainer" id="innerFlowsButton">
+		        		<img src="resources/icons/buttons/innerFlows_white.svg"
+						class="buttonIcon"
+						id="innerFlows" />
+		        	</div> 
+		        </li>
+		        
+		        <li>
+		        	<div class="panelButtonContainer" id="incomingFlowsButton">
+		        		<img src="resources/icons/buttons/inflows_white.svg"
+						class="buttonIcon"
+						id="inFlows" />
+		        	</div> 
+		        </li>
+		        
+		        <li>
+		        	<div class="panelButtonContainer" id="outgoingFlowsButton">
+		        		<img src="resources/icons/buttons/outflows_white.svg"
+						class="buttonIcon"
+						id="outFlows" />
+		        	</div> 
+		        </li>
+		        
+		        <li>
+		        	<div class="panelButtonContainer" id="netOrTotalFlowsButton">
+		        		<img src="resources/icons/buttons/netFlows_white.svg"
+						class="buttonIcon"
+						id="netFlows" />
+		        	</div> 
+		        </li>
+		    </ul>
+			
 		</div>		
 	</div>
 	
@@ -86,13 +148,11 @@
 	<div id="filterGUI">
 		
 		<div class="btn-group" data-toggle="buttons">
-			
 		  <label class="btn btn-primary active" id="stateFlowsRadioLabel">
 		    <input type="radio" name="filterRadio" id="stateFlowsRadio" 
 		     autocomplete="off" checked> 
 		     State Flows
 		  </label>
-		  
 		  <label class="btn btn-primary" id="countyFlowsRadioLabel">
 		    <input type="radio" name="filterRadio" id="countyFlowsRadio" 
 		     autocomplete="off"> 
@@ -102,20 +162,28 @@
 		
 		<br />
 		
-		
+		<div class="btn-group" data-toggle="buttons">
+		  <label class="btn btn-primary active" id="netFlowRadioLabel">
+		    <input type="radio" name="filterRadio" id="netFlowRadio" 
+		     autocomplete="off" checked> 
+		     Net Flow
+		  </label>
+		  <label class="btn btn-primary" id="totalFlowRadioLabel">
+		    <input type="radio" name="filterRadio" id="totalFlowRadio" 
+		     autocomplete="off"> 
+		     Total Flow
+		  </label>
+		</div>
 		
 		<br />
 		
 		<div class="btn-group" data-toggle="buttons">
-			
 		  <label class="btn btn-primary active" id="inStateFlowsToggle">
 		    <input type="checkbox" checked autocomplete="off"> In-state Flows
 		  </label>
-		  
 		  <label class="btn btn-primary" id="outOfStateFlowsToggle">
 		    <input type="checkbox" autocomplete="off"> Out-of-state Flows
 		  </label>	
-		  	  
 		</div>
 		
 	</div>

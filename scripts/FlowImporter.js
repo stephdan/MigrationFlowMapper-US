@@ -94,7 +94,7 @@ Flox.FlowImporter = ( function(d3) {
 			    row,
 			    A_stateFIPS,
 			    B_stateFIPS,
-			    startTime = performance.now(),
+			    //startTime = performance.now(),
 			    endTime;
 
 			// For each row in the table...
@@ -151,8 +151,8 @@ Flox.FlowImporter = ( function(d3) {
 				}
 			}
 			console.log(flows.length + " flows imported!");
-			endTime = performance.now() - startTime;
-			console.log("import time: " + endTime);
+			//endTime = performance.now() - startTime;
+			//console.log("import time: " + endTime);
 			callback(flows, countyNodes);
 		});
 	}

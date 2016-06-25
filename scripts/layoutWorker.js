@@ -19,7 +19,7 @@ function layoutFlows() {
 	
 	var iterations = model.settings.NBR_ITERATIONS,
 		initialLocks = model.getLocks(),
-        startTime = performance.now(),
+        //startTime = performance.now(),
         layouter, endTime,
         i, j, weight;
 	
@@ -53,8 +53,8 @@ function layoutFlows() {
     }
     
 	model.applyLocks(initialLocks);
-	endTime = performance.now();
-	console.log("Layout time in milliseconds: " + Math.round(endTime - startTime));
+	//endTime = performance.now();
+	//console.log("Layout time in milliseconds: " + Math.round(endTime - startTime));
 	return model.getCtrlPts();
 }
 

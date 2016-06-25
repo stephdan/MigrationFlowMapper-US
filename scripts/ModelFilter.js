@@ -400,7 +400,7 @@ Flox.ModelFilter = function(model_master) {
 		var startTime, endTime;
 		
 		
-		startTime = performance.now();
+		//startTime = performance.now();
 		
 		// Net flows if settings.netFlows
 		if(filterSettings.netFlows) {
@@ -462,8 +462,8 @@ Flox.ModelFilter = function(model_master) {
 		// This is maybe the only time flows are sorted 
 		model_copy.sortFlows();
 		
-		endTime = performance.now() - startTime;
-		console.log("filterBySettings took " + Math.floor(endTime) + "ms");
+		//endTime = performance.now() - startTime;
+		//console.log("filterBySettings took " + Math.floor(endTime) + "ms");
 		
 		return model_copy;
 	};

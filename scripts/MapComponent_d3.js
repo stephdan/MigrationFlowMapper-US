@@ -32,12 +32,12 @@ Flox.MapComponent_d3 = function() {
 					.attr("class", "floxTooltip")
 					.style("display", "none"),
 		
-
-		colorPick = "orange",
 		numberOfClasses = "7",
 		
 		stateStrokeWidth = 20,
 		stateHoverStrokeWidth = 40,
+		countyStrokeWidth = 8,
+		countyHoverStrokeWidth = 16,
 		
 		colors = {
 			backgroundFill: [235,235,242],
@@ -58,7 +58,8 @@ Flox.MapComponent_d3 = function() {
 			polygonHoverStroke: [49,127,135],
 			
 			unselectedStateFill : [230, 230, 230],
-			unselectedStateStroke: [215, 215, 215]
+			unselectedStateStroke: [215, 215, 215],
+			unselectedStateHoverStroke: [190, 190, 190],
 			
 		},
 		
@@ -190,6 +191,10 @@ Flox.MapComponent_d3 = function() {
 					tooltip.style("display", "inline");
 					d3.select(this)
 					  .style("stroke", function(d) {
+					  	// It is in county or state view mode?
+					  	if (Flox.getFilterSettings().countyMode) {
+					  		return rgbArrayToString(colors.unselectedStateHoverStroke);
+					  	}
 						return rgbArrayToString(colors.polygonHoverStroke);
 					  })
 					  .style("stroke-width", stateHoverStrokeWidth )
@@ -212,10 +217,14 @@ Flox.MapComponent_d3 = function() {
 						if (Flox.getFilterSettings().stateMode) {
 							var node = model_master.findNodeByID(String(Number(d.properties.STATEFP)));
 							return populationDensityColor(Number(node.populationDensity));
+						} else if (Flox.getFilterSettings().countyMode) {
+							return rgbArrayToString(colors.unselectedStateFill);
 						}
-						d3.select(this);
 					})
 					.style("stroke", function(d){
+						if(Flox.getFilterSettings().countyMode) {
+							return rgbArrayToString(colors.unselectedStateStroke);
+						}
 						return rgbArrayToString(colors.polygonStroke);
 					})
 					.style("stroke-width", stateStrokeWidth )
@@ -667,6 +676,7 @@ Flox.MapComponent_d3 = function() {
 			var color = populationDensityColor(Number(node.populationDensity));
 			return color;
 		})
+		.style("stroke", rgbArrayToString(colors.polygonHoverStroke))
 		.attr("opacity", 1);
 		
 	}
@@ -695,10 +705,7 @@ Flox.MapComponent_d3 = function() {
 		if(filterSettings.countyMode && filterSettings.selectedState !== false){
 			colorCountiesByPopulationDensity();
 			// and make the states a neutral color.
-			d3.selectAll(".feature.state")
-			  .transition()
-			  .style("fill", rgbArrayToString(colors.unselectedStateFill))
-			  .style("stroke", rgbArrayToString(colors.unselectedStateStroke));
+			
 		} else {
 			// color the states by population density
 			colorStatesByPopulationDensity();
@@ -953,30 +960,31 @@ Flox.MapComponent_d3 = function() {
 	// boundaries, resets some filter settings.
 	function reset() {
 
-		d3.selectAll(".county").classed("hidden", true);
-		
-		var settings = Flox.getFilterSettings();
-		
-		// Remove flows if a state is selected, or if there is no state
-		// selected but it's in county mode (to get rid of state to state
-		// flows when the County Flows button is pushed)
-		if(settings.selectedState !== false || (settings.selectedState === false && settings.countyMode)) {
-			removeAllFlows();
-			if(settings.countyMode){
-				my.resetStateFillColor();
-			}
-		}
-		
-		// If it's in state mode, and a state is selected, need to get
-		// rid of them flows and add the state to state ones. 
-		if(settings.stateMode && settings.selectedState !== false) {
-			Flox.importStateToStateMigrationFlows();
-		}
-		// Also remove all necklace maps.
-		d3.select("#necklaceMapLayer").remove(); 
-		
-		// Deselect countys and states
-		Flox.setFilterSettings({selectedState: false, selectedCounty: false});
+		// // Hide county boundaries.
+		// d3.selectAll(".county").classed("hidden", true);
+// 		
+		// var settings = Flox.getFilterSettings();
+// 		
+		// // Remove flows if a state is selected, or if there is no state
+		// // selected but it's in county mode (to get rid of state to state
+		// // flows when the County Flows button is pushed)
+		// if(settings.selectedState !== false || (settings.selectedState === false && settings.countyMode)) {
+			// removeAllFlows();
+			// if(settings.countyMode){
+				// my.resetStateFillColor();
+			// }
+		// }
+// 		
+		// // If it's in state mode, and a state is selected, need to get
+		// // rid of them flows and add the state to state ones. 
+		// if(settings.stateMode && settings.selectedState !== false) {
+			// Flox.importStateToStateMigrationFlows();
+		// }
+		// // Also remove all necklace maps.
+		// d3.select("#necklaceMapLayer").remove(); 
+// 		
+		// // Deselect countys and states
+		// Flox.setFilterSettings({selectedState: false, selectedCounty: false});
 		
 		zoomToFullExtent();
 	}
@@ -1017,7 +1025,14 @@ Flox.MapComponent_d3 = function() {
 			hideAllCountyBorders();
 			// Show just the county boundaries for the selected state
 			showCountyBordersWithinState(statePolygon.properties.STATEFP);
+			
+			// Change 
+			
 			zoomToPolygon(statePolygon); 
+			d3.selectAll(".feature.state")
+			  .transition()
+			  .style("fill", rgbArrayToString(colors.unselectedStateFill))
+			  .style("stroke", rgbArrayToString(colors.unselectedStateStroke));
 			
 		} else if (filterSettings.stateMode) {
 			// Load the state flow data for that state.
