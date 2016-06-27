@@ -188,11 +188,12 @@ Flox.MapComponent_d3 = function() {
 				.attr("fill", "#ccc")
 				.on("click", stateClicked)
 				.on("mouseover", function(d) {
+					var settings = Flox.getFilterSettings();
 					tooltip.style("display", "inline");
 					d3.select(this)
 					  .style("stroke", function(d) {
 					  	// It is in county or state view mode?
-					  	if (Flox.getFilterSettings().countyMode) {
+					  	if (settings.countyMode && settings.selectedState !== false) {
 					  		return rgbArrayToString(colors.unselectedStateHoverStroke);
 					  	}
 						return rgbArrayToString(colors.polygonHoverStroke);
@@ -214,15 +215,18 @@ Flox.MapComponent_d3 = function() {
 				.on("mouseout", function(d) {
 					tooltip.style("display", "none");
 					d3.select(this).style("fill", function(d) {
-						if (Flox.getFilterSettings().stateMode) {
-							var node = model_master.findNodeByID(String(Number(d.properties.STATEFP)));
+						var settings = Flox.getFilterSettings(),
+							node;
+						if (settings.stateMode || settings.selectedState === false) {
+							node = model_master.findNodeByID(String(Number(d.properties.STATEFP)));
 							return populationDensityColor(Number(node.populationDensity));
-						} else if (Flox.getFilterSettings().countyMode) {
+						} else if (settings.countyMode) {
 							return rgbArrayToString(colors.unselectedStateFill);
 						}
 					})
 					.style("stroke", function(d){
-						if(Flox.getFilterSettings().countyMode) {
+						var settings = Flox.getFilterSettings();
+						if(settings.countyMode && settings.selectedState !== false) {
 							return rgbArrayToString(colors.unselectedStateStroke);
 						}
 						return rgbArrayToString(colors.polygonStroke);
@@ -866,9 +870,9 @@ Flox.MapComponent_d3 = function() {
 	}
 
 	// FIXME could I make one function that does both this and the above one?
-	function getMaxOutOfStateTotalFlow(model) {
+	function getMaxOutOfStateTotalFlow() {
 		// Get the nodes
-		var nodes = model.getPoints(),
+		var nodes = Flox.getModel().getPoints(),
 			maxTotalFlow = 0, i, totalFlow;
 		// looooopy loop-de-looper loop loop
 		for (i = 0; i < nodes.length; i += 1) {
@@ -894,7 +898,7 @@ Flox.MapComponent_d3 = function() {
 
 		var stateCircles = [],
 			nodeValue,
-			maxNodeValue = getMaxOutOfStateTotalFlow(model),
+			maxNodeValue = getMaxOutOfStateTotalFlow(),
 			filterSettings = Flox.getFilterSettings(),
 			maxR = outerCircle.r * 0.2,
 			maxArea = Math.PI * maxR * maxR,

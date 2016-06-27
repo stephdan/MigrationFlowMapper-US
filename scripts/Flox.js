@@ -197,8 +197,8 @@ function importStateToStateMigrationFlows() {
     mapComponent.removeAllFlows();
     mapComponent.removeNecklaceMap();
     mapComponent.zoomToFullExtent();
-	filterSettings.stateMode = true;
-	filterSettings.countyMode = false;
+	// filterSettings.stateMode = true;
+	// filterSettings.countyMode = false;
 	model_master.settings.mapScale = 4; // FIXME hardcoded
 	model_master.settings.datasetName = "states";
 	var flowPath = "data/census/US_State_migration_2014_flows.csv",
@@ -437,7 +437,8 @@ my.updateMap = function() {
 	// FIXME Something is broken when not using webworkers. 
 	if(window.Worker && model_master.settings.useWebworkers) {
 		runFilterWorker(function(filteredModel) {
-			if(filterSettings.stateMode === false) {
+			if(filterSettings.stateMode === false &&
+				filterSettings.selectedState !== false) {
 				mapComponent.configureNecklaceMap(filteredModel);
 			}
 			runLayoutWorker(filteredModel, function() {

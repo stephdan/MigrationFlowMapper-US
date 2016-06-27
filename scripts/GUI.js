@@ -64,6 +64,8 @@ Flox.GUI = (function($){
 			if(settings.countyMode === true) {
 				// It's in couny mode. So get it out of county mode! And 
 				// into state mode!
+				settings.countyMode = false;
+				settings.stateMode = true;
 				
 				// The button will show what happens when you click it. It
 				// will turn back to county mode, so show the counies icon
@@ -89,7 +91,7 @@ Flox.GUI = (function($){
 				} else if (settings.selectedState === false) {
 					// need to change the color of the states to gray...
 					// No layout will occur. This is kindof a special case. 
-					Flox.enterClickAStateMode();
+					//Flox.enterClickAStateMode();
 				}
 			}
 		}
@@ -141,8 +143,6 @@ Flox.GUI = (function($){
 		function() {
 			var buttonIcon = $(this).find("img"),
 				settings = Flox.getFilterSettings();
-			
-			
 			
 			if(settings.inStateFlows === false) {
 				buttonIcon.animate({

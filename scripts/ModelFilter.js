@@ -355,7 +355,7 @@ Flox.ModelFilter = function(model_master) {
 	 * within the selected state. 
 	 */
 	my.removeInStateFlows = function (){
-		var selectedState = model_copy.getDatasetName(),
+		var selectedState = model_copy.settings.datasetName,
 			flows = model_copy.getFlows(), nodes,
 			f, i, j;
 		
