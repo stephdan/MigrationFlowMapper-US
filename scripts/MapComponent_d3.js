@@ -24,15 +24,17 @@ Flox.MapComponent_d3 = function() {
 	    
 	    // TODO the scale setting below could be set to zoom in to the bounding
 	    // box of the lower 48 based on the window size. 
-	    zoom = d3.behavior.zoom().translate([width / 2, height / 2]).scale(0.06).scaleExtent([0.05, 80])// change these numbers to be able to zoom in or out further.
-		.on("zoom", zoomed),
+	    zoom = d3.behavior.zoom()
+				.translate([width / 2, height / 2])
+				.scale(0.06).scaleExtent([0.05, 80])// change these numbers to be able to zoom in or out further.
+				.on("zoom", zoomed),
 
 		tooltipOffset = {x: 8, y: -38}, // FIXME y is not used
 		tooltip = d3.select("body").append("div")
 					.attr("class", "floxTooltip")
 					.style("display", "none"),
 		
-		numberOfClasses = "7",
+		defaultClasses = 7,
 		
 		stateStrokeWidth = 20,
 		stateHoverStrokeWidth = 40,
@@ -118,6 +120,22 @@ Flox.MapComponent_d3 = function() {
 		inOutText = "<div class='tooltipInOutText'>" + inValue +
 					outValue + "</div>";
 		return areaName + inOutText;
+	}
+
+	function buildNecklaceNodeTooltipText(d, inState) {
+		var nodeName = d.name,
+			toNode = d.totalIncomingFlow,
+			fromNode = d.totalOutgoingFlow,
+			nameText,
+			fromText,
+			toText;
+		
+		nameText = d.name + "<br/>";
+		fromText = "<span class='tooltipValue'>" + numberWithCommas(fromNode) + "</span> " + 
+					"<div class='tooltipTypeHolder'>MOVED<br/>IN FROM</div> " + inState + "<br/>";
+		toText = "<span class='tooltipValue'>" + numberWithCommas(toNode) + " </span> " + 
+				 "<div class='tooltipTypeHolder'>MOVED<br/>OUT TO</div> " + inState + "<br/>";
+		return nameText + fromText + toText; 
 	}
 
 	// Moves the selected svg element to lay on top of other SVG elements under the 
@@ -599,11 +617,11 @@ Flox.MapComponent_d3 = function() {
 	}
 
 	// TODO name better
-	function getColorRampForD3() {
+	function getColorRampForD3(classes) {
 		var colorRamp, d3ColorRamp = [], i;
 		
 		colorRamp = Flox.ColorUtils.getColorRamp(colors.minPopDensityFill,
-			colors.maxPopDensityFill, Number(numberOfClasses));
+			colors.maxPopDensityFill, classes);
 		
 		for(i = 0; i < colorRamp.length; i += 1) {
 			d3ColorRamp.push(rgbArrayToString(colorRamp[i]));
@@ -613,7 +631,8 @@ Flox.MapComponent_d3 = function() {
 
 	function colorCountiesByPopulationDensity() {
 		var stateFIPS, counties, nodes, node, countyNodes = [], i,
-		popDensities, model_master, popDensity;
+		popDensities, model_master, popDensity, 
+		classes = defaultClasses;
 		
 		model_master = Flox.getModel();
 		nodes = model_master.getPoints(); // this gets state and county nodes.
@@ -636,11 +655,15 @@ Flox.MapComponent_d3 = function() {
 				return popDensity;
 		});
 		
+		if(popDensities.length < defaultClasses) {
+			classes = popDensities.length;
+		} 
+		
 		// Create a jenks natural breaks scale with 4 classes.
 		// Uses simple_statistics.js
 		populationDensityColor = d3.scale.threshold()
-		    .range(getColorRampForD3())
-			.domain(ss.jenks(popDensities, Number(numberOfClasses)).slice(1, -1));
+		    .range(getColorRampForD3(classes))
+			.domain(ss.jenks(popDensities, classes).slice(1, -1));
 		
 		counties.style("fill", function(d) {
 			node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
@@ -671,8 +694,8 @@ Flox.MapComponent_d3 = function() {
 		// TODO build the color gradient from a min and max color rather than
 		// hard coding each color.
 		populationDensityColor = d3.scale.threshold()
-		    .range(getColorRampForD3())
-			.domain(ss.jenks(popDensities, Number(numberOfClasses)).slice(1, -1));
+		    .range(getColorRampForD3(defaultClasses))
+			.domain(ss.jenks(popDensities, defaultClasses).slice(1, -1));
 		
 		statePolygons.style("fill", function(d) {
 			STATEFP = d.properties.STATEFP;
@@ -1152,9 +1175,7 @@ Flox.MapComponent_d3 = function() {
 			  });
         })
         .on("mousemove", function(d) {
-			tooltip.html(d.name + "<br/>" + 
-			             "Outgoing Flow: " + d.totalOutgoingFlow + "<br/>" + 
-			             "Incoming Flow: " + d.totalIncomingFlow )
+			tooltip.html(buildNecklaceNodeTooltipText(d, outerCircle.name))
 			       .style("left", (d3.event.pageX + tooltipOffset.x) + "px")
 			       .style("top", function() {
 						var tooltipHeight = d3.select(this).node().getBoundingClientRect().height;
@@ -1211,7 +1232,7 @@ Flox.MapComponent_d3 = function() {
 			})
 			//.attr("dominant-baseline", "central")
 			.text(function(d){
-				return d.name;
+				return d.STUSPS;
 			})
 			.each(function(d){
 				pt = d3.select(this);
@@ -1297,7 +1318,8 @@ Flox.MapComponent_d3 = function() {
 		formattedCircle = {
 			cx: circle.x,
 			cy: circle.y,
-			r: circle.r + 30
+			r: circle.r + 30,
+			name: targetStatePolygon.properties.NAME
 		};
 		return formattedCircle;
 		

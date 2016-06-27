@@ -59,7 +59,6 @@ Flox.ModelFilter = function(model_master) {
 				if ("FIPS" + sPt.STATEFP === selectedStateFIPS) { // end point is out of state.
 					countyFIPS = sPt.id;
 					outerStateFIPS = ePt.STATEFP;
-					ePt.name = ePt.STUSPS; 
 					
 					// If it's not there already, add the in-state county fips of 
 					// this flow as a property of outOfStateFlows
@@ -86,7 +85,6 @@ Flox.ModelFilter = function(model_master) {
 				} else { // start point is out of state.
 					countyFIPS = String(ePt.id);
 					outerStateFIPS = sPt.STATEFP;
-					sPt.name = sPt.STUSPS;
 					
 					// If it's not there already, add the in-state county fips of 
 					// this flow as a property of outOfStateFlows
@@ -397,7 +395,12 @@ Flox.ModelFilter = function(model_master) {
 		
 		console.log("Running filterBySettings...");
 		
-		var startTime, endTime;
+		
+		
+		var startTime, endTime, 
+			theModel = model_master,
+			masterNodes = model_master.getPoints(),
+			filteredNodes;
 		
 		
 		//startTime = performance.now();
@@ -406,7 +409,7 @@ Flox.ModelFilter = function(model_master) {
 		if(filterSettings.netFlows) {
 			if(!Flox.getDerivedModel("netFlowsModel")) { // if netFlowsModel isn't there yet
 				model_copy = copyModel(model_master); // Copy the master
-
+				filteredNodes = model_copy.getPoints();
 				if(filterSettings.stateMode===false) {
 					mergeOutOfStateTotalFlows(); 
 				}
@@ -464,6 +467,8 @@ Flox.ModelFilter = function(model_master) {
 		
 		//endTime = performance.now() - startTime;
 		//console.log("filterBySettings took " + Math.floor(endTime) + "ms");
+		
+		filteredNodes = model_copy.getPoints();
 		
 		return model_copy;
 	};

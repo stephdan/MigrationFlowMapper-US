@@ -191,6 +191,7 @@ html, body {
 	font-size: 8.5px;
 	display: inline-block;
 	line-height: 110%;
+	letter-spacing: 1px;
 }
 
 .tooltipToFromText {
