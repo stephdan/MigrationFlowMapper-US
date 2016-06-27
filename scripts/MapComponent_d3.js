@@ -890,11 +890,11 @@ Flox.MapComponent_d3 = function() {
 	 * @param {Object} outerCircle - Circle around central state polygon
 	 * @param {Array} states - Array of state abbreviations to make circles for.
 	 */
-	function getStateCircles(outerCircle, states, outerStatesNodes) {
+	function getStateCircles(model, outerCircle, states, outerStatesNodes) {
 
 		var stateCircles = [],
 			nodeValue,
-			maxNodeValue = getMaxOutOfStateTotalFlow(model_copy),
+			maxNodeValue = getMaxOutOfStateTotalFlow(model),
 			filterSettings = Flox.getFilterSettings(),
 			maxR = outerCircle.r * 0.2,
 			maxArea = Math.PI * maxR * maxR,
@@ -1368,7 +1368,7 @@ Flox.MapComponent_d3 = function() {
 		// Get a circle for each outerState.
 		// Actually moves the offending flow nodes and adds attributes r, 
 		// necklaceMapNode = true, and strokeWidth. I think that's it.
-		stateCircles = getStateCircles(smallerOuterCircle, outerStates, outerStatesNodes);
+		stateCircles = getStateCircles(model, smallerOuterCircle, outerStates, outerStatesNodes);
 		
 		// If there are any stateCircles...
 		if(stateCircles.length > 0) { 
@@ -1387,8 +1387,8 @@ Flox.MapComponent_d3 = function() {
 
 
 
-	my.configureNecklaceMap = function (model_copy) {
-		configureNecklaceMap(model_copy);
+	my.configureNecklaceMap = function (m) {
+		configureNecklaceMap(m);
 	};
 
 
@@ -1478,7 +1478,6 @@ Flox.MapComponent_d3 = function() {
 	};
 
 	my.reset = function() {
-		console.log("resetting");
 		reset();
 	};
 

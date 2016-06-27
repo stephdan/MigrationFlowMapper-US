@@ -7,7 +7,6 @@ Flox.GUI = (function($){
 	// Capture mouseup events to change the style of buttons when the user
 	// mousedowns on a button, but then mouseups off the button.
 	$(window).mouseup(function() {
-		console.log("mouseup!");
 		$(".panelButtonContainer").each(function(i) {
 			if($(this).hasClass("mousedown")) {
 				var buttonIcon;
@@ -17,12 +16,6 @@ Flox.GUI = (function($){
 			}
 		});
 	});
-	
-	$(".panelButtonContainer").click(
-		function() {
-			console.log("button clicked!");
-		}
-	);
 	
 	$(".panelButtonContainer").hover(
 		function() {
@@ -57,7 +50,6 @@ Flox.GUI = (function($){
 	
 	$("#usStateFlowsButton").click(
 		function() {
-			console.log("usStateFlowsButton clicked!");
 			var settings = Flox.getFilterSettings();
 			Flox.importStateToStateMigrationFlows();
 			settings.selectedState = false;
@@ -66,7 +58,6 @@ Flox.GUI = (function($){
 	
 	$("#stateOrCountyFlowsButton").click(
 		function() {
-			console.log("stateOrCountyFlowsButton clicked!");
 			var buttonIcon = $(this).find("img"),
 				settings = Flox.getFilterSettings();
 			
@@ -92,11 +83,12 @@ Flox.GUI = (function($){
 				// if a state is selected, show the county flows in that state.
 				if(settings.selectedState !== false) {
 					// This is weird. A state should already be selected here. 
+					// But this initiates the zoom thing though. Which is nice.
 					Flox.selectState(settings.selectedState);
+					
 				} else if (settings.selectedState === false) {
 					// need to change the color of the states to gray...
 					// No layout will occur. This is kindof a special case. 
-					console.log("CountyFlows was clicked while no state is selected");
 					Flox.enterClickAStateMode();
 				}
 			}
@@ -105,7 +97,6 @@ Flox.GUI = (function($){
 	
 	$("#necklaceMapButton").click(
 		function() {
-			console.log("necklaceMapButton clicked!");
 			var buttonIcon = $(this).find("img"),
 				settings = Flox.getFilterSettings(); 
 			if(settings.outerStateFlows === true) {
@@ -148,7 +139,6 @@ Flox.GUI = (function($){
 	
 	$("#innerFlowsButton").click(
 		function() {
-			console.log("innerFlowsButton clicked!");
 			var buttonIcon = $(this).find("img"),
 				settings = Flox.getFilterSettings();
 			
@@ -192,7 +182,6 @@ Flox.GUI = (function($){
 	
 	// $("#incomingFlowsButton").click(
 		// function() {
-			// console.log("incomingFlowsButton clicked!");
 			// var buttonIcon = $(this).find("img");
 			// if($(this).hasClass("noIncomingFlows")) {
 				// $(this).removeClass("noIncomingFlows");
@@ -214,7 +203,6 @@ Flox.GUI = (function($){
 	
 	// $("#outgoingFlowsButton").click(
 		// function() {
-			// console.log("outgoingFlowsButton clicked!");
 			// var buttonIcon = $(this).find("img");
 			// if($(this).hasClass("noOutgoingFlows")) {
 				// $(this).removeClass("noOutgoingFlows");
@@ -236,7 +224,6 @@ Flox.GUI = (function($){
 	
 	$("#netOrTotalFlowsButton").click(
 		function() {
-			console.log("netOrTotalFlowsButton clicked!");
 			var buttonIcon = $(this).find("img"),
 				settings = Flox.getFilterSettings();
 			if(settings.netFlows === false) {
@@ -259,7 +246,6 @@ Flox.GUI = (function($){
 			// // do stuff			
 			// Flox.importStateToStateMigrationFlows();
 		// }
-		// console.log("state flows button clicked");
 	// });
 // 	
 	// $("#countyFlowsRadioLabel").on("click", function() {
@@ -274,46 +260,41 @@ Flox.GUI = (function($){
 			// } else if (settings.selectedState === false) {
 				// // need to change the color of the states to gray...
 				// // No layout will occur. This is kindof a special case. 
-				// console.log("CountyFlows was clicked while no state is selected");
 				// Flox.enterClickAStateMode();
 			// }
 			// //Flox.importTotalCountyFlowData(settings.selectedState);
 		// }
-		// console.log("county flows button clicked");
 	// });
 	
 	// This works.
-	$("#netFlowRadioLabel").on("click", function() {
-		console.log("net clicked!");
-		
-		// Get the filter settings from Flox.
-		var settings = Flox.getFilterSettings();
-		
-		// If netFlows is false, change to true, filter, layout, draw
-		if(settings.netFlows === false) {
-			settings.netFlows = true;
-			Flox.updateMap();
-		}
-	});
+	// $("#netFlowRadioLabel").on("click", function() {
+// 		
+		// // Get the filter settings from Flox.
+		// var settings = Flox.getFilterSettings();
+// 		
+		// // If netFlows is false, change to true, filter, layout, draw
+		// if(settings.netFlows === false) {
+			// settings.netFlows = true;
+			// Flox.updateMap();
+		// }
+	// });
 	
 	// This works.
-	$("#totalFlowRadioLabel").on("click", function() {
-		console.log("total clicked!");
-		
-		// Get the filter settings from Flox.
-		var settings = Flox.getFilterSettings();
-		
-		// If netFlows is false, change to true, filter, layout, draw
-		if(settings.netFlows === true) {
-			settings.netFlows = false;
-			Flox.updateMap();
-		}
-	});
+	// $("#totalFlowRadioLabel").on("click", function() {
+// 		
+		// // Get the filter settings from Flox.
+		// var settings = Flox.getFilterSettings();
+// 		
+		// // If netFlows is false, change to true, filter, layout, draw
+		// if(settings.netFlows === true) {
+			// settings.netFlows = false;
+			// Flox.updateMap();
+		// }
+	// });
 	
 	
 	// This works.
 	$("#inStateFlowsToggle").on("click", function() {
-		console.log("inState clicked!");
 		
 		var settings = Flox.getFilterSettings();
 		settings.inStateFlows = !settings.inStateFlows;
@@ -324,8 +305,6 @@ Flox.GUI = (function($){
 	});
 
 	$("#outOfStateFlowsToggle").on("click", function() {
-		console.log("outOfState clicked!");
-		
 		var settings = Flox.getFilterSettings();
 		settings.outerStateFlows = !settings.outerStateFlows;
 		// Only do something if it's not in state mode
