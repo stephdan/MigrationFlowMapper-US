@@ -12,7 +12,7 @@ var mapComponent,
 	filterSettings = {
 		netFlows : true,
 		inStateFlows: true,
-		outerStateFlows: false,
+		outerStateFlows: true,
 		countyIncoming: true,
 		countyOutgoing: true,
 		selectedCounty: false,
@@ -383,7 +383,6 @@ my.importTotalCountyFlowData = function(stateFIPS) {
 		stuffImportWorkerNeeds.settings = model_master.settings;
 		stuffImportWorkerNeeds.stateFIPS = stateFIPS;
 		
-		// TODO Instead of the above, use importWorker.
 		runImportWorker(stuffImportWorkerNeeds, function(d) {
 			model_master.deserializeModelJSON(d);
 			my.updateMap();

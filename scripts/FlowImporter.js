@@ -333,7 +333,9 @@ Flox.FlowImporter = ( function(d3) {
 							if (val > 0) {
 								flows.push(new Flox.Flow(startPt, endPt, val));
 								startPt.totalOutgoingFlow += val;
+								startPt.netFlow -= val;					
 								endPt.totalIncomingFlow += val;
+								endPt.netFlow += val;
 							}
 						}
 					}

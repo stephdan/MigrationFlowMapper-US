@@ -24,7 +24,7 @@ Flox.Model = function() {
 			angularDistributionWeight : 0.5,
 			nodeWeight : 0.0,
 			nodeTolerancePx : 0,
-			moveFlowsIntersectingNodes : true,
+			moveFlowsIntersectingNodes : false,
 			multipleIterations : true,
 			NBR_ITERATIONS : 100,
 			showForceAnimation : false,

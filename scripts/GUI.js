@@ -58,21 +58,47 @@ Flox.GUI = (function($){
 	$("#usStateFlowsButton").click(
 		function() {
 			console.log("usStateFlowsButton clicked!");
+			var settings = Flox.getFilterSettings();
+			Flox.importStateToStateMigrationFlows();
+			settings.selectedState = false;
 		}
 	);
 	
 	$("#stateOrCountyFlowsButton").click(
 		function() {
 			console.log("stateOrCountyFlowsButton clicked!");
-			var buttonIcon = $(this).find("img");
-			if($(this).hasClass("countyFlows")) {
-				$(this).removeClass("countyFlows");
-				buttonIcon.attr("src", "resources/icons/buttons/state_white.svg")
-						  .attr("id", "state");
-			} else {
-				$(this).addClass("countyFlows");
+			var buttonIcon = $(this).find("img"),
+				settings = Flox.getFilterSettings();
+			
+			if(settings.countyMode === true) {
+				// It's in couny mode. So get it out of county mode! And 
+				// into state mode!
+				
+				// The button will show what happens when you click it. It
+				// will turn back to county mode, so show the counies icon
 				buttonIcon.attr("src", "resources/icons/buttons/counties_white.svg")
 						  .attr("id", "counties");
+				
+				Flox.importStateToStateMigrationFlows();
+			} else if (settings.countyMode === false) {
+				// It's not in county mode. Put it in county mode!
+				settings.countyMode = true;
+				settings.stateMode = false;
+				// The button will show what happens when you click it. It
+				// will turn back to county mode, so show the counies icon
+				buttonIcon.attr("src", "resources/icons/buttons/state_white.svg")
+						  .attr("id", "state");
+						  
+				// if a state is selected, show the county flows in that state.
+				if(settings.selectedState !== false) {
+					// This is weird. A state should already be selected here. 
+					Flox.selectState(settings.selectedState);
+				} else if (settings.selectedState === false) {
+					// need to change the color of the states to gray...
+					// No layout will occur. This is kindof a special case. 
+					console.log("CountyFlows was clicked while no state is selected");
+					Flox.enterClickAStateMode();
+				}
 			}
 		}
 	);
@@ -80,136 +106,181 @@ Flox.GUI = (function($){
 	$("#necklaceMapButton").click(
 		function() {
 			console.log("necklaceMapButton clicked!");
-			var buttonIcon = $(this).find("img");
-			if($(this).hasClass("noNecklaceMaps")) {
-				$(this).removeClass("noNecklaceMaps");
-				buttonIcon.animate({
-						"max-height": "100%",
-						"opacity": 1
-					}, 200, function() {
-				});
-			} else {
-				$(this).addClass("noNecklaceMaps");
+			var buttonIcon = $(this).find("img"),
+				settings = Flox.getFilterSettings(); 
+			if(settings.outerStateFlows === true) {
+				settings.outerStateFlows = false;
 				buttonIcon.animate({
 						"max-height": "70%",
 						"opacity": 0.3
 					}, 200, function() {
 				});
+			} else {
+				settings.outerStateFlows = true;
+				buttonIcon.animate({
+						"max-height": "100%",
+						"opacity": 1
+					}, 200, function() {
+				});
 			}
+			
+			// Only do something if it's not in state mode
+			if(settings.stateMode === false) {
+				Flox.updateMap();
+			}
+			// if($(this).hasClass("noNecklaceMaps")) {
+				// $(this).removeClass("noNecklaceMaps");
+				// buttonIcon.animate({
+						// "max-height": "100%",
+						// "opacity": 1
+					// }, 200, function() {
+				// });
+			// } else {
+				// $(this).addClass("noNecklaceMaps");
+				// buttonIcon.animate({
+						// "max-height": "70%",
+						// "opacity": 0.3
+					// }, 200, function() {
+				// });
+			// }
 		}
 	);
 	
 	$("#innerFlowsButton").click(
 		function() {
 			console.log("innerFlowsButton clicked!");
-			var buttonIcon = $(this).find("img");
-			if($(this).hasClass("noInnerFlows")) {
-				$(this).removeClass("noInnerFlows");
+			var buttonIcon = $(this).find("img"),
+				settings = Flox.getFilterSettings();
+			
+			
+			
+			if(settings.inStateFlows === false) {
 				buttonIcon.animate({
 						"max-height": "100%",
 						"opacity": 1
 					}, 200, function() {
 				});
 			} else {
-				$(this).addClass("noInnerFlows");
 				buttonIcon.animate({
 						"max-height": "70%",
 						"opacity": 0.3
 					}, 200, function() {
 				});
 			}
+			settings.inStateFlows = !settings.inStateFlows;
+			if(settings.stateMode === false) {
+				Flox.updateMap();
+			}
+			
+			// if($(this).hasClass("noInnerFlows")) {
+				// $(this).removeClass("noInnerFlows");
+				// buttonIcon.animate({
+						// "max-height": "100%",
+						// "opacity": 1
+					// }, 200, function() {
+				// });
+			// } else {
+				// $(this).addClass("noInnerFlows");
+				// buttonIcon.animate({
+						// "max-height": "70%",
+						// "opacity": 0.3
+					// }, 200, function() {
+				// });
+			// }
 		}
 	);
 	
-	$("#incomingFlowsButton").click(
-		function() {
-			console.log("incomingFlowsButton clicked!");
-			var buttonIcon = $(this).find("img");
-			if($(this).hasClass("noIncomingFlows")) {
-				$(this).removeClass("noIncomingFlows");
-				buttonIcon.animate({
-						"max-height": "100%",
-						"opacity": 1
-					}, 200, function() {
-				});
-			} else {
-				$(this).addClass("noIncomingFlows");
-				buttonIcon.animate({
-						"max-height": "70%",
-						"opacity": 0.3
-					}, 200, function() {
-				});
-			}
-		}
-	);
+	// $("#incomingFlowsButton").click(
+		// function() {
+			// console.log("incomingFlowsButton clicked!");
+			// var buttonIcon = $(this).find("img");
+			// if($(this).hasClass("noIncomingFlows")) {
+				// $(this).removeClass("noIncomingFlows");
+				// buttonIcon.animate({
+						// "max-height": "100%",
+						// "opacity": 1
+					// }, 200, function() {
+				// });
+			// } else {
+				// $(this).addClass("noIncomingFlows");
+				// buttonIcon.animate({
+						// "max-height": "70%",
+						// "opacity": 0.3
+					// }, 200, function() {
+				// });
+			// }
+		// }
+	// );
 	
-	$("#outgoingFlowsButton").click(
-		function() {
-			console.log("outgoingFlowsButton clicked!");
-			var buttonIcon = $(this).find("img");
-			if($(this).hasClass("noOutgoingFlows")) {
-				$(this).removeClass("noOutgoingFlows");
-				buttonIcon.animate({
-						"max-height": "100%",
-						"opacity": 1
-					}, 200, function() {
-				});
-			} else {
-				$(this).addClass("noOutgoingFlows");
-				buttonIcon.animate({
-						"max-height": "70%",
-						"opacity": 0.3
-					}, 200, function() {
-				});
-			}
-		}
-	);
+	// $("#outgoingFlowsButton").click(
+		// function() {
+			// console.log("outgoingFlowsButton clicked!");
+			// var buttonIcon = $(this).find("img");
+			// if($(this).hasClass("noOutgoingFlows")) {
+				// $(this).removeClass("noOutgoingFlows");
+				// buttonIcon.animate({
+						// "max-height": "100%",
+						// "opacity": 1
+					// }, 200, function() {
+				// });
+			// } else {
+				// $(this).addClass("noOutgoingFlows");
+				// buttonIcon.animate({
+						// "max-height": "70%",
+						// "opacity": 0.3
+					// }, 200, function() {
+				// });
+			// }
+		// }
+	// );
 	
 	$("#netOrTotalFlowsButton").click(
 		function() {
 			console.log("netOrTotalFlowsButton clicked!");
-			var buttonIcon = $(this).find("img");
-			if($(this).hasClass("totalFlows")) {
-				$(this).removeClass("totalFlows");
+			var buttonIcon = $(this).find("img"),
+				settings = Flox.getFilterSettings();
+			if(settings.netFlows === false) {
+				settings.netFlows = true;
 				buttonIcon.attr("src", "resources/icons/buttons/netFLows_white.svg")
 						  .attr("id", "netFlows");
+				Flox.updateMap();
 			} else {
-				$(this).addClass("totalFlows");
+				settings.netFlows = false;
 				buttonIcon.attr("src", "resources/icons/buttons/totalFLows_white.svg")
 						  .attr("id", "totalFlows");
+				Flox.updateMap();
 			}
 		}
 	);
 	
-	$("#stateFlowsRadioLabel").on("click", function() {
-		var settings = Flox.getFilterSettings();
-		if(settings.stateMode === false) {
-			// do stuff			
-			Flox.importStateToStateMigrationFlows();
-		}
-		console.log("state flows button clicked");
-	});
-	
-	$("#countyFlowsRadioLabel").on("click", function() {
-		var settings = Flox.getFilterSettings();
-		if(settings.countyMode === false) {
-			settings.stateMode = false;
-			settings.countyMode = true;
-			
-			// if a state is selected, show the county flows in that state.
-			if(settings.selectedState !== false) {
-				Flox.selectState(settings.selectedState);
-			} else if (settings.selectedState === false) {
-				// need to change the color of the states to gray...
-				// No layout will occur. This is kindof a special case. 
-				console.log("CountyFlows was clicked while no state is selected");
-				Flox.enterClickAStateMode();
-			}
-
-			//Flox.importTotalCountyFlowData(settings.selectedState);
-		}
-		console.log("county flows button clicked");
-	});
+	// $("#stateFlowsRadioLabel").on("click", function() {
+		// var settings = Flox.getFilterSettings();
+		// if(settings.stateMode === false) {
+			// // do stuff			
+			// Flox.importStateToStateMigrationFlows();
+		// }
+		// console.log("state flows button clicked");
+	// });
+// 	
+	// $("#countyFlowsRadioLabel").on("click", function() {
+		// var settings = Flox.getFilterSettings();
+		// if(settings.countyMode === false) {
+			// settings.stateMode = false;
+			// settings.countyMode = true;
+// 			
+			// // if a state is selected, show the county flows in that state.
+			// if(settings.selectedState !== false) {
+				// Flox.selectState(settings.selectedState);
+			// } else if (settings.selectedState === false) {
+				// // need to change the color of the states to gray...
+				// // No layout will occur. This is kindof a special case. 
+				// console.log("CountyFlows was clicked while no state is selected");
+				// Flox.enterClickAStateMode();
+			// }
+			// //Flox.importTotalCountyFlowData(settings.selectedState);
+		// }
+		// console.log("county flows button clicked");
+	// });
 	
 	// This works.
 	$("#netFlowRadioLabel").on("click", function() {

@@ -494,7 +494,7 @@ Flox.MapComponent_d3 = function() {
 			.attr("stroke-width", function(d) {
 				var strokeWidth = model_copy.getFlowStrokeWidth(d);
 				if(strokeWidth < 1) {
-					d3.select(this).attr("stroke-dasharray", "5,5");
+					//d3.select(this).attr("stroke-dasharray", "5,5");
 					return 1;
 				}
 				return strokeWidth;
@@ -894,7 +894,7 @@ Flox.MapComponent_d3 = function() {
 
 		var stateCircles = [],
 			nodeValue,
-			maxNodeValue,
+			maxNodeValue = getMaxOutOfStateTotalFlow(model_copy),
 			filterSettings = Flox.getFilterSettings(),
 			maxR = outerCircle.r * 0.2,
 			maxArea = Math.PI * maxR * maxR,
@@ -908,24 +908,10 @@ Flox.MapComponent_d3 = function() {
 			projectPointOnCircle(pt, outerCircle);
 			pt.necklaceMapNode = true;
 			
-			// Here. Make this some value based on info in the point.
-			if (filterSettings.netFlows) {
-				// Use net flows to determine radius
-				// I need the max node net flow. I have the outerStateNodes that
-				// will be displayed, but I need to know the MAX max, of all of them.
-				// Which means I need the activeFullModel. And I need a nice easy
-				// way to get the max out of state node value. 
-				maxNodeValue = getMaxOutOfStateNetFlow(model_copy);
-				ptArea = (maxArea * Math.abs(pt.netFlow))/maxNodeValue;
-				pt.r = Math.sqrt(ptArea/Math.PI);
-								
-			} else {
-				// us total flow to determine radius
-				maxNodeValue = getMaxOutOfStateTotalFlow(model_copy);
-				ptArea = (maxArea * (pt.totalIncomingFlow + pt.totalOutgoingFlow))/maxNodeValue;
-				pt.r = Math.sqrt(ptArea/Math.PI);
-			}
-			//pt.r = outerCircle.r * 0.1;
+			// Make node radius based on total flow for that node.
+			ptArea = (maxArea * (pt.totalIncomingFlow + pt.totalOutgoingFlow))/maxNodeValue;
+			pt.r = Math.sqrt(ptArea/Math.PI);
+
 			pt.strokeWidth = pt.r * 0.10;
 			stateCircles.push(pt);
 		}
