@@ -31,7 +31,10 @@ Flox.Model = function() {
 			FLOW_DISTANCE_THRESHOLD : 0.00000001, // TODO what should this be??
 			checkFlowBoundingBoxes : true,
 			maxFlows : 50,
-			mapScale : 0.5,
+			
+			// adjusts sizes of features to fit scale better
+			// TODO hardcoded everywhere, could be based off actual map scale.
+			scaleMultiplier : 0.5, 
 			
 			// Map Appearance Settings
 			maxFlowWidth : 30,
@@ -80,7 +83,8 @@ Flox.Model = function() {
 	
 		
 
-		// A list of appropriate scales for different US states. 
+		// A list of appropriate scales for different US states.
+		// Increase to make flows wider.
 		// FIXME this is problematic, and very hard-coded. There is probably
 		// a way to handle this more responsively. 
 		// Not really a setting. Doesn't get passed in to the layoutWorker. 
@@ -92,7 +96,7 @@ Flox.Model = function() {
 			"FIPS36" : 0.35, // New York
 			"FIPS44" : 0.5, // Rhode Island
 			"FIPS48" : 2, // Texas
-			"FIPS54" : 1,  // West Virginia
+			"FIPS54" : 2,  // West Virginia
 			"allStates": 0.2
 		},
 				
@@ -476,8 +480,12 @@ Flox.Model = function() {
 			area,
 			radius;
 		
+		if(node.necklaceMapNode) {
+			return node.r + node.strokeWidth;
+		}
+		
 		if(node.hasOwnProperty("r")) {
-			return node.r * settings.mapScale;
+			return node.r * settings.scaleMultiplier;
 		}
 		
 		if (settings.maxNodeValue === 0) { // There are not nodes yet
@@ -491,7 +499,7 @@ Flox.Model = function() {
 		
 		// Need the radius to draw the point tho
 		radius = Math.sqrt(area / Math.PI);
-		return radius * settings.mapScale;
+		return radius * settings.scaleMultiplier;
 	}
 
 	function getStartClipRadius(startNode) {
@@ -507,7 +515,7 @@ Flox.Model = function() {
 
 	function getFlowStrokeWidth(flow) {
 		var strokeWidth =  (settings.maxFlowWidth * flow.getValue()) / settings.maxFlowValue;
-		return strokeWidth * settings.mapScale;
+		return strokeWidth * settings.scaleMultiplier;
 	}
 
 	// TODO Might be able to just pass the flow the model's settings instead
@@ -907,17 +915,13 @@ Flox.Model = function() {
 		return selectedNodes;
 	};
 	
-	my.setStateMapScale = function(stateFIPS) {
+	my.setScaleMultiplierByState = function(stateFIPS) {
 		var stateString = "FIPS" + stateFIPS;
 		if(stateScales.hasOwnProperty(stateString)) {
-			settings.mapScale = stateScales[stateString];
+			settings.scaleMultiplier = stateScales[stateString];
 		} else {
-			settings.mapScale = 1;
+			settings.scaleMultiplier = 1;
 		}
-	};
-	
-	my.getStateMapScale = function(stateString) {
-		return stateScales[stateString];
 	};
 	
 	/**

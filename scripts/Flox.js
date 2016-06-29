@@ -199,7 +199,7 @@ function importStateToStateMigrationFlows() {
     mapComponent.zoomToFullExtent();
 	// filterSettings.stateMode = true;
 	// filterSettings.countyMode = false;
-	model_master.settings.mapScale = 4; // FIXME hardcoded
+	model_master.settings.scaleMultiplier = 4; // FIXME hardcoded
 	model_master.settings.datasetName = "states";
 	var flowPath = "data/census/US_State_migration_2014_flows.csv",
 		stuffImportWorkerNeeds = {};
@@ -376,7 +376,7 @@ my.importTotalCountyFlowData = function(stateFIPS) {
 	// This scale is used by the layouter!
 	// Could it also be used by the renderer?
 	// FIXME this is goofy
-	model_master.setStateMapScale(stateFIPS);
+	model_master.setScaleMultiplierByState(stateFIPS);
 	model_master.settings.datasetName = "FIPS" + Number(stateFIPS);
 	
 	if(window.Worker && model_master.settings.useWebworkers) {
@@ -558,7 +558,7 @@ my.initFlox = function() {
 		// model_master.initNodes(stateNodes);
 		// model_master.addFlows(flows);
 		// model_master.updateCachedValues();
-		// model_master.settings.mapScale = 5;
+		// model_master.settings.scaleMultiplier = 5;
 		// model_master.settings.datasetName = "states";
 		// my.filterBySettings(model_master, filterSettings);
 // 		
