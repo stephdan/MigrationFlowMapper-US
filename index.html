@@ -54,28 +54,15 @@
 		 are freely available on the US Census website at www.census.gov
 	</div>
 	
-	<div id="slidingPanel">
+	<div id="slidingPanel"> <!-- Sliding Panel container --> 
+		
 		<div id="slidingPanelTab">
-			
 		</div>
+		
 		<div id="slidingPanelContent">
 			
-			<!-- <div class="panelButtonContainer" id="but">
-				<img src="resources/icons/buttons/usOutline_white.svg"
-				class="buttonIcon" />
-			</div>
-			
-			
-			<div class="panelButtonContainer" id="buut"></div> 
-			<div class="panelButtonContainer" id="buuuut"></div> 
-			<div class="panelButtonContainer" id="buuuuut"></div> 
-			<div class="panelButtonContainer" id="buuuuuut"></div> 
-			<div class="panelButtonContainer" id="buuuuuuut"></div> 
-			<div class="panelButtonContainer" id="buuuuuuuut"></div> 
-			<div class="panelButtonContainer" id="buuuuuuuuut"></div>  -->
-			
-			
-			<ul>
+			<ul> <!-- List of buttons -->
+				
 		        <li>
 		        	<div class="panelButtonContainer" id="usStateFlowsButton">
 						<img src="resources/icons/buttons/usOutline_white.svg"
@@ -131,12 +118,19 @@
 						id="netFlows" />
 		        	</div> 
 		        </li>
-		    </ul>
+		        
+			</ul> <!-- End list of buttons --> 
 			
-		</div>		
+		</div> <!-- End panel content --> 
+	</div> <!-- End panel container --> 
+	
+	<div id="legendSlidingPanel">
+		<div id="legendSlidingPanelTab"></div>
+		
+		<div id="legendSlidingPanelContent">
+			<p class="legendTitle">2014 Population Density per sq.km.</p>
+		</div>
 	</div>
-	
-	
 	
 	<div class="progress hidden" id="layoutProgressBar">
 		
@@ -145,9 +139,9 @@
 		
 	</div>
 	
-	<div id="filterGUI">
+	<!-- <div id="filterGUI">
 		
-		<!-- <div class="btn-group" data-toggle="buttons">
+		<div class="btn-group" data-toggle="buttons">
 		  <label class="btn btn-primary active" id="stateFlowsRadioLabel">
 		    <input type="radio" name="filterRadio" id="stateFlowsRadio" 
 		     autocomplete="off" checked> 
@@ -161,7 +155,7 @@
 		</div>
 
 		
-		<br /> -->
+		<br />
 		
 		<div class="btn-group" data-toggle="buttons">
 		  <label class="btn btn-primary active" id="inStateFlowsToggle">
@@ -172,17 +166,14 @@
 		  </label>	
 		</div>
 		
-	</div>
+	</div> -->
 
 	
 
-    <!-- This is the div where the map goes. -->
+    <!-- Map container. -->
     <div id="map"></div>
     
-    
-    
-    
-    <!--   Import Flox scripts  -->
+    <!-- Import needed scripts -->
     <script src="scripts/Flox.js"></script>
     <script src="scripts/Flow.js"></script>
     <script src="scripts/FloxModel.js"></script>

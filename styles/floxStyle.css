@@ -22,6 +22,7 @@ html, body {
 	margin: 0px;
 }
 
+/* TODO Not used anymore */
 #filterGUI {
 	position: absolute;
 	margin: 10px;
@@ -67,6 +68,19 @@ html, body {
 	line-height: 110%;
 }
 
+.legendTitle {
+	font-family: Tahoma, Geneva, sans-serif;
+	color: white;
+	font-size: 18px;
+	line-height: 110%;
+}
+
+#legendItemContainer {
+	width: 100%;
+	height: auto;
+	background-color: gray;
+}
+
 #slidingPanel {
 	position: absolute;
 	width: 400px;
@@ -103,10 +117,7 @@ html, body {
 	height: 52px;
 	border-radius: 5px 5px 0px 0px;
 	pointer-events: all;
-
 	text-align:center;
-	
-
 }
 
 #slidingPanelContent ul {
@@ -163,6 +174,38 @@ html, body {
     -moz-user-select: none;
     -webkit-user-select: none;
     user-select: none;
+}
+
+#legendSlidingPanel {
+	position: absolute;
+	width: 200px;
+	height: auto;
+	position: fixed;
+	bottom: 40px;
+	pointer-events: none;
+}
+
+#legendSlidingPanelContent {
+	background: rgb(64, 64, 64);
+    background: rgba(64, 64, 64, 0.9);
+    box-shadow: 3px 3px 3px rgba(64,64,64,0.5);
+    border-radius: 0px 5px 5px 0px;
+    height: auto;
+    width: 182px;
+    pointer-events: all;
+    padding: 8px;
+}
+
+#legendSlidingPanelTab {
+	width: 18px;
+	height: 40px;
+	background: rgb(64, 64, 64);
+    background: rgba(64, 64, 64, 0.9);
+    box-shadow: 3px 3px 3px rgba(64,64,64,0.5);
+	border-radius: 0px 2px 2px 0px;
+	float: right;
+	margin-top: 15px;
+	pointer-events: all;
 }
 
 .floxTooltip {

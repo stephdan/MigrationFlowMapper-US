@@ -631,7 +631,7 @@ Flox.MapComponent_d3 = function() {
 
 	function colorCountiesByPopulationDensity() {
 		var stateFIPS, counties, nodes, node, countyNodes = [], i,
-		popDensities, model_master, popDensity, 
+		popDensities, model_master, popDensity, jenksBreaks,
 		classes = defaultClasses;
 		
 		model_master = Flox.getModel();
@@ -659,11 +659,16 @@ Flox.MapComponent_d3 = function() {
 			classes = popDensities.length;
 		} 
 		
-		// Create a jenks natural breaks scale with 4 classes.
+		jenksBreaks = ss.jenks(popDensities, classes);
+				// Create a jenks natural breaks scale with 4 classes.
 		// Uses simple_statistics.js
 		populationDensityColor = d3.scale.threshold()
 		    .range(getColorRampForD3(classes))
 			.domain(ss.jenks(popDensities, classes).slice(1, -1));
+					
+		// TODO update legend here!
+		configureLegend(jenksBreaks);
+
 		
 		counties.style("fill", function(d) {
 			node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
@@ -679,7 +684,7 @@ Flox.MapComponent_d3 = function() {
 	function colorStatesByPopulationDensity() {
 		// Select the state polygons somehow. 
 		var statePolygons, model_master, nodes, node, i, popDensities, STATEFP,
-			colorRamp;
+			colorRamp, jenksBreaks;
 		
 		statePolygons = d3.selectAll(".feature.state");
 		model_master = Flox.getModel();
@@ -693,9 +698,14 @@ Flox.MapComponent_d3 = function() {
 		// Uses simple_statistics.js
 		// TODO build the color gradient from a min and max color rather than
 		// hard coding each color.
+		
+		jenksBreaks = ss.jenks(popDensities, defaultClasses)
+		
 		populationDensityColor = d3.scale.threshold()
 		    .range(getColorRampForD3(defaultClasses))
-			.domain(ss.jenks(popDensities, defaultClasses).slice(1, -1));
+			.domain(jenksBreaks.slice(1, -1));
+		
+		configureLegend(jenksBreaks);
 		
 		statePolygons.style("fill", function(d) {
 			STATEFP = d.properties.STATEFP;
@@ -1407,7 +1417,40 @@ Flox.MapComponent_d3 = function() {
 		}
 	}
 	
+	function configureLegend(legendItems) {
+		
+		var rectWidth = 25,
+			rectHeight = 18,
+			rectSpacer = 4,
+			legendItemContainer,
+			rectangle;
+		
+		d3.select("#legendSlidingPanelContent svg").remove();
+		
+		legendItemContainer = d3.select("#legendSlidingPanelContent")
+			.append("svg")
+			.attr("width", "100%")
+			.attr("height", function() {
+				var l = legendItems.length - 1;
+				return (l * rectHeight + (l - 1) * rectSpacer);
+			});
+						
+		rectangle = legendItemContainer.selectAll("rect")
+			.data(legendItems.slice(0, -1))
+			.enter().append("rect")
+			.attr("width", rectWidth)
+			.attr("height", rectHeight)
+			.attr("fill", "white")
+			.attr("y", function(d, i) {
+				return (rectHeight + rectSpacer) * i;
+			})
+			.attr("x", 2)
+			.attr("fill", function(d) {
+				return populationDensityColor(d);
+			});
+	}
 	
+	//configureLegend([1,2,3,4,5,6,7]);
 	
 	// PUBLIC ---------------------------------------------------------------------
 

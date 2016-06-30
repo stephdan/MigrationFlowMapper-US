@@ -323,7 +323,22 @@ Flox.GUI = (function($){
 		} else {
 			slidingPanel.addClass("collapsed")
 						.animate({
-							height: 18
+							height: 20
+						}, 100);
+		}
+	}
+
+	function toggleLegendSlidingPanel() {
+		var slidingPanel = $("#legendSlidingPanel");
+		if(slidingPanel.hasClass("collapsed")) {
+			slidingPanel.removeClass("collapsed")
+						.animate({
+							left: "0px"
+						}, 100);
+		} else {
+			slidingPanel.addClass("collapsed")
+						.animate({
+							left: "-180px"
 						}, 100);
 		}
 	}
@@ -332,6 +347,10 @@ Flox.GUI = (function($){
 		// Change the height of if the slidingPanel
 		toggleSlidingPanel();
 		
+	});
+
+	$("#legendSlidingPanelTab").on("click", function() {
+		toggleLegendSlidingPanel();
 	});
 
 	function openSlidingPanel() {
