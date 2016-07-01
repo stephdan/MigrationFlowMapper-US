@@ -61,8 +61,17 @@ Flox.GUI = (function($){
 			var buttonIcon = $(this).find("img"),
 				settings = Flox.getFilterSettings();
 			
+			if(settings.selectedCounty !== false) {
+				console.log("A county is selected: " + settings.selectedCounty);
+				// Import the county-to-county data for that state again. No
+				// need to go all zoomy. 
+				settings.selectedCounty = false;
+				Flox.selectState(settings.selectedState);
+				return;
+			}
+			
 			if(settings.countyMode === true) {
-				// It's in couny mode. So get it out of county mode! And 
+				// It's in county mode. So get it out of county mode! And 
 				// into state mode!
 				settings.countyMode = false;
 				settings.stateMode = true;
@@ -73,10 +82,12 @@ Flox.GUI = (function($){
 						  .attr("id", "counties");
 				
 				Flox.importStateToStateMigrationFlows();
+				return;
 			} else if (settings.countyMode === false) {
 				// It's not in county mode. Put it in county mode!
 				settings.countyMode = true;
 				settings.stateMode = false;
+				
 				// The button will show what happens when you click it. It
 				// will turn back to county mode, so show the counies icon
 				buttonIcon.attr("src", "resources/icons/buttons/state_white.svg")
@@ -93,6 +104,7 @@ Flox.GUI = (function($){
 					// No layout will occur. This is kindof a special case. 
 					//Flox.enterClickAStateMode();
 				}
+				return;
 			}
 		}
 	);
@@ -314,16 +326,18 @@ Flox.GUI = (function($){
 	});
 
 	function toggleSlidingPanel() {
-		var slidingPanel = $("#slidingPanel");
+		var slidingPanel = $("#slidingPanel"),
+			slidingPanelContent = $("#slidingPanelContent"),
+			h = slidingPanelContent.outerHeight();
 		if(slidingPanel.hasClass("collapsed")) {
 			slidingPanel.removeClass("collapsed")
 						.animate({
-							height: 70
+							bottom: "0px"
 						}, 100);
 		} else {
 			slidingPanel.addClass("collapsed")
 						.animate({
-							height: 20
+							bottom: -(h - 2) + "px"
 						}, 100);
 		}
 	}
@@ -429,8 +443,8 @@ Flox.GUI = (function($){
 
 	my.showPanelButton = function(targetButtonID) {
 		$("#" + targetButtonID).animate({
-				"height": "30px",
-				"width": "40px",
+				"height": "50px",
+				"width": "60px",
 				"margin": "0px",
 				"opacity": 1
 			}, 300, function() {
@@ -442,6 +456,53 @@ Flox.GUI = (function($){
 		for(i = 0; i < buttonArray.length; i += 1) {
 			my.showPanelButton(buttonArray[i]);
 		}
+	};
+	
+	my.setHintText = function() {
+		
+	};
+	
+	// Show and hide buttons and set button icons based on current model 
+	// and filter settings.
+	my.updateGUI = function() {
+		var settings = Flox.getFilterSettings(),
+			hintText = $("#hintText"),
+			hideThese = [],
+			showThese = [];
+		
+		if(settings.selectedCounty !== false || settings.stateMode) {
+			// A county is selected . The state/county button should show counties.
+			$("#stateOrCountyFlowsButton").find("img")
+				.attr("src", "resources/icons/buttons/counties_white.svg")
+				.attr("id", "counties");
+		}
+		
+		if(settings.selectedState === false) {
+			// no state is selected
+			hideThese.push("usStateFlowsButton");
+			hideThese.push("stateOrCountyFlowsButton");
+			hintText.text("Click a state to see flows for that state");
+		} else {
+			showThese.push("usStateFlowsButton");
+			showThese.push("stateOrCountyFlowsButton");
+			hintText.text("Some helpful text!");
+		}
+		
+		if(settings.selectedState && settings.countyMode) {
+			showThese.push("necklaceMapButton");
+		} else {
+			hideThese.push("necklaceMapButton");
+		}
+		
+		if(settings.selectedState !== false && settings.countyMode 
+			&& settings.selectedCounty === false) {
+			showThese.push("innerFlowsButton");	
+		} else {
+			hideThese.push("innerFlowsButton");
+		}
+		my.setHintText();
+		my.hidePanelButtons(hideThese);
+		my.showPanelButtons(showThese);
 	};
 
 	return my;

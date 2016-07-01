@@ -655,16 +655,25 @@ Flox.MapComponent_d3 = function() {
 				return popDensity;
 		});
 		
-		if(popDensities.length < defaultClasses) {
+		if(popDensities.length <= defaultClasses) {
+			// There are as many or more colors than there are counties
+			// There will be only one county of each color. 
+			// Therefore, you don't need to make a jenks scale. You can just
+			// use the popDensities as breaks. Sorted, of course.
+			popDensities.sort(function(a,b) {
+				return a - b;
+			});
+			jenksBreaks = popDensities;
 			classes = popDensities.length;
-		} 
-		
-		jenksBreaks = ss.jenks(popDensities, classes);
-				// Create a jenks natural breaks scale with 4 classes.
-		// Uses simple_statistics.js
-		populationDensityColor = d3.scale.threshold()
-		    .range(getColorRampForD3(classes))
-			.domain(ss.jenks(popDensities, classes).slice(1, -1));
+			populationDensityColor = d3.scale.threshold()
+				.domain(jenksBreaks.slice(1))
+				.range(getColorRampForD3(classes));
+		} else {
+			jenksBreaks = ss.jenks(popDensities, classes);
+			populationDensityColor = d3.scale.threshold()
+				.domain(jenksBreaks.slice(1, -1))
+				.range(getColorRampForD3(classes));
+		}		
 					
 		// TODO update legend here!
 		configureLegend(jenksBreaks);
@@ -1417,13 +1426,16 @@ Flox.MapComponent_d3 = function() {
 		}
 	}
 	
-	function configureLegend(legendItems) {
+	function configureLegend(legendData) {
 		
 		var rectWidth = 25,
-			rectHeight = 18,
+			rectHeight = 25,
 			rectSpacer = 4,
+			labelSizePx = 13,
 			legendItemContainer,
-			rectangle;
+			rectangle, 
+			legendItem,
+			legendColors = populationDensityColor.range();
 		
 		d3.select("#legendSlidingPanelContent svg").remove();
 		
@@ -1431,13 +1443,29 @@ Flox.MapComponent_d3 = function() {
 			.append("svg")
 			.attr("width", "100%")
 			.attr("height", function() {
-				var l = legendItems.length - 1;
+				var l = legendColors.length;
 				return (l * rectHeight + (l - 1) * rectSpacer);
 			});
 						
-		rectangle = legendItemContainer.selectAll("rect")
-			.data(legendItems.slice(0, -1))
-			.enter().append("rect")
+		// rectangle = legendItemContainer.selectAll("rect")
+			// .data(legendData.slice(0, -1))
+			// .enter().append("rect")
+			// .attr("width", rectWidth)
+			// .attr("height", rectHeight)
+			// .attr("fill", "white")
+			// .attr("y", function(d, i) {
+				// return (rectHeight + rectSpacer) * i;
+			// })
+			// .attr("x", 2)
+			// .attr("fill", function(d) {
+				// return populationDensityColor(d);
+			// });
+			
+		legendItem = legendItemContainer.selectAll("g")
+			.data(populationDensityColor.range())
+			.enter().append("g");
+			
+		legendItem.append("rect")
 			.attr("width", rectWidth)
 			.attr("height", rectHeight)
 			.attr("fill", "white")
@@ -1445,8 +1473,32 @@ Flox.MapComponent_d3 = function() {
 				return (rectHeight + rectSpacer) * i;
 			})
 			.attr("x", 2)
-			.attr("fill", function(d) {
-				return populationDensityColor(d);
+			.attr("fill", function(d, i) {
+				//return populationDensityColor.range()[i];
+				return d;
+			});
+		
+		legendItem.append("text")
+			.style("font-size", labelSizePx + "px")
+			.style("font-family", "Tahoma, Geneva, sans-serif")
+			.attr("fill", "white")
+			.text(function(d, i) {
+				if(legendData.length <= defaultClasses) {
+					//One color for each value
+					return (Math.round(legendData[i] * 100)/100);
+				} 
+				// There are more values than colors.
+				// legendData includes 8 values, where the first
+				// and last are the min and max. Ranges!
+				if(i < defaultClasses - 1) {
+					return (Math.round(legendData[i] * 100)/100) + " and up"
+				}
+				return  (Math.round(legendData[i] * 100)/100) + " to " + 
+						(Math.round(legendData[i + 1] * 100) / 100);
+			})
+			.attr("x", rectWidth + 10)
+			.attr("y", function(d, i) {
+				return (rectHeight/2 + (labelSizePx/2 - 1))+ ((rectHeight + rectSpacer) * i);
 			});
 	}
 	
@@ -1561,6 +1613,11 @@ Flox.MapComponent_d3 = function() {
 	
 	my.zoomToFullExtent = function() {
 		zoomToFullExtent();
+	};
+	
+	// Debug
+	my.getPopulationDensityColor = function() {
+		return populationDensityColor;
 	};
 	
 	return my;

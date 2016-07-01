@@ -78,13 +78,12 @@ html, body {
 #legendItemContainer {
 	width: 100%;
 	height: auto;
-	background-color: gray;
 }
 
 #slidingPanel {
 	position: absolute;
-	width: 400px;
-	height: 70px;
+	width: 440px;
+	height: 95px;
 	position: fixed;
 	bottom: 0;
 	margin: 0 auto;
@@ -114,7 +113,7 @@ html, body {
     background: rgba(64, 64, 64, 0.9);
     box-shadow: 3px 3px 3px rgba(64,64,64,0.5);
 	padding: 5px;
-	height: 52px;
+	height: 77px;
 	border-radius: 5px 5px 0px 0px;
 	pointer-events: all;
 	text-align:center;
@@ -125,6 +124,7 @@ html, body {
 	margin: 0px auto;
 	padding-left: 0;
 	font-size: 0;
+	bottom: 0px;
 }
 
 #slidingPanelContent ul li {
@@ -132,12 +132,17 @@ html, body {
 	margin: 0px;
 }
 
+#hintText {
+	color: white;
+	margin-bottom: 1px;
+	margin-top: -1px;
+}
+
 .panelButtonContainer {
 	display: inline-block;
-	width: 45px;
-	height: 40px;
+	width: 60px;
+	height: 50px;
 	position: relative;
-	
 	border-style: solid;
 	border-width: 1px;
 	border-color: rgb(180,180,180);
@@ -147,7 +152,6 @@ html, body {
 }
 
 .panelButtonContainer.hover {
-	border-width: 1px;
 	border-color: rgb(255,255,255);
 }
 

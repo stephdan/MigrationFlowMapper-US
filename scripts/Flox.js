@@ -435,6 +435,7 @@ my.updateMap = function() {
 	// TODO Eventually, it might be nice to have the ability to not use 
 	// webworkers if the browser is not compatible with them. 
 	// FIXME Something is broken when not using webworkers. 
+	Flox.GUI.updateGUI();
 	if(window.Worker && model_master.settings.useWebworkers) {
 		runFilterWorker(function(filteredModel) {
 			if(filterSettings.stateMode === false &&
@@ -540,11 +541,11 @@ my.enterClickAStateMode = function() {
 };
 
 my.initFlox = function() {
-	
+	Flox.GUI.updateGUI();
 	var starterModel = new Flox.Model(), 
 		jsonPath = "data/JSON/stateToStateFlowsLayout.json",
 		flowPath = "data/census/US_State_migration_2014_flows.csv";
-	
+	Flox.GUI.updateGUI();
 	model_master = new Flox.Model();
 	mapComponent = new Flox.MapComponent_d3();
 	mapComponent.initMap();
@@ -630,6 +631,9 @@ my.getNodeCoordinates = function() {
 	return coords;
  };
 
+my.getPopulationDensityColor = function() {
+	return mapComponent.getPopulationDensityColor();
+};
 
 // END DEBUG STUFF-------------------------------------
 
