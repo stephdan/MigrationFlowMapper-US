@@ -36,8 +36,7 @@ function refreshMap(model_copy) {
 // TODO If the browser can't do webworkers, then webworkers shouldn't be used.
 function initLayoutWorker(modelCopy, callback) {
 
-	Flox.GUI.updateLayoutProgressBar(0);
-	Flox.GUI.showLayoutProgressBar();
+	
 	
 	var flows,
 		ctrlPts,
@@ -79,8 +78,6 @@ function initLayoutWorker(modelCopy, callback) {
 					flowCPt.lng = latLng.lng;
 				}
 				// Run the callback function, which is typically refreshMap();
-				Flox.GUI.updateLayoutProgressBar(100);
-				Flox.GUI.hideLayoutProgressBar();
 				callback();
 			}
 		};	
@@ -427,6 +424,8 @@ my.filterBySettings = function(m, settings) {
  */
 my.updateMap = function() {
 	
+	Flox.GUI.updateLayoutProgressBar(0);
+	Flox.GUI.showLayoutProgressBar();
 	// Good time to assign xy coordinates to nodes.
 	my.assignXYToNodes(model_master.getPoints());
 
@@ -443,7 +442,9 @@ my.updateMap = function() {
 				mapComponent.configureNecklaceMap(filteredModel);
 			}
 			runLayoutWorker(filteredModel, function() {
+				Flox.GUI.updateLayoutProgressBar(100);
 				refreshMap(filteredModel);
+				Flox.GUI.hideLayoutProgressBar();
 			});	
 		});
 	} else {

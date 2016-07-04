@@ -197,9 +197,6 @@ Flox.ModelFilter = function(model_master) {
 		model_copy.addFlows(stateFlows);
 	}
 
-
-	// PUBLIC ---------------------------------------------------------------------
-
 	my.getModelCopy = function() {
 		return model_copy;
 	};
@@ -395,15 +392,10 @@ Flox.ModelFilter = function(model_master) {
 		
 		console.log("Running filterBySettings...");
 		
-		
-		
 		var startTime, endTime, 
 			theModel = model_master,
 			masterNodes = model_master.getPoints(),
 			filteredNodes;
-		
-		
-		//startTime = performance.now();
 		
 		// Net flows if settings.netFlows
 		if(filterSettings.netFlows) {
@@ -419,10 +411,10 @@ Flox.ModelFilter = function(model_master) {
 				model_copy.updateCachedValues();
 				// Set netFlowsModel to a COPY of the net flows model, so more changes
 				// can be made to it in the filter without messing it up
-				Flox.setDerivedModels( { "netFlowsModel": (copyModel(model_copy)) } );
+				//Flox.setDerivedModels( { "netFlowsModel": (copyModel(model_copy)) } );
 			} else {
 				// netFlowsModel exists, get a COPY of it.
-				model_copy = copyModel(Flox.getDerivedModel("netFlowsModel"));
+				//model_copy = copyModel(Flox.getDerivedModel("netFlowsModel"));
 			}
 		} else { // same as above, but with totalFlowsModel
 			if(!Flox.getDerivedModel("totalFlowsModel")){
@@ -433,9 +425,9 @@ Flox.ModelFilter = function(model_master) {
 				my.getTotalFlowsModel();
 				model_copy.updateCachedValues();
 				model_copy.settings.drawArrows = false; // total flows are bi-directional, so no arrows
-				Flox.setDerivedModels( { "totalFlowsModel": (copyModel(model_copy)) } );
+				//Flox.setDerivedModels( { "totalFlowsModel": (copyModel(model_copy)) } );
 			} else {
-				model_copy = copyModel(Flox.getDerivedModel("totalFlowsModel"));
+				//model_copy = copyModel(Flox.getDerivedModel("totalFlowsModel"));
 				model_copy.settings.drawArrows = false; 
 			}
 		}
@@ -473,9 +465,7 @@ Flox.ModelFilter = function(model_master) {
 		return model_copy;
 	};
 	
-	
 	my.getSelectedCountyModel = function(countyFIPS, filterSettings) {
-			
 		getSelectedCountyModel(countyFIPS, filterSettings);
 		my.filterBySettings(filterSettings);
 		

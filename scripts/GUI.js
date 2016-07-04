@@ -242,13 +242,12 @@ Flox.GUI = (function($){
 				settings.netFlows = true;
 				buttonIcon.attr("src", "resources/icons/buttons/netFLows_white.svg")
 						  .attr("id", "netFlows");
-				Flox.updateMap();
 			} else {
 				settings.netFlows = false;
 				buttonIcon.attr("src", "resources/icons/buttons/totalFLows_white.svg")
 						  .attr("id", "totalFlows");
-				Flox.updateMap();
 			}
+			Flox.updateMap();
 		}
 	);
 	
@@ -387,6 +386,38 @@ Flox.GUI = (function($){
 		}
 	}
 
+// Hint Text ------------------------------------------------------------------
+
+	$("#usStateFlowsButton").hover(function() {
+		$("#hintText").text("Display state-to-state flows for the US");
+	}, function() {
+		my.setHintText();
+	});
+
+	$("#stateOrCountyFlowsButton").hover(function() {
+		$("#hintText").text("Switch between state or county level flows");
+	}, function() {
+		my.setHintText();
+	});
+
+	$("#necklaceMapButton").hover(function() {
+		$("#hintText").text("Show/hide flows going to/from other states");
+	}, function() {
+		my.setHintText();
+	});
+
+	$("#innerFlowsButton").hover(function() {
+		$("#hintText").text("Show/hide flows entirely within the selected state");
+	}, function() {
+		my.setHintText();
+	});
+
+	$("#netOrTotalFlowsButton").hover(function() {
+		$("#hintText").text("Switch between net or total flows");
+	}, function() {
+		my.setHintText();
+	});
+
 	my.openSlidingPanel = function() {
 		openSlidingPanel();
 	};
@@ -400,8 +431,7 @@ Flox.GUI = (function($){
  * @param {Number} progress - 0 to 100, percentage complete
 	 */
 	my.updateLayoutProgressBar = function(progress) {
-		var bar = $("#layoutProgress");
-		bar.width(progress + "%");
+		$("#layoutProgress").width(progress + "%");
 	};
 
 	my.showLayoutProgressBar = function() {
@@ -412,23 +442,12 @@ Flox.GUI = (function($){
 		$("#layoutProgressBar").addClass("hidden");
 	};
 
-	// $('.panelButtonContainer').on('click', function() {
-		// $(this).animate({
-			// "height": "0px",
-			// "width": "0px",
-			// "margin": "-2px",
-			// "opacity": 0
-			// }, 300, function() { 
-		// });
-	// });
-
-	
-
 	my.hidePanelButton = function(targetButtonID) {
 		$("#" + targetButtonID).animate({
 				"height": "0px",
 				"width": "0px",
-				"margin": "-2px",
+				"margin-right": "0px",
+				"margin-left": "-2px",
 				"opacity": 0
 			}, 300, function() {
 		});
@@ -445,7 +464,8 @@ Flox.GUI = (function($){
 		$("#" + targetButtonID).animate({
 				"height": "50px",
 				"width": "60px",
-				"margin": "0px",
+				"margin-right": "2px",
+				"margin-left": "2px",
 				"opacity": 1
 			}, 300, function() {
 		});
@@ -459,14 +479,28 @@ Flox.GUI = (function($){
 	};
 	
 	my.setHintText = function() {
+		var settings = Flox.getFilterSettings(),
+			hintText = $("#hintText");
 		
+		if(settings.selectedState === false) {
+			// no state is selected
+			hintText.text("Click a state to see flows for that state");
+		} else {
+			// A state IS selected
+			// Is it in county mode?
+			if(settings.countyMode) {
+				hintText.text("Click a county, or click a different state")
+			} else {
+				// we're viewing flows to and from one state. 
+				hintText.text("View county flows by clicking the counties menu button")
+			}
+		}
 	};
 	
 	// Show and hide buttons and set button icons based on current model 
 	// and filter settings.
 	my.updateGUI = function() {
 		var settings = Flox.getFilterSettings(),
-			hintText = $("#hintText"),
 			hideThese = [],
 			showThese = [];
 		
@@ -481,11 +515,9 @@ Flox.GUI = (function($){
 			// no state is selected
 			hideThese.push("usStateFlowsButton");
 			hideThese.push("stateOrCountyFlowsButton");
-			hintText.text("Click a state to see flows for that state");
 		} else {
 			showThese.push("usStateFlowsButton");
 			showThese.push("stateOrCountyFlowsButton");
-			hintText.text("Some helpful text!");
 		}
 		
 		if(settings.selectedState && settings.countyMode) {
@@ -500,7 +532,11 @@ Flox.GUI = (function($){
 		} else {
 			hideThese.push("innerFlowsButton");
 		}
-		my.setHintText();
+		// if it's not hovering over a button, set the hint text
+		// if ($('.panelButtonContainer:hover').length === 0) {
+		    // my.setHintText();
+		// }
+		//my.setHintText();
 		my.hidePanelButtons(hideThese);
 		my.showPanelButtons(showThese);
 	};
