@@ -19,8 +19,9 @@ Flox.MapComponent_d3 = function() {
 	    
 	    projection_albersUsa = d3.geo.albersUsa().scale(20000).translate([width / 2, height / 2]),
 	    projection_mercator = d3.geo.mercator().scale(20000).translate([width / 2, height / 2]),
+	    projectoin_albersUsaPR = albersUsaPr().scale(20000).translate([width / 2, height / 2]),
 	    //projection_conicEqualArea = d3.geo.conicEqualArea().scale(1).translate([width / 2, height / 2]),
-	    projection = projection_albersUsa,
+	    projection = projectoin_albersUsaPR,
 	    
 	    // TODO the scale setting below could be set to zoom in to the bounding
 	    // box of the lower 48 based on the window size. 
@@ -65,6 +66,17 @@ Flox.MapComponent_d3 = function() {
 			
 		},
 		
+		lookupLSAD = {
+			"03": "City and Borough",
+			"04": "Borough",
+			"05": "Census Area",
+			"06": "County",
+			"07": "District",
+			"12": "Municipality",
+			"13": "Municipio",
+			"15": "Parish",
+			"25": "City"
+		},
 		
 	    my = {};
 
@@ -1048,6 +1060,7 @@ Flox.MapComponent_d3 = function() {
 		// Deselect the selected county if there is one
 		filterSettings.selectedCounty = false;
 		filterSettings.selectedState = stateFIPS;
+		filterSettings.selectedFeatureName = statePolygon.properties.NAME;
 		
 		// County mode?
 		if(filterSettings.countyMode) {
@@ -1076,10 +1089,15 @@ Flox.MapComponent_d3 = function() {
 
 	}
 
-	function selectCounty(countyFIPS) {
+	function selectCounty(countyFIPS, feature) {
 		removeAllFlows();
 		d3.select("#necklaceMapLayer").remove();
-		Flox.setFilterSettings({selectedCounty: countyFIPS});
+		var lsad = feature.properties.LSAD,
+			featureType = lookupLSAD[lsad];
+		
+		Flox.setFilterSettings({
+			selectedCounty: countyFIPS,
+			selectedFeatureName: feature.properties.NAME + " " + featureType});
 		Flox.updateMap();
 	}
 
@@ -1096,7 +1114,7 @@ Flox.MapComponent_d3 = function() {
 
 	function countyClicked(d) {
 		var FIPS = d.properties.STATEFP + d.properties.COUNTYFP;
-		selectCounty(FIPS);
+		selectCounty(FIPS, d);
 	}
 
 	function necklaceNodeClicked(d) {
@@ -1312,9 +1330,10 @@ Flox.MapComponent_d3 = function() {
 				points = polygons[i][0];
 				for(j = 0; j < points.length; j += 1) {
 					xy = projection(points[j]);
-					formattedPoints.push({x: xy[0], y: xy[1]});
+					if(xy !== null) {
+						formattedPoints.push({x: xy[0], y: xy[1]});
+					}
 				}
-				
 			}
 			
 			

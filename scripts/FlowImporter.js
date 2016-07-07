@@ -25,7 +25,7 @@ Flox.FlowImporter = ( function(d3) {
 					newStNode.populationDensity = row.POPDENSITYKM2;
 				}
 				newStNode.populationDensity = row.POPDENSITYKM2;
-				newStNode.population = row.POP2014;
+				newStNode.population = row.POP2013;
 				newStNode.id = row.FIPS;
 				newStNode.r = Number(row.radius);
 				newStNode.name = row.name;
@@ -150,7 +150,7 @@ Flox.FlowImporter = ( function(d3) {
 					}
 				}
 			}
-			console.log(flows.length + " flows imported!");
+			console.log(flows.length + " flows imported for " + stateFIPS);
 			//endTime = performance.now() - startTime;
 			//console.log("import time: " + endTime);
 			callback(flows, countyNodes);
@@ -288,7 +288,6 @@ Flox.FlowImporter = ( function(d3) {
 				callback(flows, countyNodes);
 			});
 		});
-		
 	};
 
 	/**

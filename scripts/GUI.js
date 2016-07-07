@@ -386,6 +386,69 @@ Flox.GUI = (function($){
 		}
 	}
 
+	function updateTitle() {
+		var title = $("#titleText"),
+			subtitle = $("#subtitleText"),
+			settings = Flox.getFilterSettings(),
+			netOrTotal = settings.netFlows ? "net" : "total";
+		
+		// state flows, but no state selected
+		if(settings.stateMode && settings.selectedState === false) {
+			title.html("State migration within the US, 2013");
+			subtitle.html("Top 50 state-to-state " + netOrTotal + " flows");
+		}
+		
+		// state flows, state selected
+		if(settings.stateMode && settings.selectedState !== false) {
+			title.html("State migration within the US, 2013");
+			subtitle.html("Top 50 " + netOrTotal + " flows entering or leaving " + settings.selectedFeatureName);
+		}
+		
+		// county flows, no county selected
+		if(settings.countyMode && settings.selectedCounty === false) {
+			title.html("County migration within the US, 2009 to 2013");
+			
+			if(settings.inStateFlows && settings.outerStateFlows) {
+				subtitle.html("Top 50 " + netOrTotal + " county flows for " + settings.selectedFeatureName);
+			}
+			
+			if(settings.inStateFlows && settings.outerStateFlows === false) {
+				subtitle.html("Top 50 " + netOrTotal + " county flows within " + settings.selectedFeatureName);
+			}
+			
+			if(settings.inStateFlows === false && settings.outerStateFlows) {
+				subtitle.html("Top 50 " + netOrTotal + " county flows entering or leaving " + settings.selectedFeatureName);
+			}
+			
+			if(settings.inStateFlows === false && settings.outerStateFlows === false) {
+				subtitle.html("No flows shown");
+			}
+		}
+
+		// county flows, county selected
+		if(settings.countyMode && settings.selectedCounty !== false) {
+			title.html("County migration within the US, 2009 to 2013");
+			
+			if(settings.inStateFlows && settings.outerStateFlows) {
+				subtitle.html("Top 50 " + netOrTotal + " county flows entering or leaving " + settings.selectedFeatureName);
+			}
+			
+			if(settings.inStateFlows && settings.outerStateFlows === false) {
+				subtitle.html("Top 50 " + netOrTotal + " county flows entering or leaving " 
+								+ settings.selectedFeatureName + " to or from counties of the same state");
+			}
+			
+			if(settings.inStateFlows === false && settings.outerStateFlows) {
+				subtitle.html("Top 50 " + netOrTotal + " county flows entering or leaving " 
+								+ settings.selectedFeatureName + " to or from other states");
+			}
+			
+			if(settings.inStateFlows === false && settings.outerStateFlows === false) {
+				subtitle.html("No flows shown");
+			}
+		}
+	}
+
 // Hint Text ------------------------------------------------------------------
 
 	$("#usStateFlowsButton").hover(function() {
@@ -539,6 +602,7 @@ Flox.GUI = (function($){
 		//my.setHintText();
 		my.hidePanelButtons(hideThese);
 		my.showPanelButtons(showThese);
+		updateTitle();
 	};
 
 	return my;

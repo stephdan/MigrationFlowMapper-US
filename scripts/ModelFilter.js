@@ -13,7 +13,7 @@ Flox.ModelFilter = function(model_master) {
 	 * Return a copy of the model that was passed in on instantiation. 
 	 */
 	function copyModel(m) {
-		console.log("copying model");
+		//console.log("copying model");
 		var modelJSON = m.toJSON(), // FIXME only copies maxFlows?
 		    modelCopy = new Flox.Model();
 		modelCopy.deserializeModelJSON(modelJSON);
@@ -390,7 +390,7 @@ Flox.ModelFilter = function(model_master) {
 	 */
 	my.filterBySettings = function(filterSettings) {
 		
-		console.log("Running filterBySettings...");
+		//console.log("Running filterBySettings...");
 		
 		var startTime, endTime, 
 			theModel = model_master,

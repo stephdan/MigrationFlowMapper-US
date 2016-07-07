@@ -18,7 +18,8 @@ var mapComponent,
 		selectedCounty: false,
 		selectedState: false,
 		countyMode: false,
-		stateMode: false
+		stateMode: false,
+		selectedFeatureName: false
 	},
 	
 	derivedModels = {},
@@ -198,7 +199,10 @@ function importStateToStateMigrationFlows() {
 	// filterSettings.countyMode = false;
 	model_master.settings.scaleMultiplier = 4; // FIXME hardcoded
 	model_master.settings.datasetName = "states";
-	var flowPath = "data/census/US_State_migration_2014_flows.csv",
+	
+	filterSettings.selectedState = false;
+	
+	var flowPath = "data/census/US_State_migration_2013_flows.csv",
 		stuffImportWorkerNeeds = {};
 	
 	
@@ -209,7 +213,7 @@ function importStateToStateMigrationFlows() {
 		runImportWorker(stuffImportWorkerNeeds, function(d) {
 			model_master.deserializeModelJSON(d);
 			my.updateMap();
-		})
+		});
 	} else {
 		console.log("Browser cannot use webworkers. UI will be locked during computations.");
 		console.log("Importing state-to-state flows...");

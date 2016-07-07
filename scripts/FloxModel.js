@@ -24,7 +24,7 @@ Flox.Model = function() {
 			angularDistributionWeight : 0.5,
 			nodeWeight : 0.0,
 			nodeTolerancePx : 0,
-			moveFlowsIntersectingNodes : false,
+			moveFlowsIntersectingNodes : true,
 			multipleIterations : true,
 			NBR_ITERATIONS : 100,
 			showForceAnimation : false,
@@ -97,6 +97,7 @@ Flox.Model = function() {
 			"FIPS44" : 0.5, // Rhode Island
 			"FIPS48" : 2, // Texas
 			"FIPS54" : 2,  // West Virginia
+			"FIPS72" : 0.5,
 			"allStates": 0.2
 		},
 				
