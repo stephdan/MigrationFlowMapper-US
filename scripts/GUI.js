@@ -605,6 +605,16 @@ Flox.GUI = (function($){
 		updateTitle();
 	};
 
+// DEBUG GUI STUFF ------------------------------------------------------------
+
+$("#globalFlowWidthCheckbox").on("click", function() {
+	console.log("checkbox clicked!");
+	Flox.getModel().settings.useGlobalFlowWidth = this.checked;
+	Flox.updateMap();
+});
+
+
+
 	return my;
 
 }($));

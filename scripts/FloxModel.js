@@ -43,6 +43,7 @@ Flox.Model = function() {
 			flowDistanceFromStartPointPixel : 5,
 			flowDistanceFromEndPointPixel : 5,
 			NODE_STROKE_WIDTH : 0.5,
+			useGlobalFlowWidth: true,
 			
 			// arrow settings
 			arrowSizeRatio : 0.1,
@@ -515,7 +516,12 @@ Flox.Model = function() {
 	}
 
 	function getFlowStrokeWidth(flow) {
-		var strokeWidth =  (settings.maxFlowWidth * flow.getValue()) / settings.maxFlowValue;
+		var strokeWidth;
+		if(settings.useGlobalFlowWidth) {
+			strokeWidth =  (settings.maxFlowWidth * flow.getValue()) / settings.maxFlowValue;
+			return strokeWidth * settings.scaleMultiplier;
+		}
+		strokeWidth =  (settings.maxFlowWidth * flow.getValue()) / flows[0].getValue();
 		return strokeWidth * settings.scaleMultiplier;
 	}
 
@@ -525,11 +531,19 @@ Flox.Model = function() {
 	function getArrowSettings(flow) {
 		var arrowSettings,
 			i, j,
-			minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / settings.maxFlowValue),
+			minFlowWidth,
+			maxFlowValue,
 			endClipRadius, startClipRadius, endPt, startPt;
 		
 		endPt = flow.getEndPt();
 		startPt = flow.getStartPt();
+		
+		if(settings.useGlobalFlowWidth) {
+			minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / settings.maxFlowValue);
+		} else {
+			minFlowWidth = (settings.maxFlowWidth * flows[flows.length-1].getValue() / flows[0].getValue());
+		}
+		
 		
 		if(endPt.necklaceMapNode) {
 			endClipRadius = endPt.r + endPt.strokeWidth;
@@ -543,10 +557,27 @@ Flox.Model = function() {
 			startClipRadius = getStartClipRadius(startPt);	
 		}
 		
-		arrowSettings = settings;
-		arrowSettings.endClipRadius = endClipRadius;
-		arrowSettings.minFlowWidth = minFlowWidth;
+		if(settings.useGlobalFlowWidth) {
+			maxFlowValue = settings.maxFlowValue;
+		} else {
+			maxFlowValue = flows[0].getValue();
+		}
 		
+		arrowSettings = {
+			endClipRadius: endClipRadius,
+			startClipRadius: startClipRadius,
+			minFlowWidth: minFlowWidth,
+			maxFlowValue: maxFlowValue,
+			maxFlowWidth: settings.maxFlowWidth,
+			scaleMultiplier: settings.scaleMultiplier,
+			arrowSizeRatio: settings.arrowSizeRatio,
+			arrowLengthRatio: settings.arrowLengthRatio,
+			arrowLengthScaleFactor: settings.arrowLengthScaleFactor,
+			arrowWidthScaleFactor: settings.arrowWidthScaleFactor,
+			arrowCornerPosition: settings.arrowCornerPosition,
+			arrowEdgeCtrlWidth: settings.arrowEdgeCtrlWidth,
+			arrowEdgeCtrlLength: settings.arrowEdgeCtrlLength
+		};
 		return arrowSettings;	
 	}
 
@@ -597,8 +628,12 @@ Flox.Model = function() {
 	}
 
 	function getRelativeFlowValue(flow) {
-		return (flow.getValue() - settings.minFlowValue)
+		if(settings.useGlobalFlowWidth) {
+			return (flow.getValue() - settings.minFlowValue)
                 / (settings.maxFlowValue - settings.minFlowValue);
+		}
+		return (flow.getValue() - flows[flows.length-1].getValue())
+            / (flows[0].getValue() - flows[flows.length-1].getValue());
 	}
 
 	function getFlowColor(flow) {
