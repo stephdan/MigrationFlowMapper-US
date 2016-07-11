@@ -534,7 +534,7 @@ Flox.Model = function() {
 	// settings, which is kinda bad. FIXME.
 	function getArrowSettings(flow) {
 		var arrowSettings,
-			i, j,
+			i, j, lastFlowIndex,
 			minFlowWidth,
 			maxFlowValue,
 			endClipRadius, startClipRadius, endPt, startPt;
@@ -545,7 +545,12 @@ Flox.Model = function() {
 		if(settings.useGlobalFlowWidth) {
 			minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / settings.maxFlowValue);
 		} else {
-			minFlowWidth = (settings.maxFlowWidth * flows[settings.maxFlows -1].getValue() / flows[0].getValue());
+			if(flows.length < settings.maxFlows) {
+				lastFlowIndex = flows.length -1;
+			} else {
+				lastFlowIndex = settings.maxFlows - 1;
+			}
+			minFlowWidth = (settings.maxFlowWidth * flows[lastFlowIndex].getValue() / flows[0].getValue());
 		}
 		
 		
