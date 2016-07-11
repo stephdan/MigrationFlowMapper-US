@@ -841,52 +841,61 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 	
 	function configureArrow(s) {
 
-			// Get the difference between this flow's stroke size and the biggest
-	        // stroke size.
-		var flowWidth = ((s.maxFlowWidth * value) / s.maxFlowValue) * s.scaleMultiplier,
-			
-			baseT,
-			strokeDiff = s.maxFlowWidth - flowWidth,
-		
-			// Get the difference between this flow's stroke size and the smallest
-	        // stroke size.
-	        smallWidthDiff = flowWidth - s.minFlowWidth,
-		
-			// Get a percentage of that difference based on valRatio
-			plusStroke = strokeDiff * (s.arrowSizeRatio),
-		
-			// This much length will be subtracted from the lengths of arrowheads, 
-	        // proportionally to how relatively large they are compared to the 
-	        // smallest arrowhead. 
-	        // So the smallest arrowhead will have nothing subtracted, and the 
-	        // other arrowheads will have the difference between it and the smallest
-	        // arrowhead * model.getArrowLengthRatio (a number from 0 - 1) subtracted.
-	        minusLength = smallWidthDiff * (s.arrowLengthRatio),
-	        
-	        // Determine the distance of the tip of the arrow from the base.
-	        // Is scaled to the value of the flow, which itself is scaled by the 
-	        // scale factor of the model.
-			arrowLength = (flowWidth + plusStroke - minusLength)
-                * s.arrowLengthScaleFactor,
-                
-            // Determine the perpendicular distance of the corners of the arrow from 
-	        // a line drawn between the base and tip of the arrow.
-	        arrowWidth = (flowWidth + plusStroke)
-	                * s.arrowWidthScaleFactor,
-	                
-	        // Get the t value of the location on the flow where the base of the 
-            // arrowhead will sit
-			endT = getIntersectionTWithCircleAroundEndPoint(arrowLength + s.endClipRadius),
-			tipT = getIntersectionTWithCircleAroundEndPoint(s.endClipRadius),
-
-			// Set the base of the Arrow to the point on the curve determined above.
-			basePt = pointOnCurve(endT),
+		var flowWidth, baseT, strokeDiff, smallWidthDiff, plusStroke, minusLength, 
+			arrowLength, arrowWidth,
+			endT,
+			tipT,
+			basePt,
 			tipPt = {},
 			corner1Pt = {},
 			corner1cPt = {},
 			corner2Pt = {},
 			corner2cPt = {},
 			azimuth;
+
+		// Get the difference between this flow's stroke size and the biggest
+        // stroke size.
+		flowWidth = ((s.maxFlowWidth * value) / s.maxFlowValue) * s.scaleMultiplier;
+			
+		// if(flowWidth < 3 * s.scaleMultiplier) {
+			// flowWidth = 3 * s.scaleMultiplier;
+		// }
+		
+		strokeDiff = (s.maxFlowWidth * s.scaleMultiplier) - flowWidth;
+	
+		// Get the difference between this flow's stroke size and the smallest
+        // stroke size.
+        smallWidthDiff = flowWidth - s.minFlowWidth;
+	
+		// Get a percentage of that difference based on valRatio
+		plusStroke = strokeDiff * (s.arrowSizeRatio);
+	
+		// This much length will be subtracted from the lengths of arrowheads, 
+        // proportionally to how relatively large they are compared to the 
+        // smallest arrowhead. 
+        // So the smallest arrowhead will have nothing subtracted, and the 
+        // other arrowheads will have the difference between it and the smallest
+        // arrowhead * model.getArrowLengthRatio (a number from 0 - 1) subtracted.
+        minusLength = smallWidthDiff * (s.arrowLengthRatio);
+        
+        // Determine the distance of the tip of the arrow from the base.
+        // Is scaled to the value of the flow, which itself is scaled by the 
+        // scale factor of the model.
+		arrowLength = (flowWidth + plusStroke - minusLength)
+            * s.arrowLengthScaleFactor;
+            
+        // Determine the perpendicular distance of the corners of the arrow from 
+        // a line drawn between the base and tip of the arrow.
+        arrowWidth = (flowWidth + plusStroke)
+                * s.arrowWidthScaleFactor;
+                
+        // Get the t value of the location on the flow where the base of the 
+        // arrowhead will sit
+		endT = getIntersectionTWithCircleAroundEndPoint(arrowLength + s.endClipRadius);
+		tipT = getIntersectionTWithCircleAroundEndPoint(s.endClipRadius);
+
+		// Set the base of the Arrow to the point on the curve determined above.
+		basePt = pointOnCurve(endT);
 
         // Locate the various points that determine the shape and location of 
         // the Arrow. This pulls various parameters from the model that are 

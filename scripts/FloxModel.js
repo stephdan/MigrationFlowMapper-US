@@ -46,8 +46,8 @@ Flox.Model = function() {
 			useGlobalFlowWidth: true,
 			
 			// arrow settings
-			arrowSizeRatio : 0.1,
-			arrowLengthRatio : 0.2,
+			arrowSizeRatio : 0.2, // making small arrows bigger
+			arrowLengthRatio : 0.0, // shortening all arrows roughtly the same amount
 			arrowLengthScaleFactor : 1.8,
 			arrowWidthScaleFactor : 1,
 			arrowEdgeCtrlLength : 0.5,
@@ -97,7 +97,7 @@ Flox.Model = function() {
 			"FIPS36" : 0.35, // New York
 			"FIPS44" : 0.5, // Rhode Island
 			"FIPS48" : 2, // Texas
-			"FIPS54" : 2,  // West Virginia
+			"FIPS54" : 1.5,  // West Virginia
 			"FIPS72" : 0.5,
 			"allStates": 0.2
 		},
@@ -519,9 +519,13 @@ Flox.Model = function() {
 		var strokeWidth;
 		if(settings.useGlobalFlowWidth) {
 			strokeWidth =  (settings.maxFlowWidth * flow.getValue()) / settings.maxFlowValue;
-			return strokeWidth * settings.scaleMultiplier;
+		} else {
+			strokeWidth =  (settings.maxFlowWidth * flow.getValue()) / flows[0].getValue();
 		}
-		strokeWidth =  (settings.maxFlowWidth * flow.getValue()) / flows[0].getValue();
+		
+		// if(strokeWidth < 3) {
+			// return 3 * settings.scaleMultiplier;
+		// }
 		return strokeWidth * settings.scaleMultiplier;
 	}
 
@@ -541,7 +545,7 @@ Flox.Model = function() {
 		if(settings.useGlobalFlowWidth) {
 			minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / settings.maxFlowValue);
 		} else {
-			minFlowWidth = (settings.maxFlowWidth * flows[flows.length-1].getValue() / flows[0].getValue());
+			minFlowWidth = (settings.maxFlowWidth * flows[settings.maxFlows -1].getValue() / flows[0].getValue());
 		}
 		
 		
@@ -1012,6 +1016,7 @@ Flox.Model = function() {
 	};
 
 	// TODO probably don't need to update minFlowWidth here.
+	// Also, is this ever used?
 	my.getGlobalArrowSettings = function() {
 		var i, j,
 			minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / settings.maxFlowValue);
