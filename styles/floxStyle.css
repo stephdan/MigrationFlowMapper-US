@@ -103,7 +103,7 @@ html, body {
 #debugMenu {
 	position: absolute;
 	width: 200px;
-	height: 400px;
+	height: auto;
 	right: 20px;
 	top: 20px;
 	background: rgb(64, 64, 64);
@@ -299,11 +299,11 @@ html, body {
 
 
 .feature {
-  cursor: pointer;
+  cursor: default;
 }
 
 .feature.county {
-  cursor: pointer;
+  cursor: default;
 }
 
 .mesh {

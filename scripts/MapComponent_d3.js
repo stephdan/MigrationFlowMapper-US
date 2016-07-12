@@ -48,8 +48,8 @@ Flox.MapComponent_d3 = function() {
 			minPopDensityFill: [189,229,187],
 			maxPopDensityFill: [81,154,188],
 
-			minFlowStroke: [174,117,120],
-			maxFlowStroke: [174,49,46],
+			minFlowStroke: [174,117,120, 1],
+			maxFlowStroke: [174,49,46, 1],
 
 			necklaceNodeFill: [96,191,191],
 			necklaceNodeStroke: [44,99,99],
@@ -78,10 +78,18 @@ Flox.MapComponent_d3 = function() {
 			"25": "City"
 		},
 		
+		
 	    my = {};
+
+
 
 	// takes an array like [r,g,b] and makes it "rgb(r,g,b)" for use with d3
 	function rgbArrayToString(rgb){
+		
+		if(rgb[3]) {
+			return "rgba(" +  rgb[0] + "," + rgb[1] + "," + rgb[2] + "," + rgb[3] + ")";
+		}
+		
 		return "rgb(" +  rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
 	}
 
@@ -429,7 +437,8 @@ Flox.MapComponent_d3 = function() {
 		}
 		w = model_copy.getRelativeFlowValue(flow);
 		c = Flox.ColorUtils.blend(colors.minFlowStroke, colors.maxFlowStroke, w);
-		return "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")";
+		return rgbArrayToString(c);
+		//return "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")";
 	}
 
 	/**
@@ -489,17 +498,18 @@ Flox.MapComponent_d3 = function() {
 					// return buildSvgArrowPath(d);
 				// });
 		// }
-		// svgFlows.append("path")
-			// .classed("curveOutline", true)
-			// .attr("stroke", "#ccc")
-			// .style("cursor", "default")
-			// .attr("fill", "none")
-			// .attr("stroke-width", function(d) {
-				// return activeModel.getFlowStrokeWidth(d) + 2;
-			// })
-			// .attr("d", function(d) {
-				// return buildSvgFlowPath(d, drawArrows);
-			// });
+		svgFlows.append("path")
+			.classed("curveOutline", true)
+			.attr("stroke", "#ccc")
+			.style("cursor", "default")
+			.attr("fill", "none")
+			.attr("stroke-width", function(d) {
+				return (model_copy.getFlowStrokeWidth(d) + 4 * model_copy.settings.scaleMultiplier);
+			})
+			.attr("opacity", 0.0)
+			.attr("d", function(d) {
+				return buildSvgFlowPath(d, drawArrows);
+			});
 			
 		// Draw arrowheads
 		if (drawArrows) {
@@ -527,9 +537,9 @@ Flox.MapComponent_d3 = function() {
 			.attr("fill", "none")
 			.attr("stroke-width", function(d) {
 				var strokeWidth = model_copy.getFlowStrokeWidth(d);
-				if(strokeWidth < 1) {
-					//d3.select(this).attr("stroke-dasharray", "5,5");
-					return 1;
+				if(strokeWidth <= model_copy.settings.minFlowWidth * model_copy.settings.scaleMultiplier) {
+					d3.select(this).attr("stroke-dasharray", strokeWidth * 6 + "," + strokeWidth * 6);
+					//return 1;
 				}
 				return strokeWidth;
 			})
@@ -566,7 +576,7 @@ Flox.MapComponent_d3 = function() {
 
 	function drawPoints() {
 		var //points = model_copy.getPoints(),
-			points = Flox.getActiveFullModel().getPoints(),
+			points = model_copy.getPoints(),
 		    circles = d3.select("#pointsLayer")
 						.selectAll("circle")
 						.data(points)
@@ -1182,7 +1192,7 @@ Flox.MapComponent_d3 = function() {
 					.data(stateNodes)
 					.enter().append("g")
 					.attr("class", "necklaceNode")
-					.style("cursor", "pointer");
+					.style("cursor", "default");
 
 		// Load the data.
 		nodes.append("circle")

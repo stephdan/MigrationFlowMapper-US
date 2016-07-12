@@ -589,8 +589,7 @@ Flox.GUI = (function($){
 			hideThese.push("necklaceMapButton");
 		}
 		
-		if(settings.selectedState !== false && settings.countyMode 
-			&& settings.selectedCounty === false) {
+		if(settings.selectedState !== false && settings.countyMode) {
 			showThese.push("innerFlowsButton");	
 		} else {
 			hideThese.push("innerFlowsButton");

@@ -38,6 +38,7 @@ Flox.Model = function() {
 			
 			// Map Appearance Settings
 			maxFlowWidth : 30,
+			minFlowWidth: 3,
 			maxNodeRadius : 10,
 			isShowLockedFlows : true,
 			flowDistanceFromStartPointPixel : 5,
@@ -64,7 +65,7 @@ Flox.Model = function() {
 			minNodeValue : 0,
 			maxNodeValue : 0,
 			meanNodeValue : 0,	
-			minFlowWidth: 0,
+			
 			
 			// Draw Settings
 			drawFlows : true,
@@ -97,7 +98,7 @@ Flox.Model = function() {
 			"FIPS36" : 0.35, // New York
 			"FIPS44" : 0.5, // Rhode Island
 			"FIPS48" : 2, // Texas
-			"FIPS54" : 1.5,  // West Virginia
+			"FIPS54" : 1.0,  // West Virginia
 			"FIPS72" : 0.5,
 			"allStates": 0.2
 		},
@@ -159,8 +160,7 @@ Flox.Model = function() {
 			meanFlowValue,
 			minNodeValue,
 			maxNodeValue,
-			meanNodeValue,
-			minFlowWidth;
+			meanNodeValue;
 		
 		if (flows.length < 1) {
 			minFlowValue = 0;
@@ -222,7 +222,7 @@ Flox.Model = function() {
             nodeCounter += 1;
 		}
 		meanNodeValue = nodeSum / nodeCounter;
-		minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / maxFlowValue);
+		//minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / maxFlowValue);
 		
 		settings.minFlowLength = minFlowLength;
 		settings.maxFlowLength = maxFlowLength;
@@ -232,7 +232,6 @@ Flox.Model = function() {
 		settings.minNodeValue = minNodeValue;
 		settings.maxNodeValue = maxNodeValue;
 		settings.meanNodeValue = meanNodeValue;
-		settings.minFlowWidth = minFlowWidth;
     }
     
     
@@ -523,9 +522,10 @@ Flox.Model = function() {
 			strokeWidth =  (settings.maxFlowWidth * flow.getValue()) / flows[0].getValue();
 		}
 		
-		// if(strokeWidth < 3) {
-			// return 3 * settings.scaleMultiplier;
-		// }
+		// If the width is smaller than the minimum, make it the minimum.
+		if(strokeWidth < settings.minFlowWidth) {
+			return settings.minFlowWidth * settings.scaleMultiplier;
+		}
 		return strokeWidth * settings.scaleMultiplier;
 	}
 
@@ -542,16 +542,17 @@ Flox.Model = function() {
 		endPt = flow.getEndPt();
 		startPt = flow.getStartPt();
 		
-		if(settings.useGlobalFlowWidth) {
-			minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / settings.maxFlowValue);
-		} else {
-			if(flows.length < settings.maxFlows) {
-				lastFlowIndex = flows.length -1;
-			} else {
-				lastFlowIndex = settings.maxFlows - 1;
-			}
-			minFlowWidth = (settings.maxFlowWidth * flows[lastFlowIndex].getValue() / flows[0].getValue());
-		}
+		// if(settings.useGlobalFlowWidth) {
+			// //minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / settings.maxFlowValue);
+			// minFlowWidth = settings.minFlowWidth
+		// } else {
+			// if(flows.length < settings.maxFlows) {
+				// lastFlowIndex = flows.length -1;
+			// } else {
+				// lastFlowIndex = settings.maxFlows - 1;
+			// }
+			// minFlowWidth = (settings.maxFlowWidth * flows[lastFlowIndex].getValue() / flows[0].getValue());
+		// }
 		
 		
 		if(endPt.necklaceMapNode) {
@@ -575,7 +576,7 @@ Flox.Model = function() {
 		arrowSettings = {
 			endClipRadius: endClipRadius,
 			startClipRadius: startClipRadius,
-			minFlowWidth: minFlowWidth,
+			minFlowWidth: settings.minFlowWidth,
 			maxFlowValue: maxFlowValue,
 			maxFlowWidth: settings.maxFlowWidth,
 			scaleMultiplier: settings.scaleMultiplier,
@@ -637,12 +638,20 @@ Flox.Model = function() {
 	}
 
 	function getRelativeFlowValue(flow) {
-		if(settings.useGlobalFlowWidth) {
-			return (flow.getValue() - settings.minFlowValue)
-                / (settings.maxFlowValue - settings.minFlowValue);
-		}
-		return (flow.getValue() - flows[flows.length-1].getValue())
-            / (flows[0].getValue() - flows[flows.length-1].getValue());
+		// if(settings.useGlobalFlowWidth) {
+			// return (flow.getValue() - settings.minFlowValue)
+                // / (settings.maxFlowValue - settings.minFlowValue);
+		// }
+		// return (flow.getValue() - flows[flows.length-1].getValue())
+            // / (flows[0].getValue() - flows[flows.length-1].getValue());
+            
+		// Use width instead
+		var flowWidth = getFlowStrokeWidth(flow),
+			min = settings.minFlowWidth * settings.scaleMultiplier,
+			max = settings.maxFlowWidth * settings.scaleMultiplier;
+			
+		//  where between min and max is it?
+		return (flowWidth - min) / (max - min);
 	}
 
 	function getFlowColor(flow) {
@@ -1026,7 +1035,7 @@ Flox.Model = function() {
 		var i, j,
 			minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / settings.maxFlowValue);
 		
-		settings.minFlowWidth = minFlowWidth;
+		//settings.minFlowWidth = minFlowWidth;
 		
 		return settings;
 	};

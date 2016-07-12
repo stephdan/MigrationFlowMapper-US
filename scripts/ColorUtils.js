@@ -23,7 +23,7 @@ Flox.ColorUtils = (function() {
 		    r = Math.round(r1 + (r2 - r1) * ratio),
 		    g = Math.round(g1 + (g2 - g1) * ratio),
 		    b = Math.round(b1 + (b2 - b1) * ratio),
-		    a = Math.round(a1 + (a2 - a1) * ratio);
+		    a = (a1 + (a2 - a1) * ratio);
 	
 		return [r,g,b,a];
 	

@@ -857,15 +857,15 @@ Flox.Flow = function(sPt, ePt, val, newID) {
         // stroke size.
 		flowWidth = ((s.maxFlowWidth * value) / s.maxFlowValue) * s.scaleMultiplier;
 			
-		// if(flowWidth < 3 * s.scaleMultiplier) {
-			// flowWidth = 3 * s.scaleMultiplier;
-		// }
+		if(flowWidth < s.minFlowWidth * s.scaleMultiplier) {
+			flowWidth = s.minFlowWidth * s.scaleMultiplier;
+		}
 		
 		strokeDiff = (s.maxFlowWidth * s.scaleMultiplier) - flowWidth;
 	
 		// Get the difference between this flow's stroke size and the smallest
         // stroke size.
-        smallWidthDiff = flowWidth - s.minFlowWidth;
+        smallWidthDiff = flowWidth - (s.minFlowWidth * s.scaleMultiplier);
 	
 		// Get a percentage of that difference based on valRatio
 		plusStroke = strokeDiff * (s.arrowSizeRatio);
