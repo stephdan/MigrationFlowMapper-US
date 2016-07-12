@@ -102,13 +102,22 @@ Flox.MapComponent_d3 = function() {
 	function buildFlowTooltipText(d) {
 		var moverText = "<span class='tooltipValue'>" + numberWithCommas(d.getValue()) + "</span>",
 			typeText,
-			toFromText;
+			toFromText,
+			flowType,
+			filterSettings = Flox.getFilterSettings();
 		
-		if(d.AtoB) {
+		if(filterSettings.netFlows === false) {
 			// it's a total flow
 			typeText = " <div class='tooltipTypeHolder'>TOTAL<br/>MOVERS</div><br/>";
-			toFromText = "<div class='tooltipToFromText'>" + d.getStartPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getEndPt().name + ": " + numberWithCommas(d.AtoB) + "<br/>" + 
-				             d.getEndPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getStartPt().name + ": " + numberWithCommas(d.BtoA); + "</div>"
+			// But sometimes it's directional and needs to be treated differently.
+			if(filterSettings.countyIncoming === false || filterSettings.countyOutgoing === false) {
+				// do things differently, more like a net flow
+				toFromText = "<div class='tooltipToFromText'><span style='font-size: 8px;'>from </span>" + d.getStartPt().name + "<br/>" + 
+				             "<span style='font-size: 8px;'>to </span>" + d.getEndPt().name + "</div>";
+			} else {
+				toFromText = "<div class='tooltipToFromText'>" + d.getStartPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getEndPt().name + ": " + numberWithCommas(d.AtoB) + "<br/>" + 
+				             d.getEndPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getStartPt().name + ": " + numberWithCommas(d.BtoA) + "</div>";
+			}
 		} else {
 			// it's a net flow
 			typeText = " <div class='tooltipTypeHolder'>NET<br/>MOVERS</div><br/>";

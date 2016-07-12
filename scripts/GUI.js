@@ -192,47 +192,59 @@ Flox.GUI = (function($){
 		}
 	);
 	
-	// $("#incomingFlowsButton").click(
-		// function() {
-			// var buttonIcon = $(this).find("img");
-			// if($(this).hasClass("noIncomingFlows")) {
-				// $(this).removeClass("noIncomingFlows");
-				// buttonIcon.animate({
-						// "max-height": "100%",
-						// "opacity": 1
-					// }, 200, function() {
-				// });
-			// } else {
-				// $(this).addClass("noIncomingFlows");
-				// buttonIcon.animate({
-						// "max-height": "70%",
-						// "opacity": 0.3
-					// }, 200, function() {
-				// });
-			// }
-		// }
-	// );
+	$("#incomingFlowsButton").click(
+		function() {
+			var buttonIcon = $(this).find("img"),
+				settings = Flox.getFilterSettings();
+			
+			if(settings.countyIncoming === true) {
+				settings.countyIncoming = false;
+				buttonIcon.animate({
+						"max-height": "70%",
+						"opacity": 0.3
+					}, 200, function() {
+				});
+			} else {
+				settings.countyIncoming = true;
+				buttonIcon.animate({
+						"max-height": "100%",
+						"opacity": 1
+					}, 200, function() {
+				});
+			}
+			// Only updateMap if a state or county is selected
+			if(settings.selectedCounty !== false || settings.selectedState !== false) {
+				Flox.updateMap();
+			}
+		}
+	);
 	
-	// $("#outgoingFlowsButton").click(
-		// function() {
-			// var buttonIcon = $(this).find("img");
-			// if($(this).hasClass("noOutgoingFlows")) {
-				// $(this).removeClass("noOutgoingFlows");
-				// buttonIcon.animate({
-						// "max-height": "100%",
-						// "opacity": 1
-					// }, 200, function() {
-				// });
-			// } else {
-				// $(this).addClass("noOutgoingFlows");
-				// buttonIcon.animate({
-						// "max-height": "70%",
-						// "opacity": 0.3
-					// }, 200, function() {
-				// });
-			// }
-		// }
-	// );
+	$("#outgoingFlowsButton").click(
+		function() {
+			var buttonIcon = $(this).find("img"),
+				settings = Flox.getFilterSettings();
+			
+			if(settings.countyOutgoing === true) {
+				settings.countyOutgoing = false;
+				buttonIcon.animate({
+						"max-height": "70%",
+						"opacity": 0.3
+					}, 200, function() {
+				});
+			} else {
+				settings.countyOutgoing = true;
+				buttonIcon.animate({
+						"max-height": "100%",
+						"opacity": 1
+					}, 200, function() {
+				});
+			}
+			// Only updateMap if a state or county is selected
+			if(settings.selectedCounty !== false || settings.selectedState !== false) {
+				Flox.updateMap();
+			}
+		}
+	);
 	
 	$("#netOrTotalFlowsButton").click(
 		function() {

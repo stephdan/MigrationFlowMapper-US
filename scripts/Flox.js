@@ -10,7 +10,7 @@ var mapComponent,
     model_master,
 	
 	filterSettings = {
-		netFlows : true,
+		netFlows: true,
 		inStateFlows: true,
 		outerStateFlows: true,
 		countyIncoming: true,

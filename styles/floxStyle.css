@@ -78,7 +78,7 @@ html, body {
 
 #slidingPanel {
 	position: absolute;
-	width: 335px;
+	width: 500px;
 	height: 95px;
 	position: fixed;
 	bottom: 0;

@@ -297,7 +297,7 @@ Flox.ModelFilter = function(model_master) {
 		return model_copy;
 	};
 	
-	my.getTotalFlowsModel = function() {
+	my.getTotalFlowsModel = function(settings) {
 		// Get the flows from the original model
 		var flows = model_copy.getAllFlows(),
 		    totalFlows = [],
@@ -309,6 +309,18 @@ Flox.ModelFilter = function(model_master) {
 		    id1,
 		    id2;
 		
+		// If a county or state polygon is selected, AND incoming or outgoing
+		// flows are being ommitted, don't do anything. 
+		if((settings.countyIncoming === false || settings.countyOutgoing === false)
+			&& ((settings.countyMode === true && settings.selectedCounty !== false)
+			|| (settings.stateMode === true && settings.selectedState !== false))) {
+		    model_copy.settings.drawArrows = true;
+			return model_copy;
+		}
+
+		// initialize the incoming and outgoing flows for each node, because
+		// they are about to change. Nodes will no longer have incoming our 
+		// outgoing flows, just a non-directional total flow.
 		for(i = 0; i < nodes.length; i += 1) {
 			nodes[i].outgoingFlows = [];
 			nodes[i].incomingFlows = [];
@@ -342,6 +354,7 @@ Flox.ModelFilter = function(model_master) {
 		model_copy.addFlows(totalFlows);
 
 		//Flox.logFlows(model_copy);
+		model_copy.settings.drawArrows = false;
 		return model_copy;
 	};
 		
@@ -422,18 +435,20 @@ Flox.ModelFilter = function(model_master) {
 				if(filterSettings.stateMode===false) {
 					mergeOutOfStateTotalFlows(); 
 				}
-				my.getTotalFlowsModel();
+				
+				my.getTotalFlowsModel(filterSettings);
+				
 				model_copy.updateCachedValues();
-				model_copy.settings.drawArrows = false; // total flows are bi-directional, so no arrows
+				//model_copy.settings.drawArrows = false; // total flows are bi-directional, so no arrows
 				//Flox.setDerivedModels( { "totalFlowsModel": (copyModel(model_copy)) } );
 			} else {
 				//model_copy = copyModel(Flox.getDerivedModel("totalFlowsModel"));
-				model_copy.settings.drawArrows = false; 
+				//model_copy.settings.drawArrows = false; 
 			}
 		}
 		
 		// If a county is selected, get the model for just that county.
-		if(filterSettings.selectedCounty !== false) {
+		if(filterSettings.countyMode && filterSettings.selectedCounty !== false) {
 			getSelectedCountyModel(filterSettings);
 		}		
 		
@@ -460,7 +475,7 @@ Flox.ModelFilter = function(model_master) {
 		//endTime = performance.now() - startTime;
 		//console.log("filterBySettings took " + Math.floor(endTime) + "ms");
 		
-		filteredNodes = model_copy.getPoints();
+		//filteredNodes = model_copy.getPoints();
 		
 		return model_copy;
 	};
