@@ -51,8 +51,12 @@ Flox.GUI = (function($){
 	$("#usStateFlowsButton").click(
 		function() {
 			var settings = Flox.getFilterSettings();
-			Flox.importStateToStateMigrationFlows();
 			settings.selectedState = false;
+			settings.selectedCounty = false;
+			settings.stateMode = true;
+			settings.countyMode = false;
+			Flox.importStateToStateMigrationFlows();
+			// Could this instead call updateMap?
 		}
 	);
 	
@@ -72,7 +76,8 @@ Flox.GUI = (function($){
 			
 			if(settings.countyMode === true) {
 				// It's in county mode. So get it out of county mode! And 
-				// into state mode!
+				// into state mode, but showing only flows for the selected
+				// state
 				settings.countyMode = false;
 				settings.stateMode = true;
 				
@@ -81,7 +86,7 @@ Flox.GUI = (function($){
 				buttonIcon.attr("src", "resources/icons/buttons/counties_white.svg")
 						  .attr("id", "counties");
 				
-				Flox.importStateToStateMigrationFlows();
+				Flox.importStateToStateMigrationFlows(true);
 				return;
 			} else if (settings.countyMode === false) {
 				// It's not in county mode. Put it in county mode!
@@ -133,21 +138,6 @@ Flox.GUI = (function($){
 			if(settings.stateMode === false) {
 				Flox.updateMap();
 			}
-			// if($(this).hasClass("noNecklaceMaps")) {
-				// $(this).removeClass("noNecklaceMaps");
-				// buttonIcon.animate({
-						// "max-height": "100%",
-						// "opacity": 1
-					// }, 200, function() {
-				// });
-			// } else {
-				// $(this).addClass("noNecklaceMaps");
-				// buttonIcon.animate({
-						// "max-height": "70%",
-						// "opacity": 0.3
-					// }, 200, function() {
-				// });
-			// }
 		}
 	);
 	
@@ -173,22 +163,6 @@ Flox.GUI = (function($){
 			if(settings.stateMode === false) {
 				Flox.updateMap();
 			}
-			
-			// if($(this).hasClass("noInnerFlows")) {
-				// $(this).removeClass("noInnerFlows");
-				// buttonIcon.animate({
-						// "max-height": "100%",
-						// "opacity": 1
-					// }, 200, function() {
-				// });
-			// } else {
-				// $(this).addClass("noInnerFlows");
-				// buttonIcon.animate({
-						// "max-height": "70%",
-						// "opacity": 0.3
-					// }, 200, function() {
-				// });
-			// }
 		}
 	);
 	
@@ -262,59 +236,6 @@ Flox.GUI = (function($){
 			Flox.updateMap();
 		}
 	);
-	
-	// $("#stateFlowsRadioLabel").on("click", function() {
-		// var settings = Flox.getFilterSettings();
-		// if(settings.stateMode === false) {
-			// // do stuff			
-			// Flox.importStateToStateMigrationFlows();
-		// }
-	// });
-// 	
-	// $("#countyFlowsRadioLabel").on("click", function() {
-		// var settings = Flox.getFilterSettings();
-		// if(settings.countyMode === false) {
-			// settings.stateMode = false;
-			// settings.countyMode = true;
-// 			
-			// // if a state is selected, show the county flows in that state.
-			// if(settings.selectedState !== false) {
-				// Flox.selectState(settings.selectedState);
-			// } else if (settings.selectedState === false) {
-				// // need to change the color of the states to gray...
-				// // No layout will occur. This is kindof a special case. 
-				// Flox.enterClickAStateMode();
-			// }
-			// //Flox.importTotalCountyFlowData(settings.selectedState);
-		// }
-	// });
-	
-	// This works.
-	// $("#netFlowRadioLabel").on("click", function() {
-// 		
-		// // Get the filter settings from Flox.
-		// var settings = Flox.getFilterSettings();
-// 		
-		// // If netFlows is false, change to true, filter, layout, draw
-		// if(settings.netFlows === false) {
-			// settings.netFlows = true;
-			// Flox.updateMap();
-		// }
-	// });
-	
-	// This works.
-	// $("#totalFlowRadioLabel").on("click", function() {
-// 		
-		// // Get the filter settings from Flox.
-		// var settings = Flox.getFilterSettings();
-// 		
-		// // If netFlows is false, change to true, filter, layout, draw
-		// if(settings.netFlows === true) {
-			// settings.netFlows = false;
-			// Flox.updateMap();
-		// }
-	// });
-	
 	
 	// This works.
 	$("#inStateFlowsToggle").on("click", function() {
@@ -461,7 +382,28 @@ Flox.GUI = (function($){
 		}
 	}
 
-// Hint Text ------------------------------------------------------------------
+	// Set the button icons based on current filter settings.
+	// There is only 1 button that needs this update right now, but
+	// there could be more later (who knows where this is going!).
+	function updateButtonIcons() {
+		// make sure the county/state flows button is showing the correct icon.
+		var stateOrCountyFlowsButtonIcon = $("#stateOrCountyFlowsButton").find("img"),
+			settings = Flox.getFilterSettings();
+		
+		// There is really only one case where this button isn't being updated
+		// properly, and that's when...I forget. 
+		// Oh, when a state is clicked while viewing a county flow. 
+		// When a state is clicked, it'll always go into multi-county viewing
+		// mode. So, a state is selected, but no county is selected.
+		if(settings.countyMode && settings.selectedCounty === false) {
+			// should look like a solid state.
+			stateOrCountyFlowsButtonIcon.attr("src", "resources/icons/buttons/state_white.svg")
+						  .attr("id", "state");
+		}
+		
+	}
+
+// Hint Text Stuff -------------------------------------------------------------
 
 	$("#usStateFlowsButton").hover(function() {
 		$("#hintText").text("Display state-to-state flows for the US");
@@ -492,6 +434,8 @@ Flox.GUI = (function($){
 	}, function() {
 		my.setHintText();
 	});
+
+// END Hint Text Stuff ---------------------------------------------------------
 
 	my.openSlidingPanel = function() {
 		openSlidingPanel();
@@ -575,6 +519,7 @@ Flox.GUI = (function($){
 	// Show and hide buttons and set button icons based on current model 
 	// and filter settings.
 	my.updateGUI = function() {
+		console.log("updateGUI called");
 		var settings = Flox.getFilterSettings(),
 			hideThese = [],
 			showThese = [];
@@ -605,12 +550,23 @@ Flox.GUI = (function($){
 			showThese.push("innerFlowsButton");	
 		} else {
 			hideThese.push("innerFlowsButton");
+		}	
+		
+		if((settings.stateMode && settings.selectedState !== false) ||
+			(settings.countyMode && settings.selectedCounty !== false)) {
+			showThese.push("incomingFlowsButton");
+			showThese.push("outgoingFlowsButton");
+		} else {
+			hideThese.push("incomingFlowsButton");
+			hideThese.push("outgoingFlowsButton");
 		}
+		
 		// if it's not hovering over a button, set the hint text
 		// if ($('.panelButtonContainer:hover').length === 0) {
 		    // my.setHintText();
 		// }
 		//my.setHintText();
+		updateButtonIcons();
 		my.hidePanelButtons(hideThese);
 		my.showPanelButtons(showThese);
 		updateTitle();

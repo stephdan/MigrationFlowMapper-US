@@ -187,7 +187,7 @@ function layoutFlows(model) {
 	console.log("Layout time in milliseconds: " + Math.round(endTime - startTime));
 }
 
-function importStateToStateMigrationFlows() {
+function importStateToStateMigrationFlows(keepSelectedState) {
 	// clear the model
     model_master.deleteAllFlows();
     derivedModels = {};
@@ -200,7 +200,9 @@ function importStateToStateMigrationFlows() {
 	model_master.settings.scaleMultiplier = 4; // FIXME hardcoded
 	model_master.settings.datasetName = "states";
 	
-	filterSettings.selectedState = false;
+	if(!keepSelectedState) {
+		filterSettings.selectedState = false;
+	}
 	
 	var flowPath = "data/census/US_State_migration_2013_flows.csv",
 		stuffImportWorkerNeeds = {};
@@ -359,8 +361,8 @@ my.runLayoutWorker = function () {
 	runLayoutWorker();
 };
 
-my.importStateToStateMigrationFlows = function () {
-	importStateToStateMigrationFlows();
+my.importStateToStateMigrationFlows = function (keepSelectedState) {
+	importStateToStateMigrationFlows(keepSelectedState);
 };
 
 my.importTotalCountyFlowData = function(stateFIPS) {		

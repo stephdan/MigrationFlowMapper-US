@@ -688,7 +688,7 @@ Flox.FlowLayouter = function (model) {
 		var flowStrokeWidth = model.getFlowStrokeWidth(flow),
 			nodeRadius = node.r 
 		                     + (model.settings.nodeTolerancePx 
-		                     / model.settings.mapScale),
+		                     / model.settings.scaleMultiplier),
 			threshDist =  nodeRadius + (flowStrokeWidth/2),
 			// how far is the node from the flow?
 			shortestDist = flow.distance({x: node.x, y: node.y});
@@ -763,7 +763,7 @@ Flox.FlowLayouter = function (model) {
 	}
 
 	function moveFlowIntersectingObstaclesSPIRAL(flow, obstacles) {
-		var dist = model.settings.SPIRAL_SPACING_PX * model.settings.mapScale,
+		var dist = model.settings.SPIRAL_SPACING_PX * model.settings.scaleMultiplier,
 			cPt = flow.getCtrlPt(),
 			originalX = cPt.x,
 			originalY = cPt.y,
@@ -903,8 +903,8 @@ Flox.FlowLayouter = function (model) {
 				// Add the unitVectors to the control point. Also, multiply the
 		        // unitVectors by 2. This will cut the iterations in half without
 		        // losing significant fidelity. 
-		        newX = cPt.x + ((unitVectorX / model.settings.mapScale) * 2);
-		        newY = cPt.y + ((unitVectorY / model.settings.mapScale) * 2);
+		        newX = cPt.x + ((unitVectorX / model.settings.scaleMultiplier) * 2);
+		        newY = cPt.y + ((unitVectorY / model.settings.scaleMultiplier) * 2);
 		        cPt.x = newX;
 		        cPt.y = newY;
 	       }
@@ -927,8 +927,8 @@ Flox.FlowLayouter = function (model) {
 					// Add the unitVectors to the control point. Also, multiply the
 			        // unitVectors by 2. This will cut the iterations in half without
 			        // losing significant fidelity. 
-			        newX = cPt.x + ((unitVectorX / model.settings.mapScale) * 2);
-			        newY = cPt.y + ((unitVectorY / model.settings.mapScale) * 2);
+			        newX = cPt.x + ((unitVectorX / model.settings.scaleMultiplier) * 2);
+			        newY = cPt.y + ((unitVectorY / model.settings.scaleMultiplier) * 2);
 			        cPt.x = newX;
 			        cPt.y = newY;
 		       }

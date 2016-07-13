@@ -110,7 +110,9 @@ Flox.MapComponent_d3 = function() {
 			// it's a total flow
 			typeText = " <div class='tooltipTypeHolder'>TOTAL<br/>MOVERS</div><br/>";
 			// But sometimes it's directional and needs to be treated differently.
-			if(filterSettings.countyIncoming === false || filterSettings.countyOutgoing === false) {
+			if((filterSettings.countyIncoming === false || filterSettings.countyOutgoing === false) &&
+				((filterSettings.stateMode && filterSettings.selectedState !== false) ||
+			(filterSettings.countyMode && filterSettings.selectedCounty !== false))) {
 				// do things differently, more like a net flow
 				toFromText = "<div class='tooltipToFromText'><span style='font-size: 8px;'>from </span>" + d.getStartPt().name + "<br/>" + 
 				             "<span style='font-size: 8px;'>to </span>" + d.getEndPt().name + "</div>";
