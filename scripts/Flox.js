@@ -36,9 +36,6 @@ function refreshMap(model_copy) {
 
 // TODO If the browser can't do webworkers, then webworkers shouldn't be used.
 function initLayoutWorker(modelCopy, callback) {
-
-	
-	
 	var flows,
 		ctrlPts,
 		flow, flowCPt, 
@@ -80,6 +77,9 @@ function initLayoutWorker(modelCopy, callback) {
 				}
 				// Run the callback function, which is typically refreshMap();
 				callback();
+			}
+			if(e.data[1] === 100) {
+				Flox.GUI.hideLayoutProgressBar();
 			}
 		};	
 	}
@@ -448,9 +448,7 @@ my.updateMap = function() {
 				mapComponent.configureNecklaceMap(filteredModel);
 			}
 			runLayoutWorker(filteredModel, function() {
-				Flox.GUI.updateLayoutProgressBar(100);
 				refreshMap(filteredModel);
-				Flox.GUI.hideLayoutProgressBar();
 			});	
 		});
 	} else {

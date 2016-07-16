@@ -760,6 +760,45 @@ Flox.MapComponent_d3 = function() {
 		
 	}
 
+	function drawIntermediateFlowPoints() {
+		// flow points should be stored inside flows, right?
+		var flows,
+			flowPoints,
+			allFlowPoints = [],
+			flow,
+			circles,
+			i, j;
+		
+		model_copy.cacheAllFlowLineSegments();
+		flows = model_copy.getLargestFlows();
+		
+		for(i = 0; i < flows.length; i += 1) {
+			flowPoints = flows[i].getCachedLineSegments();
+			for(j = 0; j < flowPoints.length; j += 1) {
+				allFlowPoints.push(flowPoints[j]);
+			}
+		}
+		
+		d3.select("#flowPointsLayer").remove();
+		
+		circles = d3.select("#mapFeaturesLayer").append("g").attr("id", "flowPointsLayer")
+			.selectAll("circle")
+			.data(allFlowPoints)
+			.enter().append("circle");
+			
+		circles.style("stroke", "black")
+			.style("fill", "white")
+			.attr("cx", function(d) {
+				return d.x;
+			})
+			.attr("cy", function(d) {
+				return d.y;
+			})
+			.attr("r", function(d) {
+				return 5 * model_copy.settings.scaleMultiplier;
+			});
+	}
+
 	/**
 	 * @param m : A copy of the model.
 	 */
@@ -799,6 +838,7 @@ Flox.MapComponent_d3 = function() {
 		} 
 
 		//drawObstacles();
+		//drawIntermediateFlowPoints();
 	}
 	
 	// TODO Are counties the only features that have a state fips as a class?

@@ -383,6 +383,9 @@ Flox.FlowLayouter = function (model) {
 
 		// Get the subset of flows that will exert force on targetFlow
 		flows = model.getFlows();
+		
+		// TODO this was the experimental stuff with ignoring flows that are
+		// far away. Not being done now. 
 		// for (i = 0, j = flows.length; i < j; i += 1) {
 // 			
 			// if (flows[i] !== targetFlow) { // Don't add the targetFlow

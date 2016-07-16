@@ -23,7 +23,7 @@ Flox.Model = function() {
 			antiTorsionWeight : 0.8,
 			angularDistributionWeight : 0.5,
 			nodeWeight : 0.0,
-			nodeTolerancePx : 0,
+			nodeTolerancePx : 1,
 			moveFlowsIntersectingNodes : true,
 			multipleIterations : true,
 			NBR_ITERATIONS : 100,
@@ -31,6 +31,8 @@ Flox.Model = function() {
 			FLOW_DISTANCE_THRESHOLD : 0.00000001, // TODO what should this be??
 			checkFlowBoundingBoxes : true,
 			maxFlows : 50,
+			
+			liveDrawing: true,
 			
 			// adjusts sizes of features to fit scale better
 			// TODO hardcoded everywhere, could be based off actual map scale.
@@ -674,16 +676,18 @@ Flox.Model = function() {
 	};
 	
 	/**
-	 * Cashe line segments of filtered flows.
+	 * Cashe line segments of all flows. Though really only need to do the largest flows.
 	 */
 	my.cacheAllFlowLineSegments = function () {
 		var gap = getFlowPointGap(),
 			flow,
 			rs, re,
-			i, j;
+			i, j,
+			bigFlows = my.getLargestFlows();
 		
-        for(i = 0, j = flows.length; i < j; i += 1) {
-			flow = flows[i];
+		
+        for(i = 0, j = bigFlows.length; i < j; i += 1) {
+			flow = bigFlows[i];
 			rs = settings.flowDistanceFromStartPointPixel > 0 ? getStartClipRadius(flow.getStartPt()) : 0;
 			re = settings.flowDistanceFromEndPointPixel > 0 ? getEndClipRadius(flow.getEndPt()) : 0;
 			flow.cacheClippedLineSegments(rs, re, gap);

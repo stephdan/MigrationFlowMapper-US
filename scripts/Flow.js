@@ -123,8 +123,6 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 	}
 
 	function toRegularStraightLineSegments(gap) {
-		
-		
 		var regularPoints = [],
 		    irregularPoints = toIrregularStraightLineSegments(gap),
 		
@@ -133,7 +131,6 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 			// FIXME abusing the deCasteljauTol, which is not really the tolerance
 			// for de Casteljau's algorithm (it is devided by 100).
 			targetDist = totalLength / Math.round(totalLength / gap),
-		
 		
 			startX = irregularPoints[0], // px coords!
 			startY = irregularPoints[1], // px coords!

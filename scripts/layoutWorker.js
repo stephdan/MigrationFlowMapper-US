@@ -35,9 +35,12 @@ function layoutFlows() {
         layouter.layoutAllFlows(weight);
         
         if(i % 5 === 0) {
-			postMessage([false, (i/iterations * 100)]);
+			if(model.settings.liveDrawing) {
+				postMessage([model.getCtrlPts(), (i/iterations * 100)]);
+			} else {
+				postMessage([false, (i/iterations * 100)]);
+			}
         }
-        
     }
 	
 	// Run second half of iterations, with MFIN
@@ -48,7 +51,11 @@ function layoutFlows() {
 			layouter.moveFlowsIntersectingNodes();
 		}
 		if(i % 5 === 0) {
-			postMessage([false, (i/iterations * 100)]);
+			if(model.settings.liveDrawing) {
+				postMessage([model.getCtrlPts(), (i/iterations * 100)]);
+			} else {
+				postMessage([false, (i/iterations * 100)]);
+			}
         }	
     }
     
