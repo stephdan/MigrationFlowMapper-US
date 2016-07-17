@@ -47,7 +47,7 @@ function layoutFlows() {
     for (i = Math.floor(iterations/2); i < iterations; i += 1) {
         weight = 1 - i/iterations;
         layouter.layoutAllFlows(weight);
-        if(model.settings.moveFlowsIntersectingNodes) {
+        if(model.settings.moveFlowsIntersectingObstacles) {
 			layouter.moveFlowsIntersectingNodes();
 		}
 		if(i % 5 === 0) {

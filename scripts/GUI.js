@@ -580,7 +580,23 @@ $("#globalFlowWidthCheckbox").on("click", function() {
 	Flox.updateMap();
 });
 
+$("#mfooCheckbox").on("click", function() {
+	console.log(this.checked);
+	Flox.getModel().settings.moveFlowsIntersectingObstacles = this.checked;
+	Flox.updateMap();
+});
 
+$("#moveFlowsOffArrowheads").on("click", function() {
+	console.log(this.checked);
+	Flox.getModel().settings.moveFlowsOffArrowheads = this.checked;
+	Flox.updateMap();
+});
+
+$("#moveFlowsOffNodes").on("click", function() {
+	console.log(this.checked);
+	Flox.getModel().settings.moveFlowsOffNodes = this.checked;
+	Flox.updateMap();
+});
 
 	return my;
 

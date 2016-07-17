@@ -76,6 +76,10 @@ Flox.FlowLayouter = function (model) {
 		
 		var a4, a8;
 		
+		if(exp === 0) {
+			return Math.sqrt(a2);
+		}
+		
         if (exp === 1) {
             return a2;
         }
@@ -544,11 +548,11 @@ Flox.FlowLayouter = function (model) {
         force.scale(angularDistributionWeight);
         
         if(isNaN(force.fx)){
-			console.log("NaN in _computeAngularDistributionForce!");
+			console.log("NaN in computeAngularDistributionForce!");
         }
         
         if(isNaN(force.fy)){
-			console.log("NaN in _computeAngularDistributionForce!");
+			console.log("NaN in computeAngularDistributionForce!");
         }
         
         return force;
@@ -624,23 +628,12 @@ Flox.FlowLayouter = function (model) {
 	            ctrlPt.x = ctrlPt.x + weight * f.fx;
 	            ctrlPt.y = ctrlPt.y + weight * f.fy;
 	
+				// Angular distribution weight gets larger with each iteration.
 	            angularDistWeight = weight * (1 - weight);
-	            angularDistForce = angularDistForces[i];
-				
-				newCPtX = ctrlPt.x + angularDistWeight * angularDistForce.fx;
-				newCPtY = ctrlPt.y + angularDistWeight * angularDistForce.fy;
-				
-				if(isNaN(newCPtX)) {
-					console.log("NaN in FlowLayouter!");
-				}
-				
-				if(isNaN(newCPtY)) {
-					console.log("NaN in FlowLayouter!");
-				}
-				
-	            ctrlPt.x = newCPtX;
-	            ctrlPt.y = newCPtY;
-	
+	            angularDistForce = angularDistForces[i];				
+
+	            //ctrlPt.x = ctrlPt.x + angularDistWeight * angularDistForce.fx;
+	            //ctrlPt.y = ctrlPt.y + angularDistWeight * angularDistForce.fy;
 	
 	            if(model.settings.enforceRangebox) {	                
 	                flow.enforceRangebox(model.settings.flowRangeboxHeight);
@@ -703,6 +696,7 @@ Flox.FlowLayouter = function (model) {
 			arrows,
 			nodeObstacles = [],
 			arrowObstacles = [],
+			returnObstacles = [],
 			i, j, node, arrow, radius, 
 			flows = model.getLargestFlows(), // Assumed these all have arrows
 			flow;
@@ -729,7 +723,17 @@ Flox.FlowLayouter = function (model) {
 									type: "arrow"});
 			}
 		}
-		return nodeObstacles.concat(arrowObstacles);
+		
+		
+		if(model.settings.moveFlowsOffNodes) {
+			returnObstacles = returnObstacles.concat(nodeObstacles);
+		}
+		
+		if(model.settings.moveFlowsOffArrowheads) {
+			returnObstacles = returnObstacles.concat(arrowObstacles);
+		}
+		
+		return returnObstacles;
 	}
 
 	function flowIntersectsObstacle(flow, obstacles) {

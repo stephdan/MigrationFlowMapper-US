@@ -144,13 +144,37 @@
 		
 		<div class="checkbox">
 			<p style="font-size: 16px">Debug/Options</p>
+			
 			<label>
-				<input type="checkbox" value="" checked="true" id="globalFlowWidthCheckbox"/>
+				<input type="checkbox" value="" checked id="globalFlowWidthCheckbox"/>
 				Global Flow Width
 			</label>
+			
+			<label>
+				<input type="checkbox" value="" checked id="mfooCheckbox"/>
+				Move Flows Off Obstacles
+			</label>
+
+			<label>
+				<input type="checkbox" value="" checked id="moveFlowsOffArrowheads"/>
+				Arrow Obstacles
+			</label>
+			
+			<label>
+				<input type="checkbox" value="" checked id="moveFlowsOffNodes"/>
+				Node Obstacles
+			</label>
+
 		</div>
-		
 	</div>
+	
+	<div id="coordinateDisplay">
+		x: <span id="xCoord"></span> <br />
+		y: <span id="yCoord"></span> <br />
+		lat: <span id="latitude"></span> <br />
+		long: <span id="longitude"></span>
+	</div>
+	
 
     <!-- Map container. -->
     <div id="map"></div>
