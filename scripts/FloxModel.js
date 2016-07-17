@@ -13,25 +13,22 @@ Flox.Model = function() {
 	
 		settings = {
 			// Layout Settings
-			maxFlowPoints : 20,
-			distanceWeightExponent : 0,
-			peripheralStiffnessFactor : 0.1,
-			maxFlowLengthSpringConstant : 0.05,
-			minFlowLengthSpringConstant : 0.5,
-			enforceRangebox : true,
-			flowRangeboxHeight : 0.4,
-			antiTorsionWeight : 0.8,
+			maxFlowPoints : 25, // match
+			distanceWeightExponent : 4, // Should be 0, 1, 2, 4, 8, 16, or 16+ match
+			peripheralStiffnessFactor : 0.5, // match
+			maxFlowLengthSpringConstant : 0.05,// match
+			minFlowLengthSpringConstant : 0.5,// match
+			enforceRangebox : true,// match
+			flowRangeboxHeight : 0.2,// match
+			antiTorsionWeight : 0.8,// match
 			angularDistributionWeight : 0.0,
-			nodeWeight : 0.0,
-			nodeTolerancePx : 1,
+			nodeWeight : 0.0, // not matched, should work when this is 0, too
+			minObstacleDistPx : 2, // match
 			moveFlowsIntersectingObstacles : true, // TODO this is called different things in different places
-			moveFlowsOffArrowheads: true,
-			moveFlowsOffNodes: true,
-			multipleIterations : true,
-			NBR_ITERATIONS : 100,
-			showForceAnimation : false,
-			FLOW_DISTANCE_THRESHOLD : 0.00000001, // TODO what should this be??
-			checkFlowBoundingBoxes : true,
+			moveFlowsOffArrowheads: true,// match
+			moveFlowsOffNodes: true,// match
+			multipleIterations : true,// match
+			NBR_ITERATIONS : 100,// match
 			maxFlows : 50,
 			
 			liveDrawing: true,

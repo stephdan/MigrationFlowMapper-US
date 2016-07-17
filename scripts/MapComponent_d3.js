@@ -664,7 +664,7 @@ Flox.MapComponent_d3 = function() {
 					return d.y;
 			   })
 			   .attr("r", function(d) {
-					return (d.r + model_copy.settings.nodeTolerancePx);
+					return (d.r + model_copy.settings.minObstacleDistPx);
 			   })
 			   .attr("pointer-events", "none");
 	}

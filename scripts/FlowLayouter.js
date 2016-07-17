@@ -74,24 +74,30 @@ Flox.FlowLayouter = function (model) {
 
     function geometricSeriesPower(a2, exp) {
 		
-		var a4, a8;
+		var a4, a8, a16;
 		
-		if(exp === 0) {
-			return Math.sqrt(a2);
-		}
-		
+		if (exp === 0) {
+            return 1;
+        }
         if (exp === 1) {
+            return Math.sqrt(a2);
+        }
+        if (exp === 2) {
             return a2;
         }
         a4 = a2 * a2;
-        if (exp <= 2) {
+        if (exp <= 4) {
             return a4;
         }
         a8 = a4 * a4;
-        if (exp <= 3) {
+        if (exp <= 8) {
             return a8;
         }
-        return a8 * a8;
+        a16 = a8 * a8;
+        if (exp <= 16) {
+            return a16;
+        }
+        return a16 * a16;
     }
 
     /**
@@ -147,7 +153,7 @@ Flox.FlowLayouter = function (model) {
 	 * @param targetPoint Forces upon this point will be computed.
 	 * @param targetFlow Flow containing the targetPoint
 	 */
-	function computeForceOnPoint(targetPoint, targetFlow, flowSubset) {
+	function computeForceOnPoint(targetPoint, targetFlow) {
 	   
 	   // var flows = model.getFlows(), // Get the flows
 	    
@@ -158,23 +164,17 @@ Flox.FlowLayouter = function (model) {
 			wTotal = 0, // sum of the weight of all forces
 			i, j, k, flow, points, point, ptID, xDist, yDist, lSq, w, 
 			fxFinal, fyFinal, flowDist, flowDistW, threshold,
-			skipEndPoints, beginPtID, endPtID;
+			skipEndPoints, beginPtID, endPtID,
+			flows = model.getFlows();
 	
 	    // Iterate through the flows. The forces of each flow on the target 
 	    // is calculated and added to the total force.
-	    for (i = 0, j = flowSubset.length; i< j; i += 1){
+	    for (i = 0, j = flows.length; i< j; i += 1){
 	        
-	        flow = flowSubset[i];
-	        
-	        //console.log("shortest distance between bb's: " + flowDist);
-	        // set flowDistW. If this number is really small, that means the bounding
-	        // boxes are far apart.
-	        // If this number is LARGE, than the boxes are close together, yes?
-	        // TODO this is kindof messy and I don't really know if I'm doing it right.
-	        // On hold until further experimentation is done.
-			//flowDistW = 1/geometricSeriesPower(flowDist * flowDist, distWeightExponent);
-		
-			// TODO the threshold is a constant that needs reviewing. 	        
+	        flow = flows[i];
+	        if(targetFlow === flow) {
+				continue;
+	        }	        
 	        
             // get the points along this flow
 			points = flow.getCachedLineSegments();
@@ -218,9 +218,10 @@ Flox.FlowLayouter = function (model) {
 	
 	// Calculate the final force of all nodes on the target point
 		if(wTotal!==0) {
-			fxFinal = fxTotal; // wTotal;
-			fyFinal = fyTotal; // wTotal;
+			fxFinal = fxTotal / wTotal;
+			fyFinal = fyTotal / wTotal;
 		} else {
+			console.log("total w of 0 in compute force on point")
 			fxFinal = 0;
 			fyFinal = 0;
 		}
@@ -385,36 +386,14 @@ Flox.FlowLayouter = function (model) {
 			distWeightExponent = model.settings.distanceWeightExponent,
 			threshold = model.settings.flowDistanceThreshold;
 
-		// Get the subset of flows that will exert force on targetFlow
-		flows = model.getFlows();
-		
-		// TODO this was the experimental stuff with ignoring flows that are
-		// far away. Not being done now. 
-		// for (i = 0, j = flows.length; i < j; i += 1) {
-// 			
-			// if (flows[i] !== targetFlow) { // Don't add the targetFlow
-// 			
-				// flowDistance = getLongestAxisDistanceBetweenFlowBoundingBoxes(targetFlow, flows[i]);
-				// //console.log("Longest distance between " + targetFlow.getId() + " and " + flows[i].getId() + ": " + flowDistance);	
-// 				
-				// flowDistW = 1/geometricSeriesPower(flowDistance * flowDistance, distWeightExponent);
-				// //console.log("flowDistW: " + flowDistW);
-// 				
-				// // if flowDistW is high, that means they are close together. 
-				// // If it's high enough, add the current flow to the subset
-				// if (true){//(flowDistance > 0 && flowDistW > threshold) {
-					// //console.log("close together!")
-					// flowSubset.push(flows[i]);
-				// }
-			// }
-		// }
+
 
         // Iterate through the points along targetFlow
         for (i=0, j = flowPoints.length; i < j; i += 1) {
 
             pt = flowPoints[i];
 
-            f = computeForceOnPoint(pt, targetFlow, flows);
+            f = computeForceOnPoint(pt, targetFlow);
 
             // add f to totals
             externalF.addForce(f);
@@ -683,7 +662,7 @@ Flox.FlowLayouter = function (model) {
 	function flowIntersectsNode(flow, node) {
 		var flowStrokeWidth = model.getFlowStrokeWidth(flow),
 			nodeRadius = node.r 
-		                     + (model.settings.nodeTolerancePx 
+		                     + (model.settings.minObstacleDistPx 
 		                     / model.settings.scaleMultiplier),
 			threshDist =  nodeRadius + (flowStrokeWidth/2),
 			// how far is the node from the flow?
