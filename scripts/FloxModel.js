@@ -19,9 +19,9 @@ Flox.Model = function() {
 			maxFlowLengthSpringConstant : 0.05,// match
 			minFlowLengthSpringConstant : 0.5,// match
 			enforceRangebox : true,// match
-			flowRangeboxHeight : 0.2,// match
+			flowRangeboxHeight : 0.3,// match
 			antiTorsionWeight : 0.8,// match
-			angularDistributionWeight : 0.0,
+			angularDistributionWeight : 0.2,
 			nodeWeight : 0.0, // not matched, should work when this is 0, too
 			minObstacleDistPx : 2, // match
 			moveFlowsIntersectingObstacles : true, // TODO this is called different things in different places
@@ -95,12 +95,14 @@ Flox.Model = function() {
 		// determine an appropriate distance flows should be moved off nodes. 
 		stateScales = {
 			"FIPS1"  : 1, // Alabama
+			"FIPS17" : 0.5, // Illinois
 			"FIPS34" : 0.5, // New Jersey
 			"FIPS36" : 0.35, // New York
 			"FIPS44" : 0.5, // Rhode Island
 			"FIPS48" : 2, // Texas
 			"FIPS54" : 1.0,  // West Virginia
-			"FIPS72" : 0.5,
+			"FIPS55" : 0.8,  // Wisconsin
+			"FIPS72" : 0.5, // Puerto Rico
 			"allStates": 0.2
 		},
 				

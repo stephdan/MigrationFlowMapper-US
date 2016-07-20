@@ -611,8 +611,8 @@ Flox.FlowLayouter = function (model) {
 	            angularDistWeight = weight * (1 - weight);
 	            angularDistForce = angularDistForces[i];				
 
-	            //ctrlPt.x = ctrlPt.x + angularDistWeight * angularDistForce.fx;
-	            //ctrlPt.y = ctrlPt.y + angularDistWeight * angularDistForce.fy;
+	            ctrlPt.x = ctrlPt.x + angularDistWeight * angularDistForce.fx;
+	            ctrlPt.y = ctrlPt.y + angularDistWeight * angularDistForce.fy;
 	
 	            if(model.settings.enforceRangebox) {	                
 	                flow.enforceRangebox(model.settings.flowRangeboxHeight);

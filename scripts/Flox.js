@@ -204,7 +204,7 @@ function importStateToStateMigrationFlows(keepSelectedState) {
 		filterSettings.selectedState = false;
 	}
 	
-	var flowPath = "data/census/US_State_migration_2013_flows.csv",
+	var flowPath = "data/census/US_state_migration_2013_flows.csv",
 		stuffImportWorkerNeeds = {};
 	
 	
@@ -546,10 +546,7 @@ my.enterClickAStateMode = function() {
 };
 
 my.initFlox = function() {
-	Flox.GUI.updateGUI();
-	var starterModel = new Flox.Model(), 
-		jsonPath = "data/JSON/stateToStateFlowsLayout.json",
-		flowPath = "data/census/US_State_migration_2014_flows.csv";
+
 	Flox.GUI.updateGUI();
 	model_master = new Flox.Model();
 	mapComponent = new Flox.MapComponent_d3();
@@ -557,25 +554,6 @@ my.initFlox = function() {
 	
 	filterSettings.stateMode = true;
 	
-	// Load the entire state-to-state dataset.
-	// Wouldn't it be better to have some premade JSON of this model?
-	// FIXME this is resulting in the start and end points being askew somehow.
-	// Flox.FlowImporter.importStateToStateMigrationFlows(flowPath, function(flows, stateNodes) {
-		// model_master.initNodes(stateNodes);
-		// model_master.addFlows(flows);
-		// model_master.updateCachedValues();
-		// model_master.settings.scaleMultiplier = 5;
-		// model_master.settings.datasetName = "states";
-		// my.filterBySettings(model_master, filterSettings);
-// 		
-		// d3.json(jsonPath, function(d) {
-			// starterModel.deserializeModelJSON(d);
-// 			
-			// starterModel.configureArrows();
-			// //layoutFlows(starterModel);
-			// mapComponent.drawFeatures(starterModel);
-		// });
-	// });
 	importStateToStateMigrationFlows();
 };
 

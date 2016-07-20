@@ -226,11 +226,11 @@ Flox.GUI = (function($){
 				settings = Flox.getFilterSettings();
 			if(settings.netFlows === false) {
 				settings.netFlows = true;
-				buttonIcon.attr("src", "resources/icons/buttons/netFLows_white.svg")
+				buttonIcon.attr("src", "resources/icons/buttons/netFlows_white.svg")
 						  .attr("id", "netFlows");
 			} else {
 				settings.netFlows = false;
-				buttonIcon.attr("src", "resources/icons/buttons/totalFLows_white.svg")
+				buttonIcon.attr("src", "resources/icons/buttons/totalFlows_white.svg")
 						  .attr("id", "totalFlows");
 			}
 			Flox.updateMap();

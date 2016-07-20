@@ -857,8 +857,8 @@ Flox.MapComponent_d3 = function() {
 			drawPoints();
 		} 
 
-		drawObstacles();
-		drawIntermediateFlowPoints();
+		//drawObstacles();
+		//drawIntermediateFlowPoints();
 	}
 	
 	// TODO Are counties the only features that have a state fips as a class?
@@ -1076,6 +1076,19 @@ Flox.MapComponent_d3 = function() {
 		.call(zoom.translate(translate).scale(scale).event);
 	}
 	
+	// Zooms to a circle object {cx: center x, cy: center y, r: radius}
+	// Adds a litle padding to the circle and the edge of the window
+	function zoomToCircle(c){
+		// get the corners of a box around the circle. 
+		var dx = c.r * 2,
+			dy = c.r * 2,
+			scale = 0.7 / Math.max(dx / width, dy / height),
+			translate = [width / 2 - scale * c.cx, height / 2 - scale * c.cy];
+		svg.transition()
+		.duration(750) // TODO long zoom for testing asynchronous stuff.
+		.call(zoom.translate(translate).scale(scale).event);
+	}
+	
 	// FIXME Hardcoded scale. Calculate scale from feature extent somehow.
 	function zoomToFullExtent() {
 		svg.transition().duration(750).call(zoom.translate([width / 2, height / 2]).scale(0.06).event);
@@ -1145,16 +1158,23 @@ Flox.MapComponent_d3 = function() {
 		
 		// County mode?
 		if(filterSettings.countyMode) {
+			
+			// Get the smallest circle around the polygon, save it for later.
+			outerCircle = getSmallestCircleAroundPolygon(statePolygon);
+			
+			
 			// Load the county flow data for that state
+			//zoomToPolygon(statePolygon); 
+			zoomToCircle(outerCircle);
+			
 			Flox.importTotalCountyFlowData(statePolygon.properties.STATEFP);
 			// Hide county boundaries
 			hideAllCountyBorders();
 			// Show just the county boundaries for the selected state
 			showCountyBordersWithinState(statePolygon.properties.STATEFP);
 			
-			// Change 
 			
-			zoomToPolygon(statePolygon); 
+			
 			d3.selectAll(".feature.state")
 			  .transition()
 			  .style("fill", rgbArrayToString(colors.unselectedStateFill))
