@@ -155,16 +155,16 @@ Flox.MapComponent_d3 = function() {
 
 	function buildNecklaceNodeTooltipText(d, inState) {
 		var nodeName = d.name,
-			toNode = d.totalIncomingFlow,
-			fromNode = d.totalOutgoingFlow,
+			incomingFlow = d.totalIncomingFlow,
+			outgoingFlow = d.totalOutgoingFlow,
 			nameText,
 			fromText,
 			toText;
 		
 		nameText = d.name + "<br/>";
-		fromText = "<span class='tooltipValue'>" + numberWithCommas(fromNode) + "</span> " + 
+		fromText = "<span class='tooltipValue'>" + numberWithCommas(incomingFlow) + "</span> " + 
 					"<div class='tooltipTypeHolder'>MOVED<br/>IN FROM</div> " + inState + "<br/>";
-		toText = "<span class='tooltipValue'>" + numberWithCommas(toNode) + " </span> " + 
+		toText = "<span class='tooltipValue'>" + numberWithCommas(outgoingFlow) + " </span> " + 
 				 "<div class='tooltipTypeHolder'>MOVED<br/>OUT TO</div> " + inState + "<br/>";
 		return nameText + fromText + toText; 
 	}
