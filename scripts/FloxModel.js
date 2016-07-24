@@ -99,7 +99,7 @@ Flox.Model = function() {
 			"FIPS34" : 0.5, // New Jersey
 			"FIPS36" : 0.35, // New York
 			"FIPS44" : 0.5, // Rhode Island
-			"FIPS48" : 2, // Texas
+			"FIPS48" : 1.75, // Texas
 			"FIPS54" : 1.0,  // West Virginia
 			"FIPS55" : 0.8,  // Wisconsin
 			"FIPS72" : 0.5, // Puerto Rico

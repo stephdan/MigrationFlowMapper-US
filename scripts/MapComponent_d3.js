@@ -1054,6 +1054,7 @@ Flox.MapComponent_d3 = function() {
 			pt.strokeWidth = pt.r * 0.10;
 			stateCircles.push(pt);
 		}
+		// Sort by radius so they can be drawn in order by size
 		sortCirclesByRadius(stateCircles);
 		return stateCircles;
 	}
@@ -1256,25 +1257,43 @@ Flox.MapComponent_d3 = function() {
 	function addNecklaceMap(outerCircle, stateNodes, callback) {
 		var w = 0, // width of force graph.
 		    h = 0, // height of force graph. 
-		    nodeRadius = stateNodes[0].r, // radius of nodes.
-
-		// center of circle the points must stay outside of.
+		    // get the radius of the largest node, which is the first on in the 
+		    // array of stateNodes (it gets sorted in getStateCircles)
+		    nodeRadius = stateNodes[0].r,
+			// center of circle the points must stay outside of.
 			cx = outerCircle.cx, // center x of circle nodes stay out of
 		    cy = outerCircle.cy, // center y of circle nodes stay out of
-		    r = outerCircle.r + nodeRadius, // radius of the circle the necklace
-		    // nodes are arranged around. Radius of the nodes is added to keep
-		    // them from overlapping outer counties. 
+		    // radius of the circle the necklace
+		    // nodes are arranged around. Radius of the largest node is added 
+		    // to keep necklace nodes from overlapping the state.
+		    r = outerCircle.r + nodeRadius, 
 			force, necklaceMap, nodes, i,
-			labelSize = (outerCircle.r * 0.07),	// in pixels
+			labelSize,	// in pixels
+			labelSize_max = (outerCircle.r * 0.1),
+			labelSize_min = (outerCircle.r * 0.04),
 			pt,
 			labelOffset = 0;
 			
 		// delete the previous necklace map
+		// TODO this should happen sooner, like when a state is clicked.
 		d3.select("#necklaceMapLayer").remove(); 
 	
 		// Initialize the force layout settings
 		// 0 gravity has great results! Otherwize nodes arrange themselves lopsided. 
-		force = d3.layout.force().gravity(0.0).charge(-r * 0.28).size([w, h]).nodes(stateNodes);
+		force = d3.layout.force()
+				.gravity(0)
+				.charge(function(node){
+					// TODO Sometimes charge is too big, sometimes too small. 
+					var charge = -node.r * node.r/6,
+						minCharge = -r * 0.1;
+					
+					if(charge > minCharge) {
+						return minCharge;
+					}
+					return charge;
+					
+				}).size([w, h])
+				.nodes(stateNodes);
 
 		// Add an SVG group to hold the necklace map.
 		necklaceMap = d3.select("#mapFeaturesLayer").append("g").attr("id", "necklaceMapLayer");
@@ -1298,11 +1317,14 @@ Flox.MapComponent_d3 = function() {
 			})
 			.style("stroke-width", function(d) {
 				return (d.strokeWidth);
+			})
+			// This is where dragable stuff happens
+			// Enabled for development purposes.
+			// TODO be sure to turn this off later.
+			.call(force.drag)
+			.on("mousedown", function() {
+				d3.event.stopPropagation();
 			});
-			// .call(force.drag)
-			// .on("mousedown", function() {
-				// d3.event.stopPropagation();
-			// });
 
 		// Add some mouse interactions to the nodes, like tooltips.
 		nodes.on("mouseover", function(d) {
@@ -1331,9 +1353,45 @@ Flox.MapComponent_d3 = function() {
 			tooltip.style("display", "none");
 			necklaceNodeClicked(d);
         });
+        
+		// Detects collision between points I guess?
+		// Copied from https://bl.ocks.org/mbostock/3231298
+		function collide(node) {
+		  var r = node.r,
+		      nx1 = node.x - r,
+		      nx2 = node.x + r,
+		      ny1 = node.y - r,
+		      ny2 = node.y + r;
+		  return function(quad, x1, y1, x2, y2) {
+		    if (quad.point && (quad.point !== node)) {
+		      var x = node.x - quad.point.x,
+		          y = node.y - quad.point.y,
+		          l = Math.sqrt(x * x + y * y),
+		          r = node.r + quad.point.r;
+		      if (l < r) {
+		        l = (l - r) / l * 0.5;
+		        node.x -= x *= l;
+		        node.y -= y *= l;
+		        quad.point.x += x;
+		        quad.point.y += y;
+		      }
+		    }
+		    return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+		  };
+		}
 		
-		function tick () {
+		function tick (alpha) {
 			var dx, dy, dist;
+			
+			// Try out the collision algorithm!
+			//if(alpha.alpha < 0.09) {
+				var q = d3.geom.quadtree(stateNodes),
+				i = 0,
+				n = stateNodes.length;
+			
+				while (++i < n) q.visit(collide(stateNodes[i]));
+			//}
+			
 			// Changing the transform moves everything in the group.
 			nodes.attr("transform", function(d) {
 				dx = d.x - cx;
@@ -1345,12 +1403,11 @@ Flox.MapComponent_d3 = function() {
 				dy = d.y - cy;
 				dist = Math.sqrt(dx * dx + dy * dy);
 				d.y = dy * r / dist + cy;
-				
 				return "translate(" + d.x + "," + d.y + ")";
-			})
+			});
 		}
 
-		// On each tick of the force layout,
+		// On each tick of the force layout, run tick()
 		force.on("tick", tick);
 				
 		// Start the force layout.
@@ -1363,21 +1420,25 @@ Flox.MapComponent_d3 = function() {
 		}
 		force.stop();
 		
+		// Add labels
 		nodes.append("text")
-			//.attr("text-anchor", "middle")
-			.style("font-size", function(d) {
-				return labelSize +  "px";
-			})
-			//.attr("dominant-baseline", "central")
+
 			.text(function(d){
 				return d.STUSPS;
 			})
 			.each(function(d){
 				pt = d3.select(this);
-				if(labelSize < (d.r + (d.r * 0.70))) {
-					pt.attr("text-anchor", "middle")
-					  .attr("dominant-baseline", "central");
-				} else {
+				
+				// calculate the label size.
+				labelSize = (d.r + (d.r * 0.3));
+				
+				// if it's smaller than the min, make it the min and place
+				// it outside the circle
+				if(labelSize < labelSize_min) {
+					labelSize = labelSize_min;
+					pt.style("font-size", function(d) {
+						return labelSize + "px";
+					  });
 					labelOffset = (d.r * -0.1);
 					if(d.x >= cx && d.y <= cy) { // top right
 						pt.attr("text-anchor", "start")
@@ -1401,6 +1462,19 @@ Flox.MapComponent_d3 = function() {
 						  .attr("x", -d.r - labelOffset)
 						  .attr("y", d.r + labelOffset);
 					}
+				} else {
+					// It's bigger than the min because the circle is large 
+					// enough to hold a label of the min size. Put the label 
+					// inside the circle. 
+					// If the label is bigger than the max, set it to the max,
+					if(labelSize > labelSize_max){
+						labelSize = labelSize_max;
+					}
+					pt.style("font-size", function(d) {
+						return labelSize + "px";
+					  })
+					  .attr("text-anchor", "middle")
+					  .attr("dominant-baseline", "central");
 				}
 			});
 	}

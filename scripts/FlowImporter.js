@@ -101,7 +101,13 @@ Flox.FlowImporter = ( function(d3) {
 			for ( i = 0, j = flowData.length; i < j; i += 1) {
 				row = flowData[i];
 				A_stateFIPS = row.placeA_FIPS.slice(0, -3);
-				B_stateFIPS = row.placeB_FIPS.slice(0, -3);
+				
+				if(row.placeB_FIPS.length <= 2) {
+					B_stateFIPS = row.placeB_FIPS;
+				} else {
+					B_stateFIPS = row.placeB_FIPS.slice(0, -3);
+				}
+				
 				// First check if see if this flow has out of state nodes.
 				if(Number(A_stateFIPS) !== Number(stateFIPS)) {
 					// Place A is out of state.
@@ -278,7 +284,7 @@ Flox.FlowImporter = ( function(d3) {
 	my.importTotalCountyFlowData = function(stateFIPS, callback) {	
 		
 		var nodePath = "data/geometry/centroids_counties_all.csv",
-			flowPath = "data/census/flows/" + stateFIPS + "_net.csv";
+			flowPath = "data/census/flows/" + stateFIPS + "_net_mergedOuterFlows.csv";
 			
 		// Import nodes for all counties
 		my.importUSCensusCountyNodes(nodePath, stateFIPS, function(countyNodes) {
