@@ -416,7 +416,7 @@ Flox.ModelFilter = function(model_master) {
 				model_copy = copyModel(model_master); // Copy the master
 				filteredNodes = model_copy.getPoints();
 				if(filterSettings.stateMode===false) {
-					mergeOutOfStateTotalFlows(); 
+					//mergeOutOfStateTotalFlows(); 
 				}
 				
 				my.getNetFlowsModel();
@@ -433,7 +433,7 @@ Flox.ModelFilter = function(model_master) {
 			if(!Flox.getDerivedModel("totalFlowsModel")){
 				model_copy = copyModel(model_master);
 				if(filterSettings.stateMode===false) {
-					mergeOutOfStateTotalFlows(); 
+					//mergeOutOfStateTotalFlows(); 
 				}
 				
 				my.getTotalFlowsModel(filterSettings);

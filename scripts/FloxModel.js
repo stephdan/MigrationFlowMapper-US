@@ -1147,6 +1147,9 @@ Flox.Model = function() {
 		return getFlowColor(flow);
 	};
 	
+	
+	
+	
 	my.settings = settings;
 	
 	return my;
