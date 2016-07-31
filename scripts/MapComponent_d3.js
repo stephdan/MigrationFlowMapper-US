@@ -1266,7 +1266,7 @@ Flox.MapComponent_d3 = function() {
 		    // radius of the circle the necklace
 		    // nodes are arranged around. Radius of the largest node is added 
 		    // to keep necklace nodes from overlapping the state.
-		    r = outerCircle.r + nodeRadius, 
+		    ringR = outerCircle.r + nodeRadius, 
 			force, necklaceMap, nodes, i,
 			labelSize,	// in pixels
 			labelSize_max = (outerCircle.r * 0.1),
@@ -1282,15 +1282,17 @@ Flox.MapComponent_d3 = function() {
 		// 0 gravity has great results! Otherwize nodes arrange themselves lopsided. 
 		force = d3.layout.force()
 				.gravity(0)
+				.friction(0.6)
 				.charge(function(node){
 					// TODO Sometimes charge is too big, sometimes too small. 
 					var charge = -node.r * node.r/6,
-						minCharge = -r * 0.1;
+						minCharge = -ringR * 0.1;
 					
 					if(charge > minCharge) {
 						return minCharge;
 					}
 					return charge;
+					//return r;
 					
 				}).size([w, h])
 				.nodes(stateNodes);
@@ -1317,14 +1319,14 @@ Flox.MapComponent_d3 = function() {
 			})
 			.style("stroke-width", function(d) {
 				return (d.strokeWidth);
-			})
+			});
 			// This is where dragable stuff happens
 			// Enabled for development purposes.
 			// TODO be sure to turn this off later.
-			.call(force.drag)
-			.on("mousedown", function() {
-				d3.event.stopPropagation();
-			});
+			// .call(force.drag)
+			// .on("mousedown", function() {
+				// d3.event.stopPropagation();
+			// });
 
 		// Add some mouse interactions to the nodes, like tooltips.
 		nodes.on("mouseover", function(d) {
@@ -1356,7 +1358,7 @@ Flox.MapComponent_d3 = function() {
         
 		// Detects collision between points I guess?
 		// Copied from https://bl.ocks.org/mbostock/3231298
-		function collide(node) {
+		function collide(node, minDistance) {
 		  var r = node.r,
 		      nx1 = node.x - r,
 		      nx2 = node.x + r,
@@ -1368,7 +1370,7 @@ Flox.MapComponent_d3 = function() {
 		          y = node.y - quad.point.y,
 		          l = Math.sqrt(x * x + y * y),
 		          r = node.r + quad.point.r;
-		      if (l < r) {
+		      if (l < r ) {
 		        l = (l - r) / l * 0.5;
 		        node.x -= x *= l;
 		        node.y -= y *= l;
@@ -1384,25 +1386,25 @@ Flox.MapComponent_d3 = function() {
 			var dx, dy, dist;
 			
 			// Try out the collision algorithm!
-			//if(alpha.alpha < 0.09) {
+			if(alpha.alpha < 0.085) {
 				var q = d3.geom.quadtree(stateNodes),
 				i = 0,
 				n = stateNodes.length;
 			
-				while (++i < n) q.visit(collide(stateNodes[i]));
-			//}
+				while (++i < n) q.visit(collide(stateNodes[i], ringR * 0.05));
+			}
 			
 			// Changing the transform moves everything in the group.
 			nodes.attr("transform", function(d) {
 				dx = d.x - cx;
 				dy = d.y - cy;
 				dist = Math.sqrt(dx * dx + dy * dy);
-				d.x = dx * r / dist + cx;
+				d.x = dx * ringR / dist + cx;
 				
 				dx = d.x - cx;
 				dy = d.y - cy;
 				dist = Math.sqrt(dx * dx + dy * dy);
-				d.y = dy * r / dist + cy;
+				d.y = dy * ringR / dist + cy;
 				return "translate(" + d.x + "," + d.y + ")";
 			});
 		}
@@ -1531,7 +1533,7 @@ Flox.MapComponent_d3 = function() {
 		formattedCircle = {
 			cx: circle.x,
 			cy: circle.y,
-			r: circle.r + 30,
+			r: circle.r,
 			name: targetStatePolygon.properties.NAME
 		};
 		return formattedCircle;

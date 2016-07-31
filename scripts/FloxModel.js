@@ -1147,9 +1147,29 @@ Flox.Model = function() {
 		return getFlowColor(flow);
 	};
 	
+	// Store a count of the number of above average flows. 
+	my.setAboveAverageFlowCount = function() {
+		var totalFlowVolume = 0,
+			averageFlowValue,
+			count = 0,
+			i;
+		// get the total flow volume.
+		for(i = 0; i < flows.length; i += 1) {
+			totalFlowVolume += flows[i].getValue();	
+		}
+		averageFlowValue = totalFlowVolume / flows.length;
+		// get the total flow volume.
+		for(i = 0; i < flows.length; i += 1) {
+			if(flows[i].getValue() > averageFlowValue) {
+				count += 1;
+			}
+		}
+		settings.aboveAverageFlowCount = count;
+		console.log(count + " out of " + flows.length + " flows above average of " + averageFlowValue);
+		
+	};
 	
-	
-	
+	// make settings public
 	my.settings = settings;
 	
 	return my;

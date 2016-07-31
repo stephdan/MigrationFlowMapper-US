@@ -443,11 +443,14 @@ my.updateMap = function() {
 	Flox.GUI.updateGUI();
 	if(window.Worker && model_master.settings.useWebworkers) {
 		runFilterWorker(function(filteredModel) {
+			// configure the needed variables to get only above average flows.
+			filteredModel.setAboveAverageFlowCount();
 			if(filterSettings.stateMode === false &&
 				filterSettings.selectedState !== false) {
 				mapComponent.configureNecklaceMap(filteredModel);
 			}
 			runLayoutWorker(filteredModel, function() {
+				
 				refreshMap(filteredModel);
 			});	
 		});
