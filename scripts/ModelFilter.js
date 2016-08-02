@@ -157,10 +157,10 @@ Flox.ModelFilter = function(model_master) {
 		for(i = 0, j = nodes.length; i < j; i += 1) {
 			node = nodes[i];
 			if(Number(node.id) === Number(settings.selectedCounty)) {
-				if(settings.countyIncoming) {
+				if(settings.incoming) {
 					incomingFlows = node.incomingFlows;
 				}
-				if(settings.countyOutgoing) {
+				if(settings.outgoing) {
 					outgoingFlows = node.outgoingFlows;
 				}
 				break;
@@ -183,10 +183,10 @@ Flox.ModelFilter = function(model_master) {
 		for(i = 0, j = nodes.length; i < j; i += 1) {
 			node = nodes[i];
 			if(Number(node.FIPS) === Number(settings.selectedState)) {
-				if(settings.countyIncoming) {
+				if(settings.incoming) {
 					incomingFlows = node.incomingFlows;
 				}
-				if(settings.countyOutgoing) {
+				if(settings.outgoing) {
 					outgoingFlows = node.outgoingFlows;
 				}
 				break;
@@ -311,7 +311,7 @@ Flox.ModelFilter = function(model_master) {
 		
 		// If a county or state polygon is selected, AND incoming or outgoing
 		// flows are being ommitted, don't do anything. 
-		if((settings.countyIncoming === false || settings.countyOutgoing === false)
+		if((settings.incoming === false || settings.outgoing === false)
 			&& ((settings.countyMode === true && settings.selectedCounty !== false)
 			|| (settings.stateMode === true && settings.selectedState !== false))) {
 		    model_copy.settings.drawArrows = true;

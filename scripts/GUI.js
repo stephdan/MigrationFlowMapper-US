@@ -114,24 +114,31 @@ Flox.GUI = (function($){
 		}
 	);
 	
+	function toggleButtonIcon(buttonID, boo) {
+		buttonID = buttonID[0] === "#" ? buttonID : "#" + buttonID;
+		var buttonIcon = $(buttonID).find("img"),
+			max_height = boo ? "100%" : "70%",
+			opacity = boo ? 1 : 0.3;
+		buttonIcon.animate({
+			"max-height": max_height,
+			"opacity": opacity
+		}, 200);
+	}
+	
 	$("#necklaceMapButton").click(
 		function() {
 			var buttonIcon = $(this).find("img"),
 				settings = Flox.getFilterSettings(); 
 			if(settings.outerStateFlows === true) {
 				settings.outerStateFlows = false;
-				buttonIcon.animate({
-						"max-height": "70%",
-						"opacity": 0.3
-					}, 200, function() {
-				});
+				toggleButtonIcon("necklaceMapButton", false);
+				if(settings.inStateFlows === false) {
+					settings.inStateFlows = true;
+					toggleButtonIcon("innerFlowsButton", true);
+				}
 			} else {
 				settings.outerStateFlows = true;
-				buttonIcon.animate({
-						"max-height": "100%",
-						"opacity": 1
-					}, 200, function() {
-				});
+				toggleButtonIcon("necklaceMapButton", true);
 			}
 			
 			// Only do something if it's not in state mode
@@ -145,19 +152,14 @@ Flox.GUI = (function($){
 		function() {
 			var buttonIcon = $(this).find("img"),
 				settings = Flox.getFilterSettings();
-			
-			if(settings.inStateFlows === false) {
-				buttonIcon.animate({
-						"max-height": "100%",
-						"opacity": 1
-					}, 200, function() {
-				});
+			if(settings.inStateFlows === true) {
+				toggleButtonIcon("innerFlowsButton", false);
+				if(settings.outerStateFlows === false) {
+					settings.outerStateFlows = true;
+					toggleButtonIcon("necklaceMapButton", true);
+				}
 			} else {
-				buttonIcon.animate({
-						"max-height": "70%",
-						"opacity": 0.3
-					}, 200, function() {
-				});
+				toggleButtonIcon("innerFlowsButton", true);
 			}
 			settings.inStateFlows = !settings.inStateFlows;
 			if(settings.stateMode === false) {
@@ -168,23 +170,19 @@ Flox.GUI = (function($){
 	
 	$("#incomingFlowsButton").click(
 		function() {
-			var buttonIcon = $(this).find("img"),
-				settings = Flox.getFilterSettings();
+			var settings = Flox.getFilterSettings();
 			
-			if(settings.countyIncoming === true) {
-				settings.countyIncoming = false;
-				buttonIcon.animate({
-						"max-height": "70%",
-						"opacity": 0.3
-					}, 200, function() {
-				});
+			if(settings.incoming === true) {
+				settings.incoming = false;
+				toggleButtonIcon("incomingFlowsButton", false);
+				if(settings.outgoing === false) {
+					console.log("the other button is also turned off");
+					settings.outgoing = true;
+					toggleButtonIcon("outgoingFlowsButton", true);
+				}
 			} else {
-				settings.countyIncoming = true;
-				buttonIcon.animate({
-						"max-height": "100%",
-						"opacity": 1
-					}, 200, function() {
-				});
+				settings.incoming = true;
+				toggleButtonIcon("incomingFlowsButton", true);
 			}
 			// Only updateMap if a state or county is selected
 			if(settings.selectedCounty !== false || settings.selectedState !== false) {
@@ -195,23 +193,21 @@ Flox.GUI = (function($){
 	
 	$("#outgoingFlowsButton").click(
 		function() {
-			var buttonIcon = $(this).find("img"),
-				settings = Flox.getFilterSettings();
+			var settings = Flox.getFilterSettings();
 			
-			if(settings.countyOutgoing === true) {
-				settings.countyOutgoing = false;
-				buttonIcon.animate({
-						"max-height": "70%",
-						"opacity": 0.3
-					}, 200, function() {
-				});
+			if(settings.outgoing === true) {
+				settings.outgoing = false;
+				toggleButtonIcon("outgoingFlowsButton", false);
+				
+				if(settings.incoming === false) {
+					console.log("the other button is also turned off");
+					settings.incoming = true;
+					toggleButtonIcon("incomingFlowsButton", true);
+				}
+				
 			} else {
-				settings.countyOutgoing = true;
-				buttonIcon.animate({
-						"max-height": "100%",
-						"opacity": 1
-					}, 200, function() {
-				});
+				settings.outgoing = true;
+				toggleButtonIcon("outgoingFlowsButton", true);
 			}
 			// Only updateMap if a state or county is selected
 			if(settings.selectedCounty !== false || settings.selectedState !== false) {
@@ -403,39 +399,37 @@ Flox.GUI = (function($){
 		
 	}
 
-// Hint Text Stuff -------------------------------------------------------------
-
-	$("#usStateFlowsButton").hover(function() {
-		$("#hintText").text("Display state-to-state flows for the US");
-	}, function() {
+	// Change the hint text when hovering over buttons
+	$(".panelButtonContainer").hover(function() {
+		// get the id of this.
+		var hintText;
+		switch($(this).attr("id")){
+			case "usStateFlowsButton":
+				hintText = "Display state-to-state flows for the US";
+				break;
+			case "stateOrCountyFlowsButton":
+				hintText = "Switch between state or county level flows";
+				break;
+			case "necklaceMapButton":
+				hintText = "Show/hide flows going to/from other states";
+				break;
+			case "innerFlowsButton":
+				hintText = "Show/hide flows entirely within the selected state";
+				break;
+			case "incomingFlowsButton":
+				hintText = "Show/hide incoming flows";
+				break;
+			case "outgoingFlowsButton":
+				hintText = "Show/hide outgoing flows";
+				break;
+			case "netOrTotalFlowsButton":
+				hintText = "Switch between net or total flows";
+				break;
+		}
+		$("#hintText").text(hintText);
+	}, function(){
 		my.setHintText();
 	});
-
-	$("#stateOrCountyFlowsButton").hover(function() {
-		$("#hintText").text("Switch between state or county level flows");
-	}, function() {
-		my.setHintText();
-	});
-
-	$("#necklaceMapButton").hover(function() {
-		$("#hintText").text("Show/hide flows going to/from other states");
-	}, function() {
-		my.setHintText();
-	});
-
-	$("#innerFlowsButton").hover(function() {
-		$("#hintText").text("Show/hide flows entirely within the selected state");
-	}, function() {
-		my.setHintText();
-	});
-
-	$("#netOrTotalFlowsButton").hover(function() {
-		$("#hintText").text("Switch between net or total flows");
-	}, function() {
-		my.setHintText();
-	});
-
-// END Hint Text Stuff ---------------------------------------------------------
 
 	my.openSlidingPanel = function() {
 		openSlidingPanel();
