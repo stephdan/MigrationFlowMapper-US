@@ -106,7 +106,7 @@ Flox.MapComponent_d3 = function() {
 			flowType,
 			filterSettings = Flox.getFilterSettings();
 		
-		if(filterSettings.netFlows === false) {
+		if(filterSettings.flowType !== "netFlows") {
 			// it's a total flow
 			typeText = " <div class='tooltipTypeHolder'>TOTAL<br/>MOVERS</div><br/>";
 			// But sometimes it's directional and needs to be treated differently.
@@ -414,15 +414,13 @@ Flox.MapComponent_d3 = function() {
 		    ePY;
 		    
 		if (drawArrows && f.getArrow()) {
-			
 			// The place where this curve is clipped will depend on whether or
 			// not arrows are drawn.
-			//flow = f.getArrow()[6];
 			flow = f.getArrow().outFlow;
 			rs = model_copy.settings.flowDistanceFromStartPointPixel > 0 ? startClipRadius(f.getStartPt()) : 0;
 			flow = flow.getClippedFlow(rs, 1);
-			// clip the start bit off the arrowed flow
 		} else {
+			// No arrows!
 			rs = model_copy.settings.flowDistanceFromStartPointPixel > 0 ? startClipRadius(f.getStartPt()) : 0;
 			re = model_copy.settings.flowDistanceFromEndPointPixel > 0 ? endClipRadius(f.getEndPt()) : 0;
 			flow = f.getClippedFlow(rs, re);
@@ -567,9 +565,10 @@ Flox.MapComponent_d3 = function() {
 			.attr("fill", "none")
 			.attr("stroke-width", function(d) {
 				var strokeWidth = model_copy.getFlowStrokeWidth(d);
+				// If the stroke width is below the minimum, make it the 
+				// minimum and dashed
 				if(strokeWidth <= model_copy.settings.minFlowWidth * model_copy.settings.scaleMultiplier) {
-					d3.select(this).attr("stroke-dasharray", strokeWidth * 6 + "," + strokeWidth * 6);
-					//return 1;
+					d3.select(this).attr("stroke-dasharray", strokeWidth * 6 + "," + strokeWidth * 3);
 				}
 				return strokeWidth;
 			})
@@ -824,20 +823,24 @@ Flox.MapComponent_d3 = function() {
 	 */
 	function drawFeatures(m) {
 	
-		var filterSettings = Flox.getFilterSettings(), modelJSON, 
-			drawArrows, modelJSONString;
+		var filterSettings = Flox.getFilterSettings();
 		
 		// Stringify the model! For debugging. TODO
 		//m.stringifyModel();
 		
+		// Delete all the old flows before drawing new ones.
+		// TODO This needs to happen sooner. Old flows are still there during
+		// all the cool zoomy effects sometimes. 
 		removeAllFlows();
 	
 		if(!m) {
 			throw new Error("drawFeatures needs to be passed a copy of the model");
 		}
+		
+		// Store m in a place where other functions can get at it. 
+		// It's called model_copy as a reminder that it isn't the master model,
+		// but a modified copy created by the filter.
 		model_copy = m;
-		
-		
 		
 		// if this is county flow data, color the counties by pop density
 		if(filterSettings.countyMode && filterSettings.selectedState !== false){

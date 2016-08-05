@@ -96,7 +96,7 @@ Flox.Model = function() {
 		stateScales = {
 			"FIPS1"  : 1, // Alabama
 			"FIPS06"  : 1.5, // California
-			"FIPS17" : 0.5, // Illinois
+			"FIPS17" : 0.7, // Illinois
 			"FIPS34" : 0.5, // New Jersey
 			"FIPS36" : 0.35, // New York
 			"FIPS44" : 0.5, // Rhode Island

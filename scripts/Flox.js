@@ -10,6 +10,7 @@ var mapComponent,
     model_master,
 	
 	filterSettings = {
+		flowType: "net",
 		netFlows: true,
 		inStateFlows: true,
 		outerStateFlows: true,
@@ -21,8 +22,6 @@ var mapComponent,
 		stateMode: false,
 		selectedFeatureName: false
 	},
-	
-	derivedModels = {},
 	startTimeAll, 
 	endTimeAll,
 	my = {};
@@ -190,7 +189,6 @@ function layoutFlows(model) {
 function importStateToStateMigrationFlows(keepSelectedState) {
 	// clear the model
     model_master.deleteAllFlows();
-    derivedModels = {};
     mapComponent.hideAllCountyBorders();
     mapComponent.removeAllFlows();
     mapComponent.removeNecklaceMap();
@@ -371,7 +369,7 @@ my.importTotalCountyFlowData = function(stateFIPS) {
 	
 	// erase all flows from the model.
 	model_master.deleteAllFlows();
-	derivedModels = {};
+
 	
 	filterSettings.selectedState = stateFIPS;
 	
@@ -503,39 +501,7 @@ my.setFilterSettings = function(settings) {
 	}
 };
 
-my.setDerivedModels = function(newModels) {
-	var param;
-	
-	for(param in newModels) {
-		if(newModels.hasOwnProperty(param)) {
-			if(!derivedModels.hasOwnProperty(param)) {
-				derivedModels[param] = newModels[param];
-			}
-		}
-	}
-};
 
-my.getDerivedModel = function(requestedModel) {
-	if(derivedModels.hasOwnProperty(requestedModel)) {
-		return derivedModels[requestedModel];
-	} else {
-		return false;
-	}
-};
-
-/**
- * Returns the appropriate derived model based on the current filter settings.
- */
-my.getActiveFullModel = function() {
-	if(filterSettings.netFlows) {
-		return derivedModels.netFlowsModel;
-	}
-	return derivedModels.totalFlowsModel;
-};
-
-my.getAllDerivedModels = function() {
-	return derivedModels;
-};
 
 my.selectState = function(stateFIPS) {
 	mapComponent.selectState(stateFIPS);

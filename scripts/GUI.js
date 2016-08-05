@@ -37,7 +37,6 @@ Flox.GUI = (function($){
 	
 	$(".panelButtonContainer").mouseup(
 		function() {
-			
 			// If it has the class mousedown...
 			if($(this).hasClass("mousedown")) {
 				var buttonIcon;
@@ -114,7 +113,9 @@ Flox.GUI = (function($){
 		}
 	);
 	
+	// boo : true if turning ON, false if turning OFF.
 	function toggleButtonIcon(buttonID, boo) {
+		console.log("toggling " + buttonID + " " + boo);
 		buttonID = buttonID[0] === "#" ? buttonID : "#" + buttonID;
 		var buttonIcon = $(buttonID).find("img"),
 			max_height = boo ? "100%" : "70%",
@@ -123,6 +124,22 @@ Flox.GUI = (function($){
 			"max-height": max_height,
 			"opacity": opacity
 		}, 200);
+	}
+	
+	// Make sure the buttons match the current settings.
+	function updateFlowTypeRadioButtons(){
+		console.log("updating buttons!");
+		var settings = Flox.getFilterSettings(),
+			flowType = settings.flowType,
+			settingList = ["net", "total", "incoming", "outgoing"],
+			i;
+		for(i = 0; i < settingList.length; i += 1) {
+			if(flowType === settingList[i]) {
+				toggleButtonIcon(settingList[i] + "FlowsButton", true);
+			} else {
+				toggleButtonIcon(settingList[i] + "FlowsButton", false);
+			}
+		}
 	}
 	
 	$("#necklaceMapButton").click(
@@ -148,42 +165,37 @@ Flox.GUI = (function($){
 		}
 	);
 	
-	$("#innerFlowsButton").click(
-		function() {
-			var buttonIcon = $(this).find("img"),
-				settings = Flox.getFilterSettings();
-			if(settings.inStateFlows === true) {
-				toggleButtonIcon("innerFlowsButton", false);
-				if(settings.outerStateFlows === false) {
-					settings.outerStateFlows = true;
-					toggleButtonIcon("necklaceMapButton", true);
-				}
-			} else {
-				toggleButtonIcon("innerFlowsButton", true);
-			}
-			settings.inStateFlows = !settings.inStateFlows;
-			if(settings.stateMode === false) {
-				Flox.updateMap();
-			}
-		}
-	);
+	// $("#innerFlowsButton").click(
+		// function() {
+			// var buttonIcon = $(this).find("img"),
+				// settings = Flox.getFilterSettings();
+			// if(settings.inStateFlows === true) {
+				// toggleButtonIcon("innerFlowsButton", false);
+				// if(settings.outerStateFlows === false) {
+					// settings.outerStateFlows = true;
+					// toggleButtonIcon("necklaceMapButton", true);
+				// }
+			// } else {
+				// toggleButtonIcon("innerFlowsButton", true);
+			// }
+			// settings.inStateFlows = !settings.inStateFlows;
+			// if(settings.stateMode === false) {
+				// Flox.updateMap();
+			// }
+		// }
+	// );
+	
+	
 	
 	$("#incomingFlowsButton").click(
 		function() {
 			var settings = Flox.getFilterSettings();
 			
-			if(settings.incoming === true) {
-				settings.incoming = false;
-				toggleButtonIcon("incomingFlowsButton", false);
-				if(settings.outgoing === false) {
-					console.log("the other button is also turned off");
-					settings.outgoing = true;
-					toggleButtonIcon("outgoingFlowsButton", true);
-				}
-			} else {
-				settings.incoming = true;
-				toggleButtonIcon("incomingFlowsButton", true);
+			if(settings.flowType !== "incoming") {
+				settings.flowType = "incoming";
 			}
+			updateFlowTypeRadioButtons();
+			
 			// Only updateMap if a state or county is selected
 			if(settings.selectedCounty !== false || settings.selectedState !== false) {
 				Flox.updateMap();
@@ -195,20 +207,11 @@ Flox.GUI = (function($){
 		function() {
 			var settings = Flox.getFilterSettings();
 			
-			if(settings.outgoing === true) {
-				settings.outgoing = false;
-				toggleButtonIcon("outgoingFlowsButton", false);
-				
-				if(settings.incoming === false) {
-					console.log("the other button is also turned off");
-					settings.incoming = true;
-					toggleButtonIcon("incomingFlowsButton", true);
-				}
-				
-			} else {
-				settings.outgoing = true;
-				toggleButtonIcon("outgoingFlowsButton", true);
+			if(settings.flowType !== "outgoing") {
+				settings.flowType = "outgoing";
 			}
+			updateFlowTypeRadioButtons();
+
 			// Only updateMap if a state or county is selected
 			if(settings.selectedCounty !== false || settings.selectedState !== false) {
 				Flox.updateMap();
@@ -216,24 +219,51 @@ Flox.GUI = (function($){
 		}
 	);
 	
-	$("#netOrTotalFlowsButton").click(
+	$("#netFlowsButton").click(
 		function() {
-			var buttonIcon = $(this).find("img"),
-				settings = Flox.getFilterSettings();
-			if(settings.netFlows === false) {
-				settings.netFlows = true;
-				buttonIcon.attr("src", "resources/icons/buttons/netFlows_white.svg")
-						  .attr("id", "netFlows");
-			} else {
-				settings.netFlows = false;
-				buttonIcon.attr("src", "resources/icons/buttons/totalFlows_white.svg")
-						  .attr("id", "totalFlows");
+			var settings = Flox.getFilterSettings();
+			
+			if(settings.flowType !== "net") {
+				settings.flowType = "net";
 			}
+			updateFlowTypeRadioButtons();
 			Flox.updateMap();
 		}
 	);
 	
+	$("#totalFlowsButton").click(
+		function() {
+			var settings = Flox.getFilterSettings();
+			
+			if(settings.flowType !== "total") {
+				settings.flowType = "total";
+			}
+			updateFlowTypeRadioButtons();
+			Flox.updateMap();
+		}
+	);
+	
+	// $("#netOrTotalFlowsButton").click(
+		// function() {
+			// var buttonIcon = $(this).find("img"),
+				// settings = Flox.getFilterSettings();
+			// if(settings.netFlows === false) {
+				// settings.netFlows = true;
+				// buttonIcon.attr("src", "resources/icons/buttons/netFlows_white.svg")
+						  // .attr("id", "netFlows");
+			// } else {
+				// settings.netFlows = false;
+				// buttonIcon.attr("src", "resources/icons/buttons/totalFlows_white.svg")
+						  // .attr("id", "totalFlows");
+			// }
+			// Flox.updateMap();
+		// }
+	// );
+	
+	
+	
 	// This works.
+	// TODO is this obsolete?
 	$("#inStateFlowsToggle").on("click", function() {
 		
 		var settings = Flox.getFilterSettings();
@@ -265,7 +295,7 @@ Flox.GUI = (function($){
 		} else {
 			slidingPanel.addClass("collapsed")
 						.animate({
-							bottom: -(h - 2) + "px"
+							bottom: -(h - 28) + "px"
 						}, 100);
 		}
 	}
@@ -315,38 +345,67 @@ Flox.GUI = (function($){
 		}
 	}
 
-	function updateTitle() {
-		var title = $("#titleText"),
-			subtitle = $("#subtitleText"),
+	// TopX + filter + description + location
+	function updateTitleBetter () {
+		var subtitle = $("#subtitleText"),
 			settings = Flox.getFilterSettings(),
-			netOrTotal = settings.netFlows ? "net" : "total";
+			topX,
+			filter,
+			description,
+			location;
+			
+		// How many flows are being shown?
+		topX = "Top 50 ";
+		
+		// What kind of flows? How are they filtered?
+		// Either incoming, outgoing, net, or total.
+		// They can only be incoming or outgoing if a state or county is selected,
+		// AND they aren't net or total.
+		// It might be better to have a filter setting like "flowType"
+		// That would be the least ambiguous. I'm trying not to change
+		// the filter module here. But maybe I should. 
+			
+			
+	}
+	
+	
+	
+	function updateTitle() {
+		var subtitle = $("#subtitleText"),
+			settings = Flox.getFilterSettings(),
+			netOrTotal = settings.netFlows ? "net" : "total",
+			enteringOrLeaving = "for";
+		
+		if(settings.incoming===false) {
+			enteringOrLeaving = "leaving";
+		}
+		if(settings.outgoing===false) {
+			enteringOrLeaving = "entering";
+		}
 		
 		// state flows, but no state selected
 		if(settings.stateMode && settings.selectedState === false) {
-			title.html("State migration within the US, 2013");
 			subtitle.html("Top 50 state-to-state " + netOrTotal + " flows");
 		}
 		
 		// state flows, state selected
 		if(settings.stateMode && settings.selectedState !== false) {
-			title.html("State migration within the US, 2013");
-			subtitle.html("Top 50 " + netOrTotal + " flows entering or leaving " + settings.selectedFeatureName);
+			subtitle.html("Top 50 " + netOrTotal + " flows " + enteringOrLeaving + " " + settings.selectedFeatureName);
 		}
 		
 		// county flows, no county selected
 		if(settings.countyMode && settings.selectedCounty === false) {
-			title.html("County migration within the US, 2009 to 2013");
 			
 			if(settings.inStateFlows && settings.outerStateFlows) {
-				subtitle.html("Top 50 " + netOrTotal + " county flows for " + settings.selectedFeatureName);
+				subtitle.html("Top 50 " + netOrTotal + " flows for " + settings.selectedFeatureName);
 			}
 			
 			if(settings.inStateFlows && settings.outerStateFlows === false) {
-				subtitle.html("Top 50 " + netOrTotal + " county flows within " + settings.selectedFeatureName);
+				subtitle.html("Top 50 " + netOrTotal + " flows within " + settings.selectedFeatureName);
 			}
 			
 			if(settings.inStateFlows === false && settings.outerStateFlows) {
-				subtitle.html("Top 50 " + netOrTotal + " county flows entering or leaving " + settings.selectedFeatureName);
+				subtitle.html("Top 50 " + netOrTotal + enteringOrLeaving + " " + settings.selectedFeatureName);
 			}
 			
 			if(settings.inStateFlows === false && settings.outerStateFlows === false) {
@@ -356,19 +415,18 @@ Flox.GUI = (function($){
 
 		// county flows, county selected
 		if(settings.countyMode && settings.selectedCounty !== false) {
-			title.html("County migration within the US, 2009 to 2013");
 			
 			if(settings.inStateFlows && settings.outerStateFlows) {
-				subtitle.html("Top 50 " + netOrTotal + " county flows entering or leaving " + settings.selectedFeatureName);
+				subtitle.html("Top 50 " + netOrTotal + " flows " + enteringOrLeaving + " " + settings.selectedFeatureName);
 			}
 			
 			if(settings.inStateFlows && settings.outerStateFlows === false) {
-				subtitle.html("Top 50 " + netOrTotal + " county flows entering or leaving " 
+				subtitle.html("Top 50 " + netOrTotal + " flows " + enteringOrLeaving + " " 
 								+ settings.selectedFeatureName + " to or from counties of the same state");
 			}
 			
 			if(settings.inStateFlows === false && settings.outerStateFlows) {
-				subtitle.html("Top 50 " + netOrTotal + " county flows entering or leaving " 
+				subtitle.html("Top 50 " + netOrTotal + " county flows " + enteringOrLeaving + " " 
 								+ settings.selectedFeatureName + " to or from other states");
 			}
 			
@@ -396,7 +454,6 @@ Flox.GUI = (function($){
 			stateOrCountyFlowsButtonIcon.attr("src", "resources/icons/buttons/state_white.svg")
 						  .attr("id", "state");
 		}
-		
 	}
 
 	// Change the hint text when hovering over buttons
@@ -563,7 +620,7 @@ Flox.GUI = (function($){
 		updateButtonIcons();
 		my.hidePanelButtons(hideThese);
 		my.showPanelButtons(showThese);
-		updateTitle();
+		//updateTitle();
 	};
 
 // DEBUG GUI STUFF ------------------------------------------------------------

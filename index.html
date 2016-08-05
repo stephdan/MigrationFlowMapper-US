@@ -48,12 +48,12 @@
 
 <body>
 	
-	<div id="titleText">Migration Within the US</div>
-	<div id="subtitleText">Top 50 state-to-state flows</div>
+	<div id="titleText">Migration in the United States, 2009 to 2013</div>
+	
 	
 	<div id="creditText">
-		Data for this sweet map including state &amp; county boundaries<br />
-		 are freely available on the US Census website at www.census.gov
+		All data in this map can be found on<br />
+		 the US Census website at www.census.gov
 	</div>
 	
 	<div id="slidingPanel"> <!-- Sliding Panel container --> 
@@ -62,6 +62,7 @@
 		</div>
 		
 		<div id="slidingPanelContent">
+			<div id="subtitleText">Top 50 state-to-state flows</div>
 			<p id="hintText">Click a state to see flows for that state</p>
 			<ul> <!-- List of buttons -->
 				
@@ -89,13 +90,13 @@
 		        	</div> 
 		        </li>
 		        
-		        <li>
+		        <!-- <li>
 		        	<div class="panelButtonContainer" id="innerFlowsButton">
 		        		<img src="resources/icons/buttons/innerFlows_white.svg"
 						class="buttonIcon"
 						id="innerFlows" />
 		        	</div> 
-		        </li>
+		        </li> -->
 		        
 		        <li>
 		        	<div class="panelButtonContainer" id="incomingFlowsButton">
@@ -114,10 +115,18 @@
 		        </li>
 		        
 		        <li>
-		        	<div class="panelButtonContainer" id="netOrTotalFlowsButton">
+		        	<div class="panelButtonContainer" id="netFlowsButton">
 		        		<img src="resources/icons/buttons/netFlows_white.svg"
 						class="buttonIcon"
 						id="netFlows" />
+		        	</div> 
+		        </li>
+		        
+		        <li>
+		        	<div class="panelButtonContainer" id="totalFlowsButton">
+		        		<img src="resources/icons/buttons/totalFlows_white.svg"
+						class="buttonIcon"
+						id="totalFlows" />
 		        	</div> 
 		        </li>
 		        

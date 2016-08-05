@@ -157,17 +157,17 @@ Flox.ModelFilter = function(model_master) {
 		for(i = 0, j = nodes.length; i < j; i += 1) {
 			node = nodes[i];
 			if(Number(node.id) === Number(settings.selectedCounty)) {
-				if(settings.incoming) {
-					incomingFlows = node.incomingFlows;
-				}
-				if(settings.outgoing) {
-					outgoingFlows = node.outgoingFlows;
+				if(settings.flowType === "incoming") {
+					countyFlows = node.incomingFlows;
+				} else if (settings.flowType === "outgoing") {
+					countyFlows = node.outgoingFlows;
+				} else {
+					countyFlows = node.incomingFlows.concat(node.outgoingFlows)
 				}
 				break;
 			}
 		}
-		
-		countyFlows = incomingFlows.concat(outgoingFlows);
+		//countyFlows = incomingFlows.concat(outgoingFlows);
 		model_copy.deleteAllFlows();
 		model_copy.addFlows(countyFlows);
 	}
@@ -183,16 +183,18 @@ Flox.ModelFilter = function(model_master) {
 		for(i = 0, j = nodes.length; i < j; i += 1) {
 			node = nodes[i];
 			if(Number(node.FIPS) === Number(settings.selectedState)) {
-				if(settings.incoming) {
-					incomingFlows = node.incomingFlows;
-				}
-				if(settings.outgoing) {
-					outgoingFlows = node.outgoingFlows;
+				if(settings.flowType === "incoming") {
+					stateFlows = node.incomingFlows;
+				} else if (settings.flowType === "outgoing") {
+					stateFlows = node.outgoingFlows;
+				} else {
+					stateFlows = node.incomingFlows.concat(node.outgoingFlows)
 				}
 				break;
+
 			}
 		}
-		stateFlows = incomingFlows.concat(outgoingFlows);
+		// stateFlows = incomingFlows.concat(outgoingFlows);
 		model_copy.deleteAllFlows();
 		model_copy.addFlows(stateFlows);
 	}
@@ -311,6 +313,7 @@ Flox.ModelFilter = function(model_master) {
 		
 		// If a county or state polygon is selected, AND incoming or outgoing
 		// flows are being ommitted, don't do anything. 
+		// TODO Why?
 		if((settings.incoming === false || settings.outgoing === false)
 			&& ((settings.countyMode === true && settings.selectedCounty !== false)
 			|| (settings.stateMode === true && settings.selectedState !== false))) {
@@ -401,51 +404,59 @@ Flox.ModelFilter = function(model_master) {
 	 * Perform multiple filter operations according to specified settings.
  * @param {Object} settings
 	 */
-	my.filterBySettings = function(filterSettings) {
-		
-		//console.log("Running filterBySettings...");
-		
+	my.filterBySettings = function(filterSettings) {		
 		var startTime, endTime, 
 			theModel = model_master,
 			masterNodes = model_master.getPoints(),
 			filteredNodes;
 		
-		// Net flows if settings.netFlows
-		if(filterSettings.netFlows) {
-			if(!Flox.getDerivedModel("netFlowsModel")) { // if netFlowsModel isn't there yet
-				model_copy = copyModel(model_master); // Copy the master
-				filteredNodes = model_copy.getPoints();
-				if(filterSettings.stateMode===false) {
-					//mergeOutOfStateTotalFlows(); 
-				}
-				
-				my.getNetFlowsModel();
-				
-				model_copy.updateCachedValues();
-				// Set netFlowsModel to a COPY of the net flows model, so more changes
-				// can be made to it in the filter without messing it up
-				//Flox.setDerivedModels( { "netFlowsModel": (copyModel(model_copy)) } );
-			} else {
-				// netFlowsModel exists, get a COPY of it.
-				//model_copy = copyModel(Flox.getDerivedModel("netFlowsModel"));
-			}
-		} else { // same as above, but with totalFlowsModel
-			if(!Flox.getDerivedModel("totalFlowsModel")){
-				model_copy = copyModel(model_master);
-				if(filterSettings.stateMode===false) {
-					//mergeOutOfStateTotalFlows(); 
-				}
-				
-				my.getTotalFlowsModel(filterSettings);
-				
-				model_copy.updateCachedValues();
-				//model_copy.settings.drawArrows = false; // total flows are bi-directional, so no arrows
-				//Flox.setDerivedModels( { "totalFlowsModel": (copyModel(model_copy)) } );
-			} else {
-				//model_copy = copyModel(Flox.getDerivedModel("totalFlowsModel"));
-				//model_copy.settings.drawArrows = false; 
-			}
+		model_copy = copyModel(model_master); // Copy the master
+		
+		// Net flows if settings.flowType is "net"
+		if(filterSettings.flowType === "net") {
+			my.getNetFlowsModel();
+		} else { // same as above, but with total flows
+			// Any other type of flow is total flow, even incoming or outgoing
+			my.getTotalFlowsModel(filterSettings);
 		}
+		model_copy.updateCachedValues();
+		
+		// Net flows if settings.netFlows
+		// if(filterSettings.netFlows) {
+			// if(!Flox.getDerivedModel("netFlowsModel")) { // if netFlowsModel isn't there yet
+				// model_copy = copyModel(model_master); // Copy the master
+				// filteredNodes = model_copy.getPoints();
+				// if(filterSettings.stateMode===false) {
+					// //mergeOutOfStateTotalFlows(); 
+				// }
+// 				
+				// my.getNetFlowsModel();
+// 				
+				// model_copy.updateCachedValues();
+				// // Set netFlowsModel to a COPY of the net flows model, so more changes
+				// // can be made to it in the filter without messing it up
+				// //Flox.setDerivedModels( { "netFlowsModel": (copyModel(model_copy)) } );
+			// } else {
+				// // netFlowsModel exists, get a COPY of it.
+				// //model_copy = copyModel(Flox.getDerivedModel("netFlowsModel"));
+			// }
+		// } else { // same as above, but with totalFlowsModel
+			// if(!Flox.getDerivedModel("totalFlowsModel")){
+				// model_copy = copyModel(model_master);
+				// if(filterSettings.stateMode===false) {
+					// //mergeOutOfStateTotalFlows(); 
+				// }
+// 				
+				// my.getTotalFlowsModel(filterSettings);
+// 				
+				// model_copy.updateCachedValues();
+				// //model_copy.settings.drawArrows = false; // total flows are bi-directional, so no arrows
+				// //Flox.setDerivedModels( { "totalFlowsModel": (copyModel(model_copy)) } );
+			// } else {
+				// //model_copy = copyModel(Flox.getDerivedModel("totalFlowsModel"));
+				// //model_copy.settings.drawArrows = false; 
+			// }
+		// }
 		
 		// If a county is selected, get the model for just that county.
 		if(filterSettings.countyMode && filterSettings.selectedCounty !== false) {
@@ -462,8 +473,6 @@ Flox.ModelFilter = function(model_master) {
 			my.removeOuterStateFlows();
 		}
 		
-		//Flox.logFlows(model_copy);
-		
 		if(filterSettings.inStateFlows === false && filterSettings.countyMode) {
 			// filter out in state flows
 			my.removeInStateFlows();
@@ -475,7 +484,6 @@ Flox.ModelFilter = function(model_master) {
 		//endTime = performance.now() - startTime;
 		//console.log("filterBySettings took " + Math.floor(endTime) + "ms");
 		
-		//filteredNodes = model_copy.getPoints();
 		
 		return model_copy;
 	};
