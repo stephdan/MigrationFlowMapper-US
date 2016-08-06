@@ -145,7 +145,7 @@ Flox.ModelFilter = function(model_master) {
 		return model_copy;
 	}
 
-	function getSelectedCountyModel(settings) {
+	function getSelectedCountyModel(filterSettings) {
 		var incomingFlows = [], 
 			outgoingFlows = [], 
 			countyFlows,
@@ -156,13 +156,13 @@ Flox.ModelFilter = function(model_master) {
 		
 		for(i = 0, j = nodes.length; i < j; i += 1) {
 			node = nodes[i];
-			if(Number(node.id) === Number(settings.selectedCounty)) {
-				if(settings.flowType === "incoming") {
+			if(Number(node.id) === Number(filterSettings.selectedCounty)) {
+				if(filterSettings.flowType === "incoming") {
 					countyFlows = node.incomingFlows;
-				} else if (settings.flowType === "outgoing") {
+				} else if (filterSettings.flowType === "outgoing") {
 					countyFlows = node.outgoingFlows;
 				} else {
-					countyFlows = node.incomingFlows.concat(node.outgoingFlows)
+					countyFlows = node.incomingFlows.concat(node.outgoingFlows);
 				}
 				break;
 			}
@@ -172,7 +172,7 @@ Flox.ModelFilter = function(model_master) {
 		model_copy.addFlows(countyFlows);
 	}
 
-	function getSelectedStateModel(settings) {
+	function getSelectedStateModel(filterSettings) {
 		var incomingFlows = [], 
 			outgoingFlows = [], 
 			stateFlows,
@@ -182,13 +182,13 @@ Flox.ModelFilter = function(model_master) {
 		
 		for(i = 0, j = nodes.length; i < j; i += 1) {
 			node = nodes[i];
-			if(Number(node.FIPS) === Number(settings.selectedState)) {
-				if(settings.flowType === "incoming") {
+			if(Number(node.FIPS) === Number(filterSettings.selectedState)) {
+				if(filterSettings.flowType === "incoming") {
 					stateFlows = node.incomingFlows;
-				} else if (settings.flowType === "outgoing") {
+				} else if (filterSettings.flowType === "outgoing") {
 					stateFlows = node.outgoingFlows;
 				} else {
-					stateFlows = node.incomingFlows.concat(node.outgoingFlows)
+					stateFlows = node.incomingFlows.concat(node.outgoingFlows);
 				}
 				break;
 
@@ -317,7 +317,7 @@ Flox.ModelFilter = function(model_master) {
 		if((settings.incoming === false || settings.outgoing === false)
 			&& ((settings.countyMode === true && settings.selectedCounty !== false)
 			|| (settings.stateMode === true && settings.selectedState !== false))) {
-		    model_copy.settings.drawArrows = true;
+		    //model_copy.settings.drawArrows = true;
 			return model_copy;
 		}
 
@@ -357,7 +357,7 @@ Flox.ModelFilter = function(model_master) {
 		model_copy.addFlows(totalFlows);
 
 		//Flox.logFlows(model_copy);
-		model_copy.settings.drawArrows = false;
+		//model_copy.settings.drawArrows = false;
 		return model_copy;
 	};
 		

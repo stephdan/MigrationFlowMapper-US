@@ -11,11 +11,8 @@ var mapComponent,
 	
 	filterSettings = {
 		flowType: "net",
-		netFlows: true,
 		inStateFlows: true,
 		outerStateFlows: true,
-		incoming: true,
-		outgoing: true,
 		selectedCounty: false,
 		selectedState: false,
 		countyMode: false,
@@ -482,30 +479,126 @@ my.updateMap = function() {
 	}
 };
 
-my.getFilterSettings = function() {
-	return filterSettings;
-};
+// my.getFilterSettings = function() {
+	// return filterSettings;
+// };
 
 /**
  * Loops over the filterSettings, changing the ones specified in settings.
  * @param {Object} settings - Key value pair(s) of filterSettings to change.
  */
-my.setFilterSettings = function(settings) {
-	var prop;
-	for (prop in settings) {
-		if(settings.hasOwnProperty(prop)) {
-			if (filterSettings.hasOwnProperty(prop)) {
-				filterSettings[prop] = settings[prop];
-			}
-		}
+// my.setFilterSettings = function(settings) {
+	// var prop;
+	// for (prop in settings) {
+		// if(settings.hasOwnProperty(prop)) {
+			// if (filterSettings.hasOwnProperty(prop)) {
+				// filterSettings[prop] = settings[prop];
+			// }
+		// }
+	// }
+// };
+
+my.getFlowType = function() {
+	return filterSettings.flowType;
+};
+
+my.setFlowType = function(newSetting){
+	var possibleSettings = ["net", "total", "incoming", "outgoing"];
+	if(possibleSettings.indexOf(newSetting) < 0) {
+		throw new Error("Not a possible setting for flowType: " + newSetting);
+	}
+	
+	filterSettings.flowType = newSetting;
+	
+	if(newSetting === "total"){
+		model_master.settings.drawArrows = false;
+	} else {
+		model_master.settings.drawArrows = true;
 	}
 };
 
+// state is false if no state is selected
+my.getSelectedState = function() {
+	return filterSettings.selectedState;
+};
 
+// state is false if no state is selected
+my.setSelectedState = function(state) {
+	var flowType;
+	// if state is false, we gotta do some stuff. 
+	if(state === false) {
+		flowType = my.getFlowType();
+		if(flowType === "incoming" || flowType === "outgoing") {
+			my.setFlowType("total");
+		}
+	}
+	
+	filterSettings.selectedState = state;
+	Flox.GUI.updateFlowTypeRadioButtons();
+};
+
+my.getSelectedCounty = function() {
+	return filterSettings.selectedCounty;
+};
+
+my.setSelectedCounty = function(county) {
+	var flowType;
+	if(county === false) {
+		flowType = my.getFlowType();
+		if(flowType === "incoming" || flowType === "outgoing") {
+			my.setFlowType("total");
+		}
+	}
+	filterSettings.selectedCounty = county;
+	
+	Flox.GUI.updateFlowTypeRadioButtons();
+	
+};
+
+my.getSelectedFeatureName = function() {
+	return filterSettings.selectedFeatureName;
+};
+
+my.setSelectedFeatureName = function(newSelectedFeatureName) {
+	filterSettings.selectedFeatureName = newSelectedFeatureName;
+};
+
+my.isCountyMode = function() {
+	return filterSettings.countyMode;
+};
+
+my.setCountyMode = function(boo) {
+	filterSettings.countyMode = boo;
+};
+
+my.isStateMode = function() {
+	return filterSettings.stateMode;
+};
+
+my.setStateMode = function(boo) {
+	filterSettings.stateMode = boo;
+};
 
 my.selectState = function(stateFIPS) {
 	mapComponent.selectState(stateFIPS);
 };
+
+my.isOuterStateFlows = function() {
+	return filterSettings.outerStateFlows;
+};
+
+my.setOuterStateFlows = function(boo) {
+	filterSettings.outerStateFlows = boo;
+};
+
+my.isInStateFlows = function() {
+	return filterSettings.inStateFlows;
+};
+
+my.setInStateFlows = function(boo) {
+	filterSettings.inStateFlows = boo;
+};
+
 
 
 my.enterClickAStateMode = function() {
