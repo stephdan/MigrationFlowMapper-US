@@ -81,15 +81,11 @@ Flox.MapComponent_d3 = function() {
 		
 	    my = {};
 
-
-
 	// takes an array like [r,g,b] and makes it "rgb(r,g,b)" for use with d3
 	function rgbArrayToString(rgb){
-		
 		if(rgb[3]) {
 			return "rgba(" +  rgb[0] + "," + rgb[1] + "," + rgb[2] + "," + rgb[3] + ")";
 		}
-		
 		return "rgb(" +  rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
 	}
 
@@ -106,25 +102,23 @@ Flox.MapComponent_d3 = function() {
 			flowType;
 			//filterSettings = Flox.getFilterSettings();
 		
-		if(Flox.getFlowType() !== "netFlows") {
+		if(Flox.getFlowType() === "total") {
 			// it's a total flow
 			typeText = " <div class='tooltipTypeHolder'>TOTAL<br/>MOVERS</div><br/>";
 			// But sometimes it's directional and needs to be treated differently.
-			if((Flox.getFlowType !== "incoming" || Flox.getFlowType !== "outgoing" ) &&
-				((Flox.isStateMode() && Flox.getSelectedState() !== false) ||
-			(Flox.isCountyMode() && Flox.getSelectedCounty() !== false))) {
-				// do things differently, more like a net flow
-				toFromText = "<div class='tooltipToFromText'><span style='font-size: 8px;'>from </span>" + d.getStartPt().name + "<br/>" + 
-				             "<span style='font-size: 8px;'>to </span>" + d.getEndPt().name + "</div>";
-			} else {
-				toFromText = "<div class='tooltipToFromText'>" + d.getStartPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getEndPt().name + ": " + numberWithCommas(d.AtoB) + "<br/>" + 
-				             d.getEndPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getStartPt().name + ": " + numberWithCommas(d.BtoA) + "</div>";
-			}
-		} else {
+			
+			toFromText = "<div class='tooltipToFromText'>" + d.getStartPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getEndPt().name + ": " + numberWithCommas(d.AtoB) + "<br/>" + 
+				            d.getEndPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getStartPt().name + ": " + numberWithCommas(d.BtoA) + "</div>";
+
+		} else if (Flox.getFlowType() === "net"){
 			// it's a net flow
 			typeText = " <div class='tooltipTypeHolder'>NET<br/>MOVERS</div><br/>";
 			toFromText = "<div class='tooltipToFromText'><span style='font-size: 8px;'>from </span>" + d.getStartPt().name + "<br/>" + 
 				             "<span style='font-size: 8px;'>to </span>" + d.getEndPt().name + "</div>";
+		} else {
+			typeText = " <div class='tooltipTypeHolder'>TOTAL<br/>MOVERS</div><br/>";
+			toFromText = "<div class='tooltipToFromText'><span style='font-size: 8px;'>from </span>" + d.getStartPt().name + "<br/>" + 
+				         "<span style='font-size: 8px;'>to </span>" + d.getEndPt().name + "</div>";
 		}
 		return moverText + typeText + toFromText;
 	}
