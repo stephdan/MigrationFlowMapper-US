@@ -145,6 +145,50 @@ Flox.ModelFilter = function(model_master) {
 		return model_copy;
 	}
 
+	// Get just the flows to or from a selected feature, which will be either
+	// a state or a county.
+	function getSelectedFeatureModel(filterSettings) {
+		var incomingFlows = [], 
+			outgoingFlows = [], 
+			featureFlows,
+			selectedFeatureID,
+			nodes, node, i, j;
+		
+		// what is the selected feature?
+		if(filterSettings.selectedCounty !== false) {
+			// if a county is selected, it's a county.
+			selectedFeatureID = filterSettings.selectedCounty;
+		} else {
+			selectedFeatureID = filterSettings.selectedState;
+		}
+		
+		// Loop through the nodes, find the one with a matching FIPS.
+		nodes = model_copy.getPoints();
+		
+		for(i = 0, j = nodes.length; i < j; i += 1) {
+			node = nodes[i];
+			if(Number(node.id) === Number(selectedFeatureID)) {
+				
+				// If we only want incoming or outgoing flows, take care of that
+				// here.
+				if (filterSettings.flowType === "incoming") {
+					featureFlows = node.incomingFlows;
+				} else if (filterSettings.flowType === "outgoing") {
+					featureFlows = node.outgoingFlows;
+				} else { 
+					featureFlows = node.incomingFlows.concat(node.outgoingFlows);
+				}
+				
+				// Stop looping, it's done.
+				break;
+			}
+		}
+		//countyFlows = incomingFlows.concat(outgoingFlows);
+		model_copy.deleteAllFlows();
+		model_copy.addFlows(featureFlows);
+		
+	}
+
 	function getSelectedCountyModel(filterSettings) {
 		var incomingFlows = [], 
 			outgoingFlows = [], 
@@ -182,7 +226,7 @@ Flox.ModelFilter = function(model_master) {
 		
 		for(i = 0, j = nodes.length; i < j; i += 1) {
 			node = nodes[i];
-			if(Number(node.FIPS) === Number(filterSettings.selectedState)) {
+			if(Number(node.id) === Number(filterSettings.selectedState)) {
 				if(filterSettings.flowType === "incoming") {
 					stateFlows = node.incomingFlows;
 				} else if (filterSettings.flowType === "outgoing") {
@@ -310,16 +354,6 @@ Flox.ModelFilter = function(model_master) {
 		    flow,
 		    id1,
 		    id2;
-		
-		// If a county or state polygon is selected, AND incoming or outgoing
-		// flows are being ommitted, don't do anything. 
-		// TODO Why?
-		if((settings.incoming === false || settings.outgoing === false)
-			&& ((settings.countyMode === true && settings.selectedCounty !== false)
-			|| (settings.stateMode === true && settings.selectedState !== false))) {
-		    //model_copy.settings.drawArrows = true;
-			return model_copy;
-		}
 
 		// initialize the incoming and outgoing flows for each node, because
 		// they are about to change. Nodes will no longer have incoming our 
@@ -410,16 +444,29 @@ Flox.ModelFilter = function(model_master) {
 			masterNodes = model_master.getPoints(),
 			filteredNodes;
 		
-		model_copy = copyModel(model_master); // Copy the master
+		model_copy = copyModel(model_master); // Copy the master model.
 		
-		// Net flows if settings.flowType is "net"
+		// The flows need to be merged in different ways if we want net or
+		// total flows. Nothing needs to happen otherwise. 
 		if(filterSettings.flowType === "net") {
 			my.getNetFlowsModel();
-		} else { // same as above, but with total flows
-			// Any other type of flow is total flow, even incoming or outgoing
+		} else if (filterSettings.flowType === "total"){ 
 			my.getTotalFlowsModel(filterSettings);
 		}
 		model_copy.updateCachedValues();
+		
+		// If a single feature is selected, filter out all other flows.
+		// If a county is selected, get just the flows for that county.
+		// It's tricker determining if a single state is selected. Need to know
+		// if it's in state mode or not as well. If no, then we're seeing
+		// county flows and don't want to filter anything.
+		// The case of flowType==="incoming" or "outgoing" is handled in
+		// getSelectedFeatureModel()
+		if(filterSettings.selectedCounty !== false || 
+		   (filterSettings.selectedState  !== false && filterSettings.stateMode)) {
+			getSelectedFeatureModel(filterSettings);
+		}
+		
 		
 		// Net flows if settings.netFlows
 		// if(filterSettings.netFlows) {
@@ -459,15 +506,15 @@ Flox.ModelFilter = function(model_master) {
 		// }
 		
 		// If a county is selected, get the model for just that county.
-		if(filterSettings.countyMode && filterSettings.selectedCounty !== false) {
-			getSelectedCountyModel(filterSettings);
-		}		
+		// if(filterSettings.countyMode && filterSettings.selectedCounty !== false) {
+			// getSelectedCountyModel(filterSettings);
+		// }		
 		
 		// It it's in state mode, and a state is selected, filter out all
 		// flows not connected to that state.
-		if(filterSettings.stateMode && filterSettings.selectedState !== false) {
-			getSelectedStateModel(filterSettings);
-		}
+		// if(filterSettings.stateMode && filterSettings.selectedState !== false) {
+			// getSelectedStateModel(filterSettings);
+		// }
 		
 		if(!filterSettings.outerStateFlows && !filterSettings.stateMode) {
 			my.removeOuterStateFlows();
