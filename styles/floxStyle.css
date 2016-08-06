@@ -1,6 +1,7 @@
 html, body {
 	height: 100%;
 	overflow: hidden;
+	font-family: Tahoma, Geneva, sans-serif;
 }
 
 .background {
@@ -35,7 +36,6 @@ html, body {
 	pointer-events: none;
 	font-size: 16pt;
 	font-weight: bold;
-	font-family: Tahoma, Geneva, sans-serif;
 	color: rgb(90, 90, 90);
 }
 
@@ -55,7 +55,6 @@ html, body {
 }
 
 .legendTitle {
-	font-family: Tahoma, Geneva, sans-serif;
 	color: white;
 	font-size: 18px;
 	line-height: 110%;
@@ -68,8 +67,8 @@ html, body {
 
 #slidingPanel {
 	position: absolute;
-	width: 465px;
-	height: 120px;
+	width: 500px;
+	height: 117px;
 	position: fixed;
 	bottom: 0;
 	margin: 0 auto;
@@ -102,6 +101,7 @@ html, body {
 
 #slidingPanelTab:hover {
 	background-color: #fdae6b;	
+	z-index: 1;
 }
 
 #slidingPanelContent ul {
@@ -115,6 +115,7 @@ html, body {
 #slidingPanelContent ul li {
 	display: inline;
 	margin: 0px;
+	z-index: 2;
 }
 
 #debugMenu {
@@ -142,16 +143,14 @@ html, body {
 	right: 0;
 	pointer-events: none;
 	font-size: 12pt;
-	font-family: Tahoma, Geneva, sans-serif;
 	color: white;
 }
 
 
 #hintText {
 	color: white;
-	margin-bottom: 1px;
+	margin-bottom: 3px;
 	margin-top: -1px;
-	font-family: Tahoma, Geneva, sans-serif;
 }
 
 .panelButtonContainer {
@@ -159,16 +158,22 @@ html, body {
 	width: 60px;
 	height: 50px;
 	position: relative;
+	border: transparent;
 	border-style: solid;
 	border-width: 1px;
-	border-color: rgb(180,180,180);
 	border-radius: 5px;
 	margin-right: 2px;
 	margin-left: 2px;
 }
 
+.panelButtonContainer.bordered {
+	border-style: solid;
+	border-color: rgb(180,180,180);
+}
+
 .panelButtonContainer.hover {
 	border-color: rgb(255,255,255);
+	
 }
 
 .panelButtonContainer.mousedown {
@@ -235,7 +240,6 @@ html, body {
 	height: auto;
 	padding: 0px 5px 2px 5px;
 	margin-top: -10px;
-	font-family: Tahoma,Verdana,Segoe,sans-serif; 
 	background: rgb(64, 64, 64);
     background: rgba(64, 64, 64, 0.9);
     box-shadow: 3px 3px 3px rgba(64,64,64,0.5);
@@ -290,16 +294,6 @@ html, body {
     -o-transition: none;
     transition: none;
 }
-
-.necklaceNode {
-	font-family: Tahoma,Verdana,Segoe,sans-serif; 
-}
-
-
-
-
-
-
 
 .feature {
   cursor: default;

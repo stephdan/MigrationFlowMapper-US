@@ -148,18 +148,21 @@ Flox.GUI = (function($){
 	
 	$("#necklaceMapButton").click(
 		function() {
-			var buttonIcon = $(this).find("img"); 
-			
-			if(Flox.isOuterStateFlows()) {
+			var buttonIcon = $(this).find("img");		
+			if (Flox.isOuterStateFlows()) {
 				Flox.setOuterStateFlows(false);
 				toggleButtonIcon("necklaceMapButton", false);
 				if(Flox.isInStateFlows() === false) {
 					Flox.setInStateFlows(true);
 					toggleButtonIcon("innerFlowsButton", true);
 				}
+				// Change the hint text
+				$("#hintText").text("Show flows to or from other states");
+				
 			} else {
 				Flox.setOuterStateFlows(true);
 				toggleButtonIcon("necklaceMapButton", true);
+				$("#hintText").text("Hide flows to or from other states");
 			}
 			
 			// Only do something if it's not in state mode
@@ -238,22 +241,6 @@ Flox.GUI = (function($){
 		}
 	);
 	
-	// $("#netOrTotalFlowsButton").click(
-		// function() {
-			// var buttonIcon = $(this).find("img"),
-				// settings = Flox.getFilterSettings();
-			// if(settings.netFlows === false) {
-				// settings.netFlows = true;
-				// buttonIcon.attr("src", "resources/icons/buttons/netFlows_white.svg")
-						  // .attr("id", "netFlows");
-			// } else {
-				// settings.netFlows = false;
-				// buttonIcon.attr("src", "resources/icons/buttons/totalFlows_white.svg")
-						  // .attr("id", "totalFlows");
-			// }
-			// Flox.updateMap();
-		// }
-	// );
 	
 	
 	
@@ -295,7 +282,7 @@ Flox.GUI = (function($){
 		} else {
 			slidingPanel.addClass("collapsed")
 						.animate({
-							bottom: -(h - 28) + "px"
+							bottom: -(h - 3) + "px"
 						}, 100);
 		}
 	}
@@ -346,15 +333,18 @@ Flox.GUI = (function($){
 	}
 
 	// TopX + filter + description + location
-	function updateTitleBetter () {
+	function updateSubtitle() {
 		var subtitle = $("#subtitleText"),
 			topX,
 			filter,
 			description,
-			location;
+			location,
+			newText;
 			
 		// How many flows are being shown?
 		topX = "Top 50 ";
+		
+		filter = Flox.getFlowType() + " flows "
 		
 		// What kind of flows? How are they filtered?
 		// Either incoming, outgoing, net, or total.
@@ -364,7 +354,7 @@ Flox.GUI = (function($){
 		// That would be the least ambiguous. I'm trying not to change
 		// the filter module here. But maybe I should. 
 			
-			
+		subtitle.html(newText);
 	}
 	
 	
@@ -442,6 +432,7 @@ Flox.GUI = (function($){
 	// there could be more later (who knows where this is going!).
 	function updateButtonIcons() {
 		
+		// Go ahead and update the flow type radio buttons here. 
 		updateFlowTypeRadioButtons();
 		
 		// make sure the county/state flows button is showing the correct icon.
@@ -455,36 +446,57 @@ Flox.GUI = (function($){
 	}
 
 	// Change the hint text when hovering over buttons
-	$(".panelButtonContainer").hover(function() {
+	$(".panelButtonContainer").mousemove(function(e) {
 		// get the id of this.
 		var hintText;
 		switch($(this).attr("id")){
 			case "usStateFlowsButton":
-				hintText = "Display state-to-state flows for the US";
+				hintText = "Display state-to-state flows for the entire US";
 				break;
 			case "stateOrCountyFlowsButton":
-				hintText = "Switch between state or county level flows";
+				if(Flox.isCountyMode()) {
+					if(Flox.getSelectedCounty() !== false) {
+						// A county is selected.
+						hintText = "Show flows for all counties in the selected state";
+					} else {
+						hintText = "Show state-level flows for the selected state";
+					}
+				} else {
+					hintText = "Show county-level flows for the selected state";
+				}
 				break;
 			case "necklaceMapButton":
-				hintText = "Show/hide flows going to/from other states";
+				if(Flox.isOuterStateFlows()){
+					hintText = "Hide flows to or from other states";
+				} else {
+					hintText = "Show flows to or from other states";
+				}
+			
+				
 				break;
 			case "innerFlowsButton":
 				hintText = "Show/hide flows entirely within the selected state";
 				break;
 			case "incomingFlowsButton":
-				hintText = "Show/hide incoming flows";
+				hintText = "Show incoming flows";
 				break;
 			case "outgoingFlowsButton":
-				hintText = "Show/hide outgoing flows";
+				hintText = "Show outgoing flows";
 				break;
-			case "netOrTotalFlowsButton":
-				hintText = "Switch between net or total flows";
+			case "netFlowsButton":
+				hintText = "Show net flows";
+				break;
+			case "totalFlowsButton":
+				hintText = "Show total flows";
 				break;
 		}
 		$("#hintText").text(hintText);
-	}, function(){
+	});
+
+	$(".panelButtonContainer").mouseout(function() {
 		my.setHintText();
 	});
+
 
 	my.openSlidingPanel = function() {
 		openSlidingPanel();
@@ -521,22 +533,28 @@ Flox.GUI = (function($){
 		});
 	};
 
+	my.showPanelButton = function(targetButtonID) {
+		var rightMargin = "2px";
+		if(targetButtonID === "stateOrCountyFlowsButton" ||
+		   targetButtonID === "necklaceMapButton") {
+			rightMargin = "20px";
+		}
+		
+		$("#" + targetButtonID).animate({
+				"height": "50px",
+				"width": "60px",
+				"margin-right": rightMargin,
+				"margin-left": "2px",
+				"opacity": 1
+			}, 300, function() {
+		});
+	};
+	
 	my.hidePanelButtons = function(buttonArray) {
 		var i;
 		for(i = 0; i < buttonArray.length; i += 1) {
 			my.hidePanelButton(buttonArray[i]);
 		}
-	};
-
-	my.showPanelButton = function(targetButtonID) {
-		$("#" + targetButtonID).animate({
-				"height": "50px",
-				"width": "60px",
-				"margin-right": "2px",
-				"margin-left": "2px",
-				"opacity": 1
-			}, 300, function() {
-		});
 	};
 	
 	my.showPanelButtons = function(buttonArray) {
