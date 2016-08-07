@@ -135,7 +135,19 @@ Flox.MapComponent_d3 = function() {
 	}
 	
 	function buildAreaTooltipText(d, model) {
-		var node, outgoingFlow, incomingFlow, areaName, inValue, outValue, inOutText;
+		var node,
+			outgoingFlow,
+			incomingFlow,
+			areaName,
+			inValue,
+			outValue,
+			inOutText,
+			inState,
+			inStateText = "",
+			toText = "",
+			fromText = "";
+		
+		console.log(d);
 		
 		if(d.properties.COUNTYFP){
 			// it's a county
@@ -144,14 +156,24 @@ Flox.MapComponent_d3 = function() {
 			// it's a state
 			node = model.findNodeByID(String(Number(d.properties.STATEFP)));
 		}
+		
+		if(Flox.isCountyMode()) {
+			// We're seeing counties, and flow values of states is just for the
+			// selected state.
+			inState = Flox.getSelectedStateName();
+			inStateText = " <div class='tooltipAreaName'>" + inState + "</div>";
+			toText = " TO";
+			fromText = " FROM";
+		}
+		
 		outgoingFlow = node.totalOutgoingFlow;
 		incomingFlow = node.totalIncomingFlow;
 		
 		areaName = "<div class='tooltipAreaName'>" + node.name + "</div>";
 		inValue = "<span class='tooltipValue'>" + numberWithCommas(incomingFlow) + 
-				  "</span> <div class='tooltipTypeHolder'>MOVED<br/>IN</div><br/>";
+				  "</span> <div class='tooltipTypeHolder'>MOVED<br/>IN" + fromText + "</div>" + inStateText + "<br/>";
 		outValue = "<span class='tooltipValue'>" + numberWithCommas(outgoingFlow) + 
-			       "</span> <div class='tooltipTypeHolder'>MOVED<br/>OUT</div><br/>";
+			       "</span> <div class='tooltipTypeHolder'>MOVED<br/>OUT" + toText + "</div>" + inStateText + "<br/>";
 		
 		inOutText = "<div class='tooltipInOutText'>" + inValue +
 					outValue + "</div>";
@@ -162,16 +184,19 @@ Flox.MapComponent_d3 = function() {
 		var nodeName = d.name,
 			incomingFlow = d.totalIncomingFlow,
 			outgoingFlow = d.totalOutgoingFlow,
-			nameText,
-			fromText,
-			toText;
-		
-		nameText = d.name + "<br/>";
-		fromText = "<span class='tooltipValue'>" + numberWithCommas(incomingFlow) + "</span> " + 
-					"<div class='tooltipTypeHolder'>MOVED<br/>IN FROM</div> " + inState + "<br/>";
-		toText = "<span class='tooltipValue'>" + numberWithCommas(outgoingFlow) + " </span> " + 
-				 "<div class='tooltipTypeHolder'>MOVED<br/>OUT TO</div> " + inState + "<br/>";
-		return nameText + fromText + toText; 
+			inValue,
+			outValue,
+			inOutText,
+			areaName;
+				 
+		areaName = "<div class='tooltipAreaName'>" + nodeName + "</div>";		 
+		inValue = "<span class='tooltipValue'>" + numberWithCommas(incomingFlow) + 
+				  "</span> <div class='tooltipTypeHolder'>MOVED<br/>IN FROM</div> <div class='tooltipAreaName'>" + inState + "</div><br/>";
+		outValue = "<span class='tooltipValue'>" + numberWithCommas(outgoingFlow) + 
+			       "</span> <div class='tooltipTypeHolder'>MOVED<br/>OUT TO</div> <div class='tooltipAreaName'>" + inState + "</div><br/>";
+		inOutText = "<div class='tooltipInOutText'>" + inValue + outValue + "</div>";
+				 
+		return areaName + inOutText;
 	}
 
 	// Moves the selected svg element to lay on top of other SVG elements under the 
@@ -1087,10 +1112,10 @@ Flox.MapComponent_d3 = function() {
 	// Zooms to a circle object {cx: center x, cy: center y, r: radius}
 	// Adds a litle padding to the circle and the edge of the window
 	function zoomToCircle(c){
-		// get the corners of a box around the circle. 
 		var dx = c.r * 2,
 			dy = c.r * 2,
-			scale = 0.7 / Math.max(dx / width, dy / height),
+			padding = 0.62, // The further below 1, the more padding it gets.
+			scale = padding / Math.max(dx / width, dy / height),
 			translate = [width / 2 - scale * c.cx, height / 2 - scale * c.cy];
 		svg.transition()
 		.duration(750) // TODO long zoom for testing asynchronous stuff.

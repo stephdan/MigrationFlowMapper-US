@@ -275,7 +275,7 @@ html, body {
 .tooltipValue {
 	font-weight: bold;
 	font-size: 21px;
-	display: inline-block;
+	/*display: inline-block;*/
 }
 
 .tooltipTypeHolder {
@@ -293,6 +293,7 @@ html, body {
 .tooltipAreaName {
 	font-size: 14px;
 	margin-bottom: 0px;
+	display: inline-block;
 }
 
 

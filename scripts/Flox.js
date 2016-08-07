@@ -21,7 +21,71 @@ var mapComponent,
 	},
 	startTimeAll, 
 	endTimeAll,
+	fipsLookupTable,
 	my = {};
+
+fipsLookupTable = {
+	"01": "Alabama",//AL
+	"02": "Alaska",	//AK
+	"04": "Arizona",//AZ
+	"05": "Arkansas",//AR
+	"06": "California",//CA
+	"08": "Colorado",//CO
+	"09": "Connecticut",//CT
+	"10": "Delaware",//DE
+	"11": "District of Columbia",//DC
+	"12": "Florida",//FL
+	"13": "Georgia",//GA
+	"15": "Hawaii",	//HI
+	"16": "Idaho",//ID
+	"17": "Illinois",//IL
+	"18": "Indiana",//IN
+	"19": "Iowa",//IA
+	"20": "Kansas",//KS
+	"21": "Kentucky",//KY
+	"22": "Louisiana",//LA
+	"23": "Maine",//ME
+	"24": "Maryland",//MD
+	"25": "Massachusetts",//MA
+	"26": "Michigan",//MI
+	"27": "Minnesota",//MN
+	"28": "Mississippi",//MS
+	"29": "Missouri",//MO
+	"30": "Montana"	,//MT
+	"31": "Nebraska",//NE
+	"32": "Nevada",//NV
+	"33": "New Hampshire",//NH
+	"34": "New Jersey",//NJ
+	"35": "New Mexico",//NM
+	"36": "New York",//NY
+	"37": "North Carolina",	//NC
+	"38": "North Dakota",//ND
+	"39": "Ohio",//OH
+	"40": "Oklahoma",	//OK
+	"41": "Oregon",	//OR
+	"42": "Pennsylvania",//PA
+	"44": "Rhode Island",//RI
+	"45": "South Carolina",//SC
+	"46": "South Dakota",//SD
+	"47": "Tennessee",//TN
+	"48": "Texas",//TX
+	"49": "Utah",//UT
+	"50": "Vermont",//VT
+	"51": "Virginia",//VA
+	"53": "Washington",//WA
+	"54": "West Virginia",//WV
+	"55": "Wisconsin",//WI
+	"56": "Wyoming",//WY
+	"60": "American Samoa",//AS
+	"64": "Federated States of Micronesia",//FM
+	"66": "Guam",//GU	1
+	"68": "Marshall Islands",//MH	3
+	"69": "Commonwealth of the Northern Mariana Islands",//MP
+	"70": "Palau",//PW
+	"72": "Puerto Rico",//PR
+	"74": "U.S. Minor Outlying Islands",//UM
+	"78": "U.S. Virgin Islands"//VI
+}
 
 function refreshMap(model_copy) {
 	if(!model_copy) {
@@ -709,6 +773,30 @@ my.enableTooltip = function() {
 
 my.disableTooltip = function() {
 	mapComponent.disableTooltip();
+};
+
+// Get a FIPS, return a state name.
+my.lookupFIPS = function(FIPS) {
+	// if the fips is a number, make it at string. Or just string it anyway.
+	FIPS = String(FIPS);
+	
+	// If length of FIPS is 1, then it's a single-digit number. Add leading 0.
+	if(FIPS.length === 1) {
+		FIPS = "0" + FIPS;
+	}
+	
+	if(!fipsLookupTable.hasOwnProperty(FIPS)) {
+		throw new Error(FIPS + " is not a legit FIPS code");
+	} 
+
+	return fipsLookupTable[FIPS];
+};
+
+my.getSelectedStateName = function() {
+	if(filterSettings.selectedState === false) {
+		throw new Error("No state is selected");
+	}
+	return my.lookupFIPS(filterSettings.selectedState);
 };
 
 // END DEBUG STUFF-------------------------------------
