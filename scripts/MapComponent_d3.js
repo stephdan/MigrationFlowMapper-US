@@ -78,8 +78,19 @@ Flox.MapComponent_d3 = function() {
 			"25": "City"
 		},
 		
+		tooltipEnabled = true,
 		
 	    my = {};
+
+	function showTooltip() {
+		if(tooltipEnabled) {
+			tooltip.style("display", "inline");
+		}
+	}
+
+	function hideTooltip() {
+		tooltip.style("display", "none");
+	}
 
 	// takes an array like [r,g,b] and makes it "rgb(r,g,b)" for use with d3
 	function rgbArrayToString(rgb){
@@ -211,9 +222,7 @@ Flox.MapComponent_d3 = function() {
 						.on("click", reset);
 		var mapFeaturesLayer = svg.append("g").attr("id", "mapFeaturesLayer"),
 			statesLayer = mapFeaturesLayer.append("g").attr("id", "statesLayer"),
-			countiesLayer = mapFeaturesLayer.append("g").attr("id", "countieslayer"),
-			countyTooltip,
-			stateTooltip;
+			countiesLayer = mapFeaturesLayer.append("g").attr("id", "countieslayer");
 		
 		mapFeaturesLayer.append("g").attr("id", "flowsLayer");
 		mapFeaturesLayer.append("g").attr("id", "pointsLayer");
@@ -242,16 +251,16 @@ Flox.MapComponent_d3 = function() {
 				.attr("id", function(d) {
 					return "FIPS" + Number(d.properties.STATEFP);
 				})
-				.attr("class", "feature state")
+				.attr("class", "feature state") // TODO neither feature or state classes really do anything
 				.attr("stroke", function(d){
 					return rgbArrayToString(colors.polygonStroke);
 				})
 				.style("stroke-width", stateStrokeWidth)
-				.attr("fill", "#ccc")
+				.attr("fill", "#ccc") // The initial fill before it's assigned.
 				.on("click", stateClicked)
 				.on("mouseover", function(d) {
 					//var settings = Flox.getFilterSettings();
-					tooltip.style("display", "inline");
+					showTooltip();
 					d3.select(this)
 					  .style("stroke", function(d) {
 					  	// It is in county or state view mode?
@@ -261,7 +270,6 @@ Flox.MapComponent_d3 = function() {
 						return rgbArrayToString(colors.polygonHoverStroke);
 					  })
 					  .style("stroke-width", stateHoverStrokeWidth )
-					  .classed("hovered", true)
 					  .moveToFront();
 				})
 				.on("mousemove", function(d) {
@@ -275,16 +283,17 @@ Flox.MapComponent_d3 = function() {
 					});
 				})
 				.on("mouseout", function(d) {
-					tooltip.style("display", "none");
-					d3.select(this).style("fill", function(d) {
-						var node;
-						if (Flox.isStateMode() || Flox.getSelectedState() === false) {
-							node = model_master.findNodeByID(String(Number(d.properties.STATEFP)));
-							return populationDensityColor(Number(node.populationDensity));
-						} else if (Flox.isCountyMode()) {
-							return rgbArrayToString(colors.unselectedStateFill);
-						}
-					})
+					hideTooltip();
+					d3.select(this)
+					// .style("fill", function(d) {
+						// var node;
+						// if (Flox.isStateMode() || Flox.getSelectedState() === false) {
+							// node = model_master.findNodeByID(String(Number(d.properties.STATEFP)));
+							// return populationDensityColor(Number(node.populationDensity));
+						// } else if (Flox.isCountyMode()) {
+							// return rgbArrayToString(colors.unselectedStateFill);
+						// }
+					// })
 					.style("stroke", function(d){
 						//var settings = Flox.getFilterSettings();
 						if(Flox.isCountyMode() && Flox.getSelectedState() !== false) {
@@ -318,7 +327,7 @@ Flox.MapComponent_d3 = function() {
 					})
 					.style("stroke-width", 8) // TODO hardcoded value
 					.on("mouseover", function(d) {
-						tooltip.style("display", "inline");
+						showTooltip();
 						d3.select(this)
 							.moveToFront()
 							.style("stroke", function(d) {
@@ -338,16 +347,16 @@ Flox.MapComponent_d3 = function() {
 						});
 					})
 					.on("mouseout", function() {
-						tooltip.style("display", "none");
+						hideTooltip();
 						d3.select(this)
 							.moveToFront()
 							.style("stroke", function(d){
 								return rgbArrayToString(colors.polygonStroke);
 							})
-							.style("fill", function(d) {
-								var node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
-								return populationDensityColor(Number(node.populationDensity));
-							})
+							// .style("fill", function(d) {
+								// var node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
+								// return populationDensityColor(Number(node.populationDensity));
+							// })
 							.style("stroke-width", 8 ) // TODO hardcoded value
 							.classed("hovered", false);
 					})
@@ -360,16 +369,17 @@ Flox.MapComponent_d3 = function() {
 		// end d3.json
 	}// End initMap();
 
-
-
 	function removeAllFlows() {
 		d3.select("#flowsLayer").selectAll("g").remove();
 		d3.select("#pointsLayer").selectAll("circle").remove();
+		//d3.select("#necklaceMapLayer").remove();
 	}
 
 	function removeNecklaceMap() {
 		d3.select("#necklaceMapLayer").remove();
 	}
+
+	
 
 	function getNodeRadius(node) {
 		return model_copy.getNodeRadius(node);
@@ -571,7 +581,7 @@ Flox.MapComponent_d3 = function() {
 		
          
         svgFlows.on("mouseover", function(d) {
-			tooltip.style("display", "inline");
+			showTooltip();
 			d3.select(this).select(".curve").attr("stroke", "yellow");
 			d3.select(this).select(".arrow").attr("fill", "yellow");
         })
@@ -586,7 +596,7 @@ Flox.MapComponent_d3 = function() {
 			});
         })
         .on("mouseout", function() {
-			tooltip.style("display", "none");
+			hideTooltip();
 			d3.select(this).select(".curve").attr("stroke", function(d) {
 				return getFlowColor(d);
 			});
@@ -833,6 +843,8 @@ Flox.MapComponent_d3 = function() {
 		model_copy = m;
 		
 		// if this is county flow data, color the counties by pop density
+		// TODO this is done on every single iteration of the method.
+		// It only needs to be done once. 
 		if(Flox.isCountyMode() && Flox.getSelectedState() !== false){
 			colorCountiesByPopulationDensity();
 		} else {
@@ -1154,9 +1166,13 @@ Flox.MapComponent_d3 = function() {
 		// County mode?
 		if(Flox.isCountyMode()) {
 			
+			// Hide the tooltip
+			my.disableTooltip();
+			hideTooltip();
+			
+			
 			// Get the smallest circle around the polygon, save it for later.
 			outerCircle = getSmallestCircleAroundPolygon(statePolygon);
-			
 			
 			// Load the county flow data for that state
 			//zoomToPolygon(statePolygon); 
@@ -1167,8 +1183,6 @@ Flox.MapComponent_d3 = function() {
 			hideAllCountyBorders();
 			// Show just the county boundaries for the selected state
 			showCountyBordersWithinState(statePolygon.properties.STATEFP);
-			
-			
 			
 			d3.selectAll(".feature.state")
 			  .transition()
@@ -1204,6 +1218,8 @@ Flox.MapComponent_d3 = function() {
 	function stateClicked(d) {
 		// If it's in state mode, and this state is already selected...reset?
 		if(Number(Flox.getSelectedState()) === Number(d.properties.STATEFP)) {
+			hideTooltip();
+			my.disableTooltip();
 			reset();
 			// load the state to state flows?
 			Flox.importStateToStateMigrationFlows();
@@ -1328,7 +1344,7 @@ Flox.MapComponent_d3 = function() {
 
 		// Add some mouse interactions to the nodes, like tooltips.
 		nodes.on("mouseover", function(d) {
-			tooltip.style("display", "inline");
+			showTooltip();
 			d3.select(this).selectAll("circle")
 			  .style("fill", function(d) {
 				return rgbArrayToString(colors.necklaceNodeHoverFill);
@@ -1343,14 +1359,14 @@ Flox.MapComponent_d3 = function() {
 			       });
         })
         .on("mouseout", function() {
-			tooltip.style("display", "none");
+			hideTooltip();
 			d3.select(this).selectAll("circle")
 			  .style("fill", function(d) {
 				return rgbArrayToString(colors.necklaceNodeFill);
 			  });
         })
         .on("click", function(d) {
-			tooltip.style("display", "none");
+			hideTooltip();
 			necklaceNodeClicked(d);
         });
         
@@ -1735,6 +1751,11 @@ Flox.MapComponent_d3 = function() {
 		removeNecklaceMap();
 	};
 
+	my.clearAllMapFeatures = function() {
+		removeAllFlows();
+		d3.select("#necklaceMapLayer").remove(); 
+	};
+
 	my.resizeFlows = function() {
 
 	};
@@ -1812,6 +1833,14 @@ Flox.MapComponent_d3 = function() {
 	// Debug
 	my.getPopulationDensityColor = function() {
 		return populationDensityColor;
+	};
+	
+	my.disableTooltip = function() {
+		tooltipEnabled = false;
+	};
+	
+	my.enableTooltip = function() {
+		tooltipEnabled = true;
 	};
 	
 	return my;

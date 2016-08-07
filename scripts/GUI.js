@@ -571,6 +571,7 @@ Flox.GUI = (function($){
 	my.hideLayoutProgressBar = function() {
 		setTimeout(function(){
 			$("#newProgressBar").addClass("hidden");
+			$("#newProgress").width("0%");
 		}, 100);
 	};
 

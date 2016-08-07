@@ -30,6 +30,12 @@ function refreshMap(model_copy) {
     mapComponent.drawFeatures(model_copy);
 }
 
+function terminateWorkers() {
+	if (importWorker) {importWorker.terminate();}
+	if (filterWorker) {filterWorker.terminate();}
+	if (layoutWorker) {layoutWorker.terminate();}
+}
+
 // TODO If the browser can't do webworkers, then webworkers shouldn't be used.
 function initLayoutWorker(modelCopy, callback) {
 	var flows,
@@ -41,17 +47,21 @@ function initLayoutWorker(modelCopy, callback) {
 		// If a layouter worker currently exists, call terminate on it. 
 		// If it was in the middle of something, it'll stop and do this
 		// instead. If it wasn't doing anything, then this won't matter.
-		if(layoutWorker) {
-			layoutWorker.terminate();
-		}
+		if(layoutWorker) {layoutWorker.terminate();}
+		
 		// Web workers take a separate file. Note that the path is relative
 		// to index.html, not Flox.js
 		layoutWorker = new Worker("scripts/layoutWorker.js");
 		
 		// This happens when layoutWorker sends out a message
 		layoutWorker.onmessage = function(e) {
+			var progress;
+			
+			// progress is 50 plus 
+			
+			
 			// Update the progress bar.
-			Flox.GUI.updateLayoutProgressBar(e.data[1]);
+			Flox.GUI.updateLayoutProgressBar(50 + (e.data[1]/2));
 			
 			// Get the new control points
 			ctrlPts = e.data[0];
@@ -117,13 +127,18 @@ function initImportWorker(callback) {
 		if (importWorker) {importWorker.terminate();}
 		importWorker = new Worker("importWorker.js");
 		importWorker.onmessage = function(e) {	
-			// Send the imported data to whoever called runImportWorker		
+			// update progress bar
+			Flox.GUI.updateLayoutProgressBar(30);
+			
+			// Send the imported data to whoever called runImportWorker
 			callback(e.data);
 		}
 	}	
 }
 
 function runImportWorker(stuffImportWorkerNeeds, callback) {
+	Flox.GUI.showLayoutProgressBar();
+	Flox.GUI.updateLayoutProgressBar(10);
 	initImportWorker(callback);
 
 	// post a message to the import worker
@@ -135,6 +150,7 @@ function runImportWorker(stuffImportWorkerNeeds, callback) {
  * with the appropriate weight.
  * Decreases the weight of each iteration. 
  * Calls moveFlowsIntersectingNodes() during second half of iterations.
+ * NOTE: this is run only if webworkers are not enabled or available
  */
 function layoutFlows(model) {
 	
@@ -185,6 +201,7 @@ function layoutFlows(model) {
 
 function importStateToStateMigrationFlows(keepSelectedState) {
 	// clear the model
+	terminateWorkers();
     model_master.deleteAllFlows();
     mapComponent.hideAllCountyBorders();
     mapComponent.removeAllFlows();
@@ -361,6 +378,7 @@ my.importStateToStateMigrationFlows = function (keepSelectedState) {
 };
 
 my.importTotalCountyFlowData = function(stateFIPS) {		
+	terminateWorkers();
 	
 	var stuffImportWorkerNeeds = {};
 	
@@ -424,8 +442,10 @@ my.filterBySettings = function(m, settings) {
  * Filters, performs layout, and displays the model according to current settings.
  */
 my.updateMap = function() {
+	// There should be no workers running right now.
+	terminateWorkers();
+	mapComponent.clearAllMapFeatures();
 	
-	Flox.GUI.updateLayoutProgressBar(0);
 	Flox.GUI.showLayoutProgressBar();
 	// Good time to assign xy coordinates to nodes.
 	my.assignXYToNodes(model_master.getPoints());
@@ -437,13 +457,16 @@ my.updateMap = function() {
 	// FIXME Something is broken when not using webworkers. 
 	Flox.GUI.updateGUI();
 	if(window.Worker && model_master.settings.useWebworkers) {
+		Flox.GUI.updateLayoutProgressBar(35);
 		runFilterWorker(function(filteredModel) {
+			Flox.GUI.updateLayoutProgressBar(50);
 			// configure the needed variables to get only above average flows.
 			filteredModel.setAboveAverageFlowCount();
 			if(filterSettings.stateMode === false &&
 				filterSettings.selectedState !== false) {
 				mapComponent.configureNecklaceMap(filteredModel);
 			}
+			mapComponent.enableTooltip();
 			runLayoutWorker(filteredModel, function() {
 				
 				refreshMap(filteredModel);
@@ -678,6 +701,14 @@ my.getNodeCoordinates = function() {
 
 my.getPopulationDensityColor = function() {
 	return mapComponent.getPopulationDensityColor();
+};
+
+my.enableTooltip = function() {
+	mapComponent.enableTooltip();
+};
+
+my.disableTooltip = function() {
+	mapComponent.disableTooltip();
 };
 
 // END DEBUG STUFF-------------------------------------
