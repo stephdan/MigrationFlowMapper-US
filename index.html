@@ -61,8 +61,15 @@
 		<div id="slidingPanelTab">
 		</div>
 		
+		<div id="newProgressBar" class="hidden">
+			<div id="newProgress">
+			</div>
+		</div>
+		
 		<div id="slidingPanelContent">
+			
 			<div id="subtitleText">Top 50 state-to-state flows</div>
+			
 			<p id="hintText">Click a state to see flows for that state</p>
 			<ul> <!-- List of buttons -->
 				
@@ -99,23 +106,7 @@
 		        </li> -->
 		        
 		        <li>
-		        	<div class="panelButtonContainer" id="incomingFlowsButton">
-		        		<img src="resources/icons/buttons/inFlows_white.svg"
-						class="buttonIcon"
-						id="inFlows" />
-		        	</div> 
-		        </li>
-		        
-		        <li>
-		        	<div class="panelButtonContainer" id="outgoingFlowsButton">
-		        		<img src="resources/icons/buttons/outFlows_white.svg"
-						class="buttonIcon"
-						id="outFlows" />
-		        	</div> 
-		        </li>
-		        
-		        <li>
-		        	<div class="panelButtonContainer" id="netFlowsButton">
+		        	<div class="panelButtonContainer bordered" id="netFlowsButton">
 		        		<img src="resources/icons/buttons/netFlows_white.svg"
 						class="buttonIcon"
 						id="netFlows" />
@@ -123,10 +114,26 @@
 		        </li>
 		        
 		        <li>
-		        	<div class="panelButtonContainer" id="totalFlowsButton">
+		        	<div class="panelButtonContainer bordered" id="totalFlowsButton">
 		        		<img src="resources/icons/buttons/totalFlows_white.svg"
 						class="buttonIcon"
 						id="totalFlows" />
+		        	</div> 
+		        </li>
+		        
+		        <li>
+		        	<div class="panelButtonContainer bordered" id="incomingFlowsButton">
+		        		<img src="resources/icons/buttons/inFlows_white.svg"
+						class="buttonIcon"
+						id="inFlows" />
+		        	</div> 
+		        </li>
+		        
+		        <li>
+		        	<div class="panelButtonContainer bordered" id="outgoingFlowsButton">
+		        		<img src="resources/icons/buttons/outFlows_white.svg"
+						class="buttonIcon"
+						id="outFlows" />
 		        	</div> 
 		        </li>
 		        
@@ -143,12 +150,7 @@
 		</div>
 	</div>
 	
-	<div class="progress hidden" id="layoutProgressBar">
-		
-		<div class="progress-bar" id="layoutProgress" role="progressbar" style="width:70%">
-		</div>
-		
-	</div>
+
 	
 	<div id="debugMenu">
 		

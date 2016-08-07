@@ -49,36 +49,35 @@ Flox.GUI = (function($){
 	
 	$("#usStateFlowsButton").click(
 		function() {
-			var settings = Flox.getFilterSettings();
-			settings.selectedState = false;
-			settings.selectedCounty = false;
-			settings.stateMode = true;
-			settings.countyMode = false;
+			Flox.setSelectedState(false);
+			Flox.setSelectedCounty(false);
+			Flox.setStateMode(true);
+			Flox.setCountyMode(false);
 			Flox.importStateToStateMigrationFlows();
 			// Could this instead call updateMap?
 		}
 	);
 	
+	// TODO this is kindof a mess
 	$("#stateOrCountyFlowsButton").click(
 		function() {
-			var buttonIcon = $(this).find("img"),
-				settings = Flox.getFilterSettings();
+			var buttonIcon = $(this).find("img");
 			
-			if(settings.selectedCounty !== false) {
-				console.log("A county is selected: " + settings.selectedCounty);
+			if(Flox.getSelectedCounty() !== false) {
+				console.log("A county is selected: " + Flox.getSelectedCounty());
 				// Import the county-to-county data for that state again. No
 				// need to go all zoomy. 
-				settings.selectedCounty = false;
-				Flox.selectState(settings.selectedState);
+				Flox.setSelectedCounty(false);
+				Flox.selectState(Flox.getSelectedState());
 				return;
 			}
 			
-			if(settings.countyMode === true) {
+			if(Flox.isCountyMode()) {
 				// It's in county mode. So get it out of county mode! And 
 				// into state mode, but showing only flows for the selected
 				// state
-				settings.countyMode = false;
-				settings.stateMode = true;
+				Flox.setCountyMode(false);
+				Flox.setStateMode(true);
 				
 				// The button will show what happens when you click it. It
 				// will turn back to county mode, so show the counies icon
@@ -87,10 +86,10 @@ Flox.GUI = (function($){
 				
 				Flox.importStateToStateMigrationFlows(true);
 				return;
-			} else if (settings.countyMode === false) {
+			} else if (Flox.isCountyMode() === false) {
 				// It's not in county mode. Put it in county mode!
-				settings.countyMode = true;
-				settings.stateMode = false;
+				Flox.setCountyMode(true);
+				Flox.setStateMode(false);
 				
 				// The button will show what happens when you click it. It
 				// will turn back to county mode, so show the counies icon
@@ -98,10 +97,10 @@ Flox.GUI = (function($){
 						  .attr("id", "state");
 						  
 				// if a state is selected, show the county flows in that state.
-				if(settings.selectedState !== false) {
+				if(Flox.getSelectedState() !== false) {
 					// This is weird. A state should already be selected here. 
 					// But this initiates the zoom thing though. Which is nice.
-					Flox.selectState(settings.selectedState);
+					Flox.selectState(Flox.getSelectedState());
 					
 				} else if (settings.selectedState === false) {
 					// need to change the color of the states to gray...
@@ -129,10 +128,11 @@ Flox.GUI = (function($){
 	// Make sure the buttons match the current settings.
 	function updateFlowTypeRadioButtons(){
 		console.log("updating buttons!");
-		var settings = Flox.getFilterSettings(),
-			flowType = settings.flowType,
+		
+		var flowType = Flox.getFlowType(),
 			settingList = ["net", "total", "incoming", "outgoing"],
 			i;
+			
 		for(i = 0; i < settingList.length; i += 1) {
 			if(flowType === settingList[i]) {
 				toggleButtonIcon(settingList[i] + "FlowsButton", true);
@@ -142,24 +142,31 @@ Flox.GUI = (function($){
 		}
 	}
 	
+	my.updateFlowTypeRadioButtons = function() {
+		updateFlowTypeRadioButtons();
+	};
+	
 	$("#necklaceMapButton").click(
 		function() {
-			var buttonIcon = $(this).find("img"),
-				settings = Flox.getFilterSettings(); 
-			if(settings.outerStateFlows === true) {
-				settings.outerStateFlows = false;
+			var buttonIcon = $(this).find("img");		
+			if (Flox.isOuterStateFlows()) {
+				Flox.setOuterStateFlows(false);
 				toggleButtonIcon("necklaceMapButton", false);
-				if(settings.inStateFlows === false) {
-					settings.inStateFlows = true;
+				if(Flox.isInStateFlows() === false) {
+					Flox.setInStateFlows(true);
 					toggleButtonIcon("innerFlowsButton", true);
 				}
+				// Change the hint text
+				$("#hintText").text("Show flows to or from other states");
+				
 			} else {
-				settings.outerStateFlows = true;
+				Flox.setOuterStateFlows(true);
 				toggleButtonIcon("necklaceMapButton", true);
+				$("#hintText").text("Hide flows to or from other states");
 			}
 			
 			// Only do something if it's not in state mode
-			if(settings.stateMode === false) {
+			if(Flox.isStateMode() === false) {
 				Flox.updateMap();
 			}
 		}
@@ -189,15 +196,12 @@ Flox.GUI = (function($){
 	
 	$("#incomingFlowsButton").click(
 		function() {
-			var settings = Flox.getFilterSettings();
-			
-			if(settings.flowType !== "incoming") {
-				settings.flowType = "incoming";
+			if(Flox.getFlowType() !== "incoming") {
+				Flox.setFlowType("incoming");
 			}
 			updateFlowTypeRadioButtons();
-			
 			// Only updateMap if a state or county is selected
-			if(settings.selectedCounty !== false || settings.selectedState !== false) {
+			if(Flox.getSelectedCounty() !== false || Flox.getSelectedState() !== false) {
 				Flox.updateMap();
 			}
 		}
@@ -205,15 +209,13 @@ Flox.GUI = (function($){
 	
 	$("#outgoingFlowsButton").click(
 		function() {
-			var settings = Flox.getFilterSettings();
-			
-			if(settings.flowType !== "outgoing") {
-				settings.flowType = "outgoing";
+			if(Flox.getFlowType() !== "outgoing") {
+				Flox.setFlowType("outgoing");
 			}
 			updateFlowTypeRadioButtons();
 
 			// Only updateMap if a state or county is selected
-			if(settings.selectedCounty !== false || settings.selectedState !== false) {
+			if(Flox.getSelectedCounty() !== false || Flox.getSelectedState() !== false) {
 				Flox.updateMap();
 			}
 		}
@@ -221,10 +223,8 @@ Flox.GUI = (function($){
 	
 	$("#netFlowsButton").click(
 		function() {
-			var settings = Flox.getFilterSettings();
-			
-			if(settings.flowType !== "net") {
-				settings.flowType = "net";
+			if(Flox.getFlowType() !== "net") {
+				Flox.setFlowType("net");
 			}
 			updateFlowTypeRadioButtons();
 			Flox.updateMap();
@@ -233,52 +233,39 @@ Flox.GUI = (function($){
 	
 	$("#totalFlowsButton").click(
 		function() {
-			var settings = Flox.getFilterSettings();
-			
-			if(settings.flowType !== "total") {
-				settings.flowType = "total";
+			if(Flox.getFlowType() !== "total") {
+				Flox.setFlowType("total");
 			}
 			updateFlowTypeRadioButtons();
 			Flox.updateMap();
 		}
 	);
 	
-	// $("#netOrTotalFlowsButton").click(
-		// function() {
-			// var buttonIcon = $(this).find("img"),
-				// settings = Flox.getFilterSettings();
-			// if(settings.netFlows === false) {
-				// settings.netFlows = true;
-				// buttonIcon.attr("src", "resources/icons/buttons/netFlows_white.svg")
-						  // .attr("id", "netFlows");
-			// } else {
-				// settings.netFlows = false;
-				// buttonIcon.attr("src", "resources/icons/buttons/totalFlows_white.svg")
-						  // .attr("id", "totalFlows");
-			// }
-			// Flox.updateMap();
-		// }
-	// );
 	
 	
 	
 	// This works.
 	// TODO is this obsolete?
 	$("#inStateFlowsToggle").on("click", function() {
-		
-		var settings = Flox.getFilterSettings();
-		settings.inStateFlows = !settings.inStateFlows;
+		if(Flox.isInStateFlows()) {
+			Flox.setInStateFlows(false);
+		} else {
+			Flox.setInStateFlows(true);
+		}
 		// Only do something if it's not in state mode
-		if(settings.stateMode === false) {
+		if(Flox.isStateMode() === false) {
 			Flox.updateMap();
 		}
 	});
 
-	$("#outOfStateFlowsToggle").on("click", function() {
-		var settings = Flox.getFilterSettings();
-		settings.outerStateFlows = !settings.outerStateFlows;
+	$("#outOfStateFlowsToggle").on("click", function() {		
+		if(Flox.isOuterStateFlows()) {
+			Flox.setOuterStateFlows(false);
+		} else {
+			Flox.setOuterStateFlows(true);
+		}
 		// Only do something if it's not in state mode
-		if(settings.stateMode === false) {
+		if(Flox.isStateMode() === false) {
 			Flox.updateMap();
 		}
 	});
@@ -295,7 +282,7 @@ Flox.GUI = (function($){
 		} else {
 			slidingPanel.addClass("collapsed")
 						.animate({
-							bottom: -(h - 28) + "px"
+							bottom: -(h - 32) + "px"
 						}, 100);
 		}
 	}
@@ -345,31 +332,85 @@ Flox.GUI = (function($){
 		}
 	}
 
-	// TopX + filter + description + location
-	function updateTitleBetter () {
+	function setSubtitle(newSubtitle) {
 		var subtitle = $("#subtitleText"),
-			settings = Flox.getFilterSettings(),
-			topX,
-			filter,
-			description,
-			location;
+			panel = $("#slidingPanelContent"),
+			panelWidth = panel.width(),
+			panelPadding = panel.outerWidth() - panelWidth,
+			fontSize = 16;
+		
+		//subtitle.hide();
+		
+		subtitle.css("font-size", fontSize);
+		subtitle.text(newSubtitle);
+		while (subtitle.width() >=  panelWidth) {
+			fontSize -= 0.2;
+			subtitle.css("font-size", fontSize);
+		}
+		
+		//subtitle.show();
+	}
+
+	// TopX + filter + description + location
+	function updateSubtitle() {
+		var subtitle = $("#subtitleText"),
+			flowCount,
+			stateOrCounty,
+			flowType,
+			preposition,
+			location,
+			specialCase = "",
+			newText;
 			
 		// How many flows are being shown?
-		topX = "Top 50 ";
+		flowCount = "Top 50 ";
 		
-		// What kind of flows? How are they filtered?
-		// Either incoming, outgoing, net, or total.
-		// They can only be incoming or outgoing if a state or county is selected,
-		// AND they aren't net or total.
-		// It might be better to have a filter setting like "flowType"
-		// That would be the least ambiguous. I'm trying not to change
-		// the filter module here. But maybe I should. 
-			
-			
+		// state-level or county-level
+		stateOrCounty = Flox.isStateMode() ? "state-level " : "county-level "
+		
+		// Incoming, outgoing, net, total?
+		flowType = Flox.getFlowType() + " flows "
+		
+		// for, within, between?
+		// for, if a specific state or county is selected
+		// within, if it's in county mode, and necklace maps are turned off
+		// between, if neither of the above
+		if (Flox.getSelectedCounty() !== false) {
+			preposition = "for ";
+			if(Flox.isOuterStateFlows() === false) {
+				specialCase = " just within this state"
+			}
+		} else if (Flox.selectedState !== false) {
+			if (Flox.isCountyMode() && Flox.isOuterStateFlows() === false) {
+				preposition = "just within ";
+			} else {
+				preposition = "for ";
+			}
+		} else {
+			preposition = "between ";
+		}
+		
+		// what place?
+		// all US states, if there is no selected state or county
+		// countyName, if a county is selected
+		// stateName, if a state is selected and no county is selected
+		if(Flox.getSelectedCounty() !== false) {
+			location = Flox.getSelectedFeatureName();
+		} else if (Flox.getSelectedState() !== false) {
+			location = Flox.getSelectedFeatureName();
+		} else {
+			location = " all US states";
+		}
+		newText = flowCount + stateOrCounty + flowType + preposition + location + specialCase;
+		setSubtitle(newText);
+		
+		//subtitle.html(flowCount + stateOrCounty + flowType + preposition + location + specialCase);
 	}
 	
 	
-	
+	// TODO This is about to become obsolete. It was kindof a shitty and
+	// confusing way of going about this. And it's broken now! It's here just 
+	// for reference while I make a better one.
 	function updateTitle() {
 		var subtitle = $("#subtitleText"),
 			settings = Flox.getFilterSettings(),
@@ -440,16 +481,14 @@ Flox.GUI = (function($){
 	// There is only 1 button that needs this update right now, but
 	// there could be more later (who knows where this is going!).
 	function updateButtonIcons() {
-		// make sure the county/state flows button is showing the correct icon.
-		var stateOrCountyFlowsButtonIcon = $("#stateOrCountyFlowsButton").find("img"),
-			settings = Flox.getFilterSettings();
 		
-		// There is really only one case where this button isn't being updated
-		// properly, and that's when...I forget. 
-		// Oh, when a state is clicked while viewing a county flow. 
-		// When a state is clicked, it'll always go into multi-county viewing
-		// mode. So, a state is selected, but no county is selected.
-		if(settings.countyMode && settings.selectedCounty === false) {
+		// Go ahead and update the flow type radio buttons here. 
+		updateFlowTypeRadioButtons();
+		
+		// make sure the county/state flows button is showing the correct icon.
+		var stateOrCountyFlowsButtonIcon = $("#stateOrCountyFlowsButton").find("img");
+		
+		if(Flox.isCountyMode() && Flox.getSelectedCounty() === false) {
 			// should look like a solid state.
 			stateOrCountyFlowsButtonIcon.attr("src", "resources/icons/buttons/state_white.svg")
 						  .attr("id", "state");
@@ -457,36 +496,57 @@ Flox.GUI = (function($){
 	}
 
 	// Change the hint text when hovering over buttons
-	$(".panelButtonContainer").hover(function() {
+	$(".panelButtonContainer").mousemove(function(e) {
 		// get the id of this.
 		var hintText;
 		switch($(this).attr("id")){
 			case "usStateFlowsButton":
-				hintText = "Display state-to-state flows for the US";
+				hintText = "Display state-to-state flows for the entire US";
 				break;
 			case "stateOrCountyFlowsButton":
-				hintText = "Switch between state or county level flows";
+				if(Flox.isCountyMode()) {
+					if(Flox.getSelectedCounty() !== false) {
+						// A county is selected.
+						hintText = "Show flows for all counties in the selected state";
+					} else {
+						hintText = "Show state-level flows for the selected state";
+					}
+				} else {
+					hintText = "Show county-level flows for the selected state";
+				}
 				break;
 			case "necklaceMapButton":
-				hintText = "Show/hide flows going to/from other states";
+				if(Flox.isOuterStateFlows()){
+					hintText = "Hide flows to or from other states";
+				} else {
+					hintText = "Show flows to or from other states";
+				}
+			
+				
 				break;
 			case "innerFlowsButton":
 				hintText = "Show/hide flows entirely within the selected state";
 				break;
 			case "incomingFlowsButton":
-				hintText = "Show/hide incoming flows";
+				hintText = "Show incoming flows";
 				break;
 			case "outgoingFlowsButton":
-				hintText = "Show/hide outgoing flows";
+				hintText = "Show outgoing flows";
 				break;
-			case "netOrTotalFlowsButton":
-				hintText = "Switch between net or total flows";
+			case "netFlowsButton":
+				hintText = "Show net flows";
+				break;
+			case "totalFlowsButton":
+				hintText = "Show total flows";
 				break;
 		}
 		$("#hintText").text(hintText);
-	}, function(){
+	});
+
+	$(".panelButtonContainer").mouseout(function() {
 		my.setHintText();
 	});
+
 
 	my.openSlidingPanel = function() {
 		openSlidingPanel();
@@ -501,15 +561,17 @@ Flox.GUI = (function($){
  * @param {Number} progress - 0 to 100, percentage complete
 	 */
 	my.updateLayoutProgressBar = function(progress) {
-		$("#layoutProgress").width(progress + "%");
+		$("#newProgress").width(progress + "%");
 	};
 
 	my.showLayoutProgressBar = function() {
-		$("#layoutProgressBar").removeClass("hidden");
+		$("#newProgressBar").removeClass("hidden");
 	};
 	
 	my.hideLayoutProgressBar = function() {
-		$("#layoutProgressBar").addClass("hidden");
+		setTimeout(function(){
+			$("#newProgressBar").addClass("hidden");
+		}, 100);
 	};
 
 	my.hidePanelButton = function(targetButtonID) {
@@ -523,22 +585,28 @@ Flox.GUI = (function($){
 		});
 	};
 
+	my.showPanelButton = function(targetButtonID) {
+		var rightMargin = "2px";
+		if(targetButtonID === "stateOrCountyFlowsButton" ||
+		   targetButtonID === "necklaceMapButton") {
+			rightMargin = "20px";
+		}
+		
+		$("#" + targetButtonID).animate({
+				"height": "50px",
+				"width": "60px",
+				"margin-right": rightMargin,
+				"margin-left": "2px",
+				"opacity": 1
+			}, 300, function() {
+		});
+	};
+	
 	my.hidePanelButtons = function(buttonArray) {
 		var i;
 		for(i = 0; i < buttonArray.length; i += 1) {
 			my.hidePanelButton(buttonArray[i]);
 		}
-	};
-
-	my.showPanelButton = function(targetButtonID) {
-		$("#" + targetButtonID).animate({
-				"height": "50px",
-				"width": "60px",
-				"margin-right": "2px",
-				"margin-left": "2px",
-				"opacity": 1
-			}, 300, function() {
-		});
 	};
 	
 	my.showPanelButtons = function(buttonArray) {
@@ -549,20 +617,19 @@ Flox.GUI = (function($){
 	};
 	
 	my.setHintText = function() {
-		var settings = Flox.getFilterSettings(),
-			hintText = $("#hintText");
+		var hintText = $("#hintText");
 		
-		if(settings.selectedState === false) {
+		if(Flox.getSelectedState() === false) {
 			// no state is selected
 			hintText.text("Click a state to see flows for that state");
 		} else {
 			// A state IS selected
 			// Is it in county mode?
-			if(settings.countyMode) {
-				hintText.text("Click a county, or click a different state")
+			if(Flox.isCountyMode()) {
+				hintText.text("Click a county, or click a different state");
 			} else {
 				// we're viewing flows to and from one state. 
-				hintText.text("View county flows by clicking the counties menu button")
+				hintText.text("View county flows by clicking the counties menu button");
 			}
 		}
 	};
@@ -571,18 +638,22 @@ Flox.GUI = (function($){
 	// and filter settings.
 	my.updateGUI = function() {
 		console.log("updateGUI called");
-		var settings = Flox.getFilterSettings(),
-			hideThese = [],
-			showThese = [];
+		var hideThese = [],
+			showThese = [],
+			selectedCounty = Flox.getSelectedCounty(),
+			selectedState = Flox.getSelectedState(),
+			stateMode = Flox.isStateMode(),
+			countyMode = Flox.isCountyMode();
+			
 		
-		if(settings.selectedCounty !== false || settings.stateMode) {
+		if(selectedCounty !== false || stateMode) {
 			// A county is selected . The state/county button should show counties.
 			$("#stateOrCountyFlowsButton").find("img")
 				.attr("src", "resources/icons/buttons/counties_white.svg")
 				.attr("id", "counties");
 		}
 		
-		if(settings.selectedState === false) {
+		if(selectedState === false) {
 			// no state is selected
 			hideThese.push("usStateFlowsButton");
 			hideThese.push("stateOrCountyFlowsButton");
@@ -591,20 +662,20 @@ Flox.GUI = (function($){
 			showThese.push("stateOrCountyFlowsButton");
 		}
 		
-		if(settings.selectedState && settings.countyMode) {
+		if(selectedState && countyMode) {
 			showThese.push("necklaceMapButton");
 		} else {
 			hideThese.push("necklaceMapButton");
 		}
 		
-		if(settings.selectedState !== false && settings.countyMode) {
+		if(selectedState !== false && countyMode) {
 			showThese.push("innerFlowsButton");	
 		} else {
 			hideThese.push("innerFlowsButton");
 		}	
 		
-		if((settings.stateMode && settings.selectedState !== false) ||
-			(settings.countyMode && settings.selectedCounty !== false)) {
+		if((stateMode && selectedState !== false) ||
+			(countyMode && selectedCounty !== false)) {
 			showThese.push("incomingFlowsButton");
 			showThese.push("outgoingFlowsButton");
 		} else {
@@ -620,7 +691,7 @@ Flox.GUI = (function($){
 		updateButtonIcons();
 		my.hidePanelButtons(hideThese);
 		my.showPanelButtons(showThese);
-		//updateTitle();
+		updateSubtitle();
 	};
 
 // DEBUG GUI STUFF ------------------------------------------------------------

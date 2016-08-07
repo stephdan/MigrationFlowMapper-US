@@ -94,7 +94,8 @@ Flox.Model = function() {
 		// TODO The layouter might care about the scale in order to help
 		// determine an appropriate distance flows should be moved off nodes. 
 		stateScales = {
-			"FIPS1"  : 1, // Alabama
+			"FIPS01"  : 1, // Alabama
+			"FIPS04"  : 2.0, // Arizona
 			"FIPS06"  : 1.5, // California
 			"FIPS17" : 0.7, // Illinois
 			"FIPS34" : 0.5, // New Jersey

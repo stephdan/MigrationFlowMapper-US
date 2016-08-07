@@ -81,15 +81,11 @@ Flox.MapComponent_d3 = function() {
 		
 	    my = {};
 
-
-
 	// takes an array like [r,g,b] and makes it "rgb(r,g,b)" for use with d3
 	function rgbArrayToString(rgb){
-		
 		if(rgb[3]) {
 			return "rgba(" +  rgb[0] + "," + rgb[1] + "," + rgb[2] + "," + rgb[3] + ")";
 		}
-		
 		return "rgb(" +  rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
 	}
 
@@ -103,28 +99,26 @@ Flox.MapComponent_d3 = function() {
 		var moverText = "<span class='tooltipValue'>" + numberWithCommas(d.getValue()) + "</span>",
 			typeText,
 			toFromText,
-			flowType,
-			filterSettings = Flox.getFilterSettings();
+			flowType;
+			//filterSettings = Flox.getFilterSettings();
 		
-		if(filterSettings.flowType !== "netFlows") {
+		if(Flox.getFlowType() === "total") {
 			// it's a total flow
 			typeText = " <div class='tooltipTypeHolder'>TOTAL<br/>MOVERS</div><br/>";
 			// But sometimes it's directional and needs to be treated differently.
-			if((filterSettings.countyIncoming === false || filterSettings.countyOutgoing === false) &&
-				((filterSettings.stateMode && filterSettings.selectedState !== false) ||
-			(filterSettings.countyMode && filterSettings.selectedCounty !== false))) {
-				// do things differently, more like a net flow
-				toFromText = "<div class='tooltipToFromText'><span style='font-size: 8px;'>from </span>" + d.getStartPt().name + "<br/>" + 
-				             "<span style='font-size: 8px;'>to </span>" + d.getEndPt().name + "</div>";
-			} else {
-				toFromText = "<div class='tooltipToFromText'>" + d.getStartPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getEndPt().name + ": " + numberWithCommas(d.AtoB) + "<br/>" + 
-				             d.getEndPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getStartPt().name + ": " + numberWithCommas(d.BtoA) + "</div>";
-			}
-		} else {
+			
+			toFromText = "<div class='tooltipToFromText'>" + d.getStartPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getEndPt().name + ": " + numberWithCommas(d.AtoB) + "<br/>" + 
+				            d.getEndPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getStartPt().name + ": " + numberWithCommas(d.BtoA) + "</div>";
+
+		} else if (Flox.getFlowType() === "net"){
 			// it's a net flow
 			typeText = " <div class='tooltipTypeHolder'>NET<br/>MOVERS</div><br/>";
 			toFromText = "<div class='tooltipToFromText'><span style='font-size: 8px;'>from </span>" + d.getStartPt().name + "<br/>" + 
 				             "<span style='font-size: 8px;'>to </span>" + d.getEndPt().name + "</div>";
+		} else {
+			typeText = " <div class='tooltipTypeHolder'>TOTAL<br/>MOVERS</div><br/>";
+			toFromText = "<div class='tooltipToFromText'><span style='font-size: 8px;'>from </span>" + d.getStartPt().name + "<br/>" + 
+				         "<span style='font-size: 8px;'>to </span>" + d.getEndPt().name + "</div>";
 		}
 		return moverText + typeText + toFromText;
 	}
@@ -256,12 +250,12 @@ Flox.MapComponent_d3 = function() {
 				.attr("fill", "#ccc")
 				.on("click", stateClicked)
 				.on("mouseover", function(d) {
-					var settings = Flox.getFilterSettings();
+					//var settings = Flox.getFilterSettings();
 					tooltip.style("display", "inline");
 					d3.select(this)
 					  .style("stroke", function(d) {
 					  	// It is in county or state view mode?
-					  	if (settings.countyMode && settings.selectedState !== false) {
+					  	if (Flox.isCountyMode() && Flox.getSelectedState() !== false) {
 					  		return rgbArrayToString(colors.unselectedStateHoverStroke);
 					  	}
 						return rgbArrayToString(colors.polygonHoverStroke);
@@ -283,18 +277,17 @@ Flox.MapComponent_d3 = function() {
 				.on("mouseout", function(d) {
 					tooltip.style("display", "none");
 					d3.select(this).style("fill", function(d) {
-						var settings = Flox.getFilterSettings(),
-							node;
-						if (settings.stateMode || settings.selectedState === false) {
+						var node;
+						if (Flox.isStateMode() || Flox.getSelectedState() === false) {
 							node = model_master.findNodeByID(String(Number(d.properties.STATEFP)));
 							return populationDensityColor(Number(node.populationDensity));
-						} else if (settings.countyMode) {
+						} else if (Flox.isCountyMode()) {
 							return rgbArrayToString(colors.unselectedStateFill);
 						}
 					})
 					.style("stroke", function(d){
-						var settings = Flox.getFilterSettings();
-						if(settings.countyMode && settings.selectedState !== false) {
+						//var settings = Flox.getFilterSettings();
+						if(Flox.isCountyMode() && Flox.getSelectedState() !== false) {
 							return rgbArrayToString(colors.unselectedStateStroke);
 						}
 						return rgbArrayToString(colors.polygonStroke);
@@ -822,9 +815,6 @@ Flox.MapComponent_d3 = function() {
 	 * @param m : A copy of the model.
 	 */
 	function drawFeatures(m) {
-	
-		var filterSettings = Flox.getFilterSettings();
-		
 		// Stringify the model! For debugging. TODO
 		//m.stringifyModel();
 		
@@ -843,10 +833,8 @@ Flox.MapComponent_d3 = function() {
 		model_copy = m;
 		
 		// if this is county flow data, color the counties by pop density
-		if(filterSettings.countyMode && filterSettings.selectedState !== false){
+		if(Flox.isCountyMode() && Flox.getSelectedState() !== false){
 			colorCountiesByPopulationDensity();
-			// and make the states a neutral color.
-			
 		} else {
 			// color the states by population density
 			colorStatesByPopulationDensity();
@@ -1037,7 +1025,6 @@ Flox.MapComponent_d3 = function() {
 		var stateCircles = [],
 			nodeValue,
 			maxNodeValue = getMaxOutOfStateTotalFlow(),
-			filterSettings = Flox.getFilterSettings(),
 			maxR = outerCircle.r * 0.2,
 			maxArea = Math.PI * maxR * maxR,
 			ptArea,
@@ -1140,7 +1127,7 @@ Flox.MapComponent_d3 = function() {
 	function selectState(stateFIPS) {
 		
 		var statePolygon, stateBoundingBox, outerCircle, testStates, 
-		stateCircles, filterSettings;
+		stateCircles;
 		
 		// Clear out all flows and necklace maps.
 		removeAllFlows();
@@ -1153,15 +1140,19 @@ Flox.MapComponent_d3 = function() {
 		});
 		
 		// Behavior should be different if it's in stateMode vs countyMode.
-		filterSettings = Flox.getFilterSettings();
+		//filterSettings = Flox.getFilterSettings();
 		
 		// Deselect the selected county if there is one
-		filterSettings.selectedCounty = false;
-		filterSettings.selectedState = stateFIPS;
-		filterSettings.selectedFeatureName = statePolygon.properties.NAME;
+		// filterSettings.selectedCounty = false;
+		// filterSettings.selectedState = stateFIPS;
+		// filterSettings.selectedFeatureName = statePolygon.properties.NAME;
+		
+		Flox.setSelectedCounty(false);
+		Flox.setSelectedState(stateFIPS);
+		Flox.setSelectedFeatureName(statePolygon.properties.NAME);
 		
 		// County mode?
-		if(filterSettings.countyMode) {
+		if(Flox.isCountyMode()) {
 			
 			// Get the smallest circle around the polygon, save it for later.
 			outerCircle = getSmallestCircleAroundPolygon(statePolygon);
@@ -1184,7 +1175,7 @@ Flox.MapComponent_d3 = function() {
 			  .style("fill", rgbArrayToString(colors.unselectedStateFill))
 			  .style("stroke", rgbArrayToString(colors.unselectedStateStroke));
 			
-		} else if (filterSettings.stateMode) {
+		} else if (Flox.isStateMode()) {
 			// Load the state flow data for that state.
 			// Because it's in state mode, the state flows should already be
 			// loaded. So all it has to do is show the flows. 
@@ -1200,15 +1191,19 @@ Flox.MapComponent_d3 = function() {
 		var lsad = feature.properties.LSAD,
 			featureType = lookupLSAD[lsad];
 		
-		Flox.setFilterSettings({
-			selectedCounty: countyFIPS,
-			selectedFeatureName: feature.properties.NAME + " " + featureType});
+		// Flox.setFilterSettings({
+			// selectedCounty: countyFIPS,
+			// selectedFeatureName: feature.properties.NAME + " " + featureType});
+		
+		Flox.setSelectedCounty(countyFIPS);
+		Flox.setSelectedFeatureName(feature.properties.NAME + " " + featureType);
+			
 		Flox.updateMap();
 	}
 
 	function stateClicked(d) {
 		// If it's in state mode, and this state is already selected...reset?
-		if(Number(Flox.getFilterSettings().selectedState) === Number(d.properties.STATEFP)) {
+		if(Number(Flox.getSelectedState()) === Number(d.properties.STATEFP)) {
 			reset();
 			// load the state to state flows?
 			Flox.importStateToStateMigrationFlows();
@@ -1628,7 +1623,7 @@ Flox.MapComponent_d3 = function() {
 	function configureLegend(legendData) {
 		
 		var rectWidth = 25,
-			rectHeight = 25,
+			rectHeight = 15,
 			rectSpacer = 4,
 			labelSizePx = 13,
 			legendItemContainer,
