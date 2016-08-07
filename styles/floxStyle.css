@@ -89,7 +89,9 @@ html, body {
 }
 
 #slidingPanelTab {
+	display: inline-block;
 	margin-left: 15px;
+	margin-bottom: -5px;
 	width: 40px;
 	height: 18px;
 	background: rgb(64, 64, 64);
@@ -98,6 +100,25 @@ html, body {
 	border-radius: 2px 2px 0px 0px;
 	pointer-events: all;
 }
+
+#newProgressBar {
+	box-shadow: 2px 2px 2px rgba(64,64,64,0.5);
+	display: inline-block;
+	height: 3px;
+	background: rgb(255, 255, 255);
+    background: rgba(255, 255, 255, 0.7);
+	width: 400px;
+	margin-left: 10px;
+}
+
+#newProgress {
+	height: 3px;
+	width: 50%;
+	margin: 0px;
+	background: rgb(64, 64, 64);
+    background: rgba(64, 64, 64, 0.9);
+}
+
 
 #slidingPanelTab:hover {
 	background-color: #fdae6b;	
@@ -207,7 +228,7 @@ html, body {
 	width: 200px;
 	height: auto;
 	position: fixed;
-	bottom: 40px;
+	bottom: 0px;
 	pointer-events: none;
 }
 
@@ -221,6 +242,8 @@ html, body {
     pointer-events: all;
     padding: 8px;
 }
+
+
 
 #legendSlidingPanelTab {
 	width: 18px;
@@ -276,24 +299,6 @@ html, body {
 .tooltipInOutText {
 	font-size: 10px;
 	line-height: 200%;
-}
-
-#layoutProgressBar {
-	position: absolute;
-	width: 150px;
-	height: 5px;
-	position: fixed;
-	top: 0;
-	right: 0;
-	margin: 5px;
-}
-
-.progress-bar {
-	-webkit-transition: none;
-    -moz-transition: none;
-    -ms-transition: none;
-    -o-transition: none;
-    transition: none;
 }
 
 .feature {

@@ -1623,7 +1623,7 @@ Flox.MapComponent_d3 = function() {
 	function configureLegend(legendData) {
 		
 		var rectWidth = 25,
-			rectHeight = 25,
+			rectHeight = 15,
 			rectSpacer = 4,
 			labelSizePx = 13,
 			legendItemContainer,
