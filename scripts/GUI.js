@@ -282,7 +282,7 @@ Flox.GUI = (function($){
 		} else {
 			slidingPanel.addClass("collapsed")
 						.animate({
-							bottom: -(h - 3) + "px"
+							bottom: -(h - 32) + "px"
 						}, 100);
 		}
 	}
@@ -332,29 +332,79 @@ Flox.GUI = (function($){
 		}
 	}
 
+	function setSubtitle(newSubtitle) {
+		var subtitle = $("#subtitleText"),
+			panel = $("#slidingPanelContent"),
+			panelWidth = panel.width(),
+			panelPadding = panel.outerWidth() - panelWidth,
+			fontSize = 16;
+		
+		//subtitle.hide();
+		
+		subtitle.css("font-size", fontSize);
+		subtitle.text(newSubtitle);
+		while (subtitle.width() >=  panelWidth) {
+			fontSize -= 0.2;
+			subtitle.css("font-size", fontSize);
+		}
+		
+		//subtitle.show();
+	}
+
 	// TopX + filter + description + location
 	function updateSubtitle() {
 		var subtitle = $("#subtitleText"),
-			topX,
-			filter,
-			description,
+			flowCount,
+			stateOrCounty,
+			flowType,
+			preposition,
 			location,
+			specialCase = "",
 			newText;
 			
 		// How many flows are being shown?
-		topX = "Top 50 ";
+		flowCount = "Top 50 ";
 		
-		filter = Flox.getFlowType() + " flows "
+		// state-level or county-level
+		stateOrCounty = Flox.isStateMode() ? "state-level " : "county-level "
 		
-		// What kind of flows? How are they filtered?
-		// Either incoming, outgoing, net, or total.
-		// They can only be incoming or outgoing if a state or county is selected,
-		// AND they aren't net or total.
-		// It might be better to have a filter setting like "flowType"
-		// That would be the least ambiguous. I'm trying not to change
-		// the filter module here. But maybe I should. 
-			
-		subtitle.html(newText);
+		// Incoming, outgoing, net, total?
+		flowType = Flox.getFlowType() + " flows "
+		
+		// for, within, between?
+		// for, if a specific state or county is selected
+		// within, if it's in county mode, and necklace maps are turned off
+		// between, if neither of the above
+		if (Flox.getSelectedCounty() !== false) {
+			preposition = "for ";
+			if(Flox.isOuterStateFlows() === false) {
+				specialCase = " just within this state"
+			}
+		} else if (Flox.selectedState !== false) {
+			if (Flox.isCountyMode() && Flox.isOuterStateFlows() === false) {
+				preposition = "just within ";
+			} else {
+				preposition = "for ";
+			}
+		} else {
+			preposition = "between ";
+		}
+		
+		// what place?
+		// all US states, if there is no selected state or county
+		// countyName, if a county is selected
+		// stateName, if a state is selected and no county is selected
+		if(Flox.getSelectedCounty() !== false) {
+			location = Flox.getSelectedFeatureName();
+		} else if (Flox.getSelectedState() !== false) {
+			location = Flox.getSelectedFeatureName();
+		} else {
+			location = " all US states";
+		}
+		newText = flowCount + stateOrCounty + flowType + preposition + location + specialCase;
+		setSubtitle(newText);
+		
+		//subtitle.html(flowCount + stateOrCounty + flowType + preposition + location + specialCase);
 	}
 	
 	
@@ -639,7 +689,7 @@ Flox.GUI = (function($){
 		updateButtonIcons();
 		my.hidePanelButtons(hideThese);
 		my.showPanelButtons(showThese);
-		//updateTitle();
+		updateSubtitle();
 	};
 
 // DEBUG GUI STUFF ------------------------------------------------------------

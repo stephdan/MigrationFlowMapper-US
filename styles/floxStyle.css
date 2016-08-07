@@ -116,6 +116,7 @@ html, body {
 	display: inline;
 	margin: 0px;
 	z-index: 2;
+	text-align: center;
 }
 
 #debugMenu {
@@ -137,13 +138,13 @@ html, body {
 
 
 #subtitleText {
-	width: auto;
+	height: 22px;
 	text-align: center;
-	left: 0;
-	right: 0;
+	display: inline-block;
 	pointer-events: none;
 	font-size: 12pt;
 	color: white;
+	whitespace: nowrap;
 }
 
 
