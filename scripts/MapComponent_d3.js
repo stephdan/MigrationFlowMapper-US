@@ -95,9 +95,9 @@ Flox.MapComponent_d3 = function() {
 	// takes an array like [r,g,b] and makes it "rgb(r,g,b)" for use with d3
 	function rgbArrayToString(rgb){
 		if(rgb[3]) {
-			return "rgba(" +  rgb[0] + "," + rgb[1] + "," + rgb[2] + "," + rgb[3] + ")";
+			return "rgba(" +  rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ", " + rgb[3] + ")";
 		}
-		return "rgb(" +  rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
+		return "rgb(" +  rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
 	}
 
 	function numberWithCommas(x) {
@@ -261,10 +261,16 @@ Flox.MapComponent_d3 = function() {
 				.on("mouseover", function(d) {
 					//var settings = Flox.getFilterSettings();
 					showTooltip();
+					
+					console.log(d3.select(this).style("fill"))
+					//console.log(rgbArrayToString(colors.unselectedStateHoverStroke))
+					
 					d3.select(this)
 					  .style("stroke", function(d) {
 					  	// It is in county or state view mode?
-					  	if (Flox.isCountyMode() && Flox.getSelectedState() !== false) {
+					  	if ( (Flox.isCountyMode() && Flox.getSelectedState() !== false) ||
+					  	     d3.select(this).style("fill") === rgbArrayToString(colors.unselectedStateFill)) {
+					  		// The states are that light gray color. 
 					  		return rgbArrayToString(colors.unselectedStateHoverStroke);
 					  	}
 						return rgbArrayToString(colors.polygonHoverStroke);
@@ -296,7 +302,8 @@ Flox.MapComponent_d3 = function() {
 					// })
 					.style("stroke", function(d){
 						//var settings = Flox.getFilterSettings();
-						if(Flox.isCountyMode() && Flox.getSelectedState() !== false) {
+						if((Flox.isCountyMode() && Flox.getSelectedState() !== false) ||
+						    d3.select(this).style("fill") === rgbArrayToString(colors.unselectedStateFill)) {
 							return rgbArrayToString(colors.unselectedStateStroke);
 						}
 						return rgbArrayToString(colors.polygonStroke);
@@ -691,7 +698,7 @@ Flox.MapComponent_d3 = function() {
 		
 		model_master = Flox.getModel();
 		nodes = model_master.getPoints(); // this gets state and county nodes.
-		stateFIPS = model_copy.settings.datasetName.slice(4); // FIXME goofy
+		stateFIPS = model_copy.settings.datasetName.slice(4); 
 		counties = d3.selectAll(".FIPS" + stateFIPS);
 		
 		for (i = 0; i < nodes.length; i += 1) {
@@ -754,15 +761,13 @@ Flox.MapComponent_d3 = function() {
 		model_master = Flox.getModel();
 		nodes = model_master.getPoints(); // This gets county AND state points.
 		
+		// Get an array of all the population densities nodes.
 		popDensities = nodes.map(function(d){
 			return Number(d.populationDensity);
 		});
 		
 		// Create a jenks natural breaks scale with 7 classes.
-		// Uses simple_statistics.js
-		// TODO build the color gradient from a min and max color rather than
-		// hard coding each color.
-		
+		// Uses simple_statistics.js		
 		jenksBreaks = ss.jenks(popDensities, defaultClasses)
 		
 		populationDensityColor = d3.scale.threshold()
