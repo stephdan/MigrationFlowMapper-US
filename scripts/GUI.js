@@ -297,10 +297,14 @@ Flox.GUI = (function($){
 		} else {
 			slidingPanel.addClass("collapsed")
 						.animate({
-							left: "-180px"
+							left: "-190px"
 						}, 100);
 		}
 	}
+
+	my.toggleLegendSlidingPanel = function() {
+		toggleLegendSlidingPanel();
+	};
 
 	$("#slidingPanelTab").on("click", function() {
 		// Change the height of if the slidingPanel
@@ -363,7 +367,12 @@ Flox.GUI = (function($){
 			newText;
 			
 		// How many flows are being shown?
-		flowCount = "Top 50 ";
+		if(Flox.getModel()) {
+			flowCount = "Top " + Flox.getModel().settings.maxFlows + " ";
+		} else {
+			flowCount = "Top 50 "
+		}
+		
 		
 		// state-level or county-level
 		stateOrCounty = Flox.isStateMode() ? "state-level " : "county-level "
@@ -571,6 +580,7 @@ Flox.GUI = (function($){
 	my.hideLayoutProgressBar = function() {
 		setTimeout(function(){
 			$("#newProgressBar").addClass("hidden");
+			$("#newProgress").width("0%");
 		}, 100);
 	};
 
@@ -695,6 +705,19 @@ Flox.GUI = (function($){
 	};
 
 // DEBUG GUI STUFF ------------------------------------------------------------
+
+$("#lowFlowDensity").on("click", function() {
+	Flox.getModel().settings.maxFlows = 25;
+	Flox.updateMap();
+});
+$("#midFlowDensity").on("click", function() {
+	Flox.getModel().settings.maxFlows = 50;
+	Flox.updateMap();
+});
+$("#highFlowDensity").on("click", function() {
+	Flox.getModel().settings.maxFlows = 75;
+	Flox.updateMap();
+});
 
 $("#globalFlowWidthCheckbox").on("click", function() {
 	console.log("checkbox clicked!");

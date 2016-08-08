@@ -142,18 +142,17 @@
 		</div> <!-- End panel content --> 
 	</div> <!-- End panel container --> 
 	
-	<div id="legendSlidingPanel">
+	<div id="legendSlidingPanel" >
 		<div id="legendSlidingPanelTab"></div>
 		
 		<div id="legendSlidingPanelContent">
-			<p class="legendTitle">2013 Population Density per sq.km.</p>
+			<svg height="267px"></svg>
 		</div>
 	</div>
 	
 
 	
 	<div id="debugMenu">
-		
 		<div class="checkbox">
 			<p style="font-size: 16px">Debug/Options</p>
 			
@@ -162,7 +161,7 @@
 				Global Flow Width
 			</label>
 			
-			<label>
+			<!-- <label>
 				<input type="checkbox" value="" checked id="mfooCheckbox"/>
 				Move Flows Off Obstacles
 			</label>
@@ -175,9 +174,22 @@
 			<label>
 				<input type="checkbox" value="" checked id="moveFlowsOffNodes"/>
 				Node Obstacles
-			</label>
-
+			</label> -->
 		</div>
+		
+		<p style="font-size: 14px">Max Flow Density</p>
+		
+		<div class="radio">
+			<label><input type="radio" name="optradio" id="lowFlowDensity">25 Flows</label>
+		</div>
+		<div class="radio">
+			<label><input type="radio" name="optradio" id="midFlowDensity" checked>50 Flows</label>
+		</div>
+		<div class="radio">
+			<label><input type="radio" name="optradio" id="highFlowDensity">75 Flows</label>
+		</div>
+
+		
 	</div>
 	
 	<div id="coordinateDisplay">
