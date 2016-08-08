@@ -511,6 +511,7 @@ my.updateMap = function() {
 	mapComponent.clearAllMapFeatures();
 	
 	Flox.GUI.showLayoutProgressBar();
+	
 	// Good time to assign xy coordinates to nodes.
 	my.assignXYToNodes(model_master.getPoints());
 

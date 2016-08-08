@@ -57,7 +57,7 @@ Flox.MapComponent_d3 = function() {
 			polygonStroke: [59,137,145],
 
 			flowHoverStroke: [255,255,0],
-			necklaceNodeHoverFill: [255,255,0],
+			necklaceNodeHoverFill: [189,229,187],
 			polygonHoverStroke: [49,127,135],
 			
 			unselectedStateFill : [230, 230, 230],
@@ -118,18 +118,18 @@ Flox.MapComponent_d3 = function() {
 			typeText = " <div class='tooltipTypeHolder'>TOTAL<br/>MOVERS</div><br/>";
 			// But sometimes it's directional and needs to be treated differently.
 			
-			toFromText = "<div class='tooltipToFromText'>" + d.getStartPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getEndPt().name + ": " + numberWithCommas(d.AtoB) + "<br/>" + 
-				            d.getEndPt().name + "<span style='font-size: 8px;'>  to  </span>" + d.getStartPt().name + ": " + numberWithCommas(d.BtoA) + "</div>";
+			toFromText = "<div class='tooltipToFromText'>" + d.getStartPt().name + " <span class='tooltipTypeHolder'>  TO  </span> " + d.getEndPt().name + ": " + numberWithCommas(d.AtoB) + "<br/>" + 
+				            d.getEndPt().name + " <span class='tooltipTypeHolder'>  TO  </span> " + d.getStartPt().name + ": " + numberWithCommas(d.BtoA) + "</div>";
 
 		} else if (Flox.getFlowType() === "net"){
 			// it's a net flow
 			typeText = " <div class='tooltipTypeHolder'>NET<br/>MOVERS</div><br/>";
-			toFromText = "<div class='tooltipToFromText'><span style='font-size: 8px;'>from </span>" + d.getStartPt().name + "<br/>" + 
-				             "<span style='font-size: 8px;'>to </span>" + d.getEndPt().name + "</div>";
+			toFromText = "<div class='tooltipToFromText'><span class='tooltipTypeHolder'>FROM </span> " + d.getStartPt().name + "<br/>" + 
+				             "<span class='tooltipTypeHolder'>TO </span> " + d.getEndPt().name + "</div>";
 		} else {
 			typeText = " <div class='tooltipTypeHolder'>TOTAL<br/>MOVERS</div><br/>";
-			toFromText = "<div class='tooltipToFromText'><span style='font-size: 8px;'>from </span>" + d.getStartPt().name + "<br/>" + 
-				         "<span style='font-size: 8px;'>to </span>" + d.getEndPt().name + "</div>";
+			toFromText = "<div class='tooltipToFromText'><span class='tooltipTypeHolder'>FROM </span> " + d.getStartPt().name + "<br/>" + 
+				         "<span class='tooltipTypeHolder''>TO </span> " + d.getEndPt().name + "</div>";
 		}
 		return moverText + typeText + toFromText;
 	}
@@ -528,7 +528,7 @@ Flox.MapComponent_d3 = function() {
 
 	function drawFlows(drawArrows) {
 
-		var flows = model_copy.getLargestFlows(),
+		var flows,
 		    i,
 		    j,
 		    f,
@@ -538,6 +538,13 @@ Flox.MapComponent_d3 = function() {
 	
 		configureArrows(model_copy);
 
+		// if (Flox.isStateMode() && Flox.getSelectedState() !== false) {
+			// model_copy.settings.maxFlows = 60;
+		// } else {
+			// model_copy.settings.maxFlows = 50;
+		// }
+		
+		flows = model_copy.getLargestFlows();
 		
 		// sort the flows in descending order so that big flows are drawn under
 		// small flows (big flows will be drawn first)
@@ -614,8 +621,9 @@ Flox.MapComponent_d3 = function() {
          
         svgFlows.on("mouseover", function(d) {
 			showTooltip();
-			d3.select(this).select(".curve").attr("stroke", "yellow");
-			d3.select(this).select(".arrow").attr("fill", "yellow");
+			var hoverColor = rgbArrayToString(colors.flowHoverStroke);
+			d3.select(this).select(".curve").attr("stroke", hoverColor);
+			d3.select(this).select(".arrow").attr("fill", hoverColor);
         })
 		.on("mousemove", function(d) {
 			tooltip.html(function() {
@@ -1313,7 +1321,7 @@ Flox.MapComponent_d3 = function() {
 		    ringR = outerCircle.r + nodeRadius, 
 			force, necklaceMap, nodes, i,
 			labelSize,	// in pixels
-			labelSize_max = (outerCircle.r * 0.1),
+			labelSize_max = (outerCircle.r * 0.08),
 			labelSize_min = (outerCircle.r * 0.04),
 			pt,
 			labelOffset = 0;
@@ -1476,7 +1484,7 @@ Flox.MapComponent_d3 = function() {
 				pt = d3.select(this);
 				
 				// calculate the label size.
-				labelSize = (d.r + (d.r * 0.3));
+				labelSize = (d.r + (d.r * 0.1));
 				
 				// if it's smaller than the min, make it the min and place
 				// it outside the circle
@@ -1641,11 +1649,6 @@ Flox.MapComponent_d3 = function() {
 				outerStatesNodes.push(ePt);
 			}
 		}
-
-		// Get the bounding box for the selected state polygon.
-		// Then, get a circle that encloses the bounding box of the state.
-		//stateBoundingBox = path.bounds(targetStatePolygon);
-		//outerCircle = getCircleAroundBoundingBox(stateBoundingBox);
 		
 		// Get the smallest circle that encloses the targetStatePolygon
 		smallerOuterCircle = getSmallestCircleAroundPolygon(targetStatePolygon);
@@ -1672,34 +1675,195 @@ Flox.MapComponent_d3 = function() {
 			rectHeight = 15,
 			rectSpacer = 4,
 			labelSizePx = 13,
+			flowLength = 60,
+			flowSpacer = 18,
+			s = model_copy.settings,
+			flowLeft = 0 - s.flowDistanceFromStartPointPixel,
+			flowLegendItemContainer,
 			legendItemContainer,
 			rectangle, 
 			legendItem,
-			legendColors = populationDensityColor.range();
+			flowSVG,
+			legendFlows = [],
+			svgLegendFlows,
+			maxFlow, maxFlowStartPt, maxFlowEndPt,
+			midFlow, midFlowStartPt, midFlowEndPt,
+			minFlow, minFlowStartPt, minFlowEndPt,
+			legendColors = populationDensityColor.range(),
+			i,
+			largestFlows = model_copy.getLargestFlows(),
+			arrowSettings,
+			maxLegendFlowWidth = 10,
+			minLegendFlowWidth = maxLegendFlowWidth / (s.maxFlowWidth / s.minFlowWidth),
+			midLegendFlowWidth = minLegendFlowWidth + ((maxLegendFlowWidth - minLegendFlowWidth) * 0.5),
+			maxFlowValue = s.useGlobalFlowWidth ? s.maxFlowValue : largestFlows[0].getValue(),
+			dashedFlowValue = maxFlowValue / (s.maxFlowWidth / s.minFlowWidth),
+			notShownFlowValue = largestFlows[largestFlows.length - 1].getValue(),
+			midFlowValue = dashedFlowValue + ((maxFlowValue - dashedFlowValue) * 0.5),
+			legendFlowLabels,
+			flowGap,
+			notShownText = "";
 		
-		d3.select("#legendSlidingPanelContent svg").remove();
+		if(largestFlows.length >= s.maxFlows) {
+			notShownText = "Flows under " + numberWithCommas(largestFlows[largestFlows.length-1].getValue()) + " not shown";
+		}
 		
+		if(maxLegendFlowWidth / 2 > maxLegendFlowWidth * model_copy.settings.arrowWidthScaleFactor) {
+			flowGap = (maxLegendFlowWidth / 2);
+		} else {
+			flowGap = maxLegendFlowWidth * model_copy.settings.arrowWidthScaleFactor;
+		}
+		
+		// Remove the old legend svg. Title can stay.
+		d3.select("#legendSlidingPanelContent").selectAll("svg").remove();
+		d3.select("#legendSlidingPanelContent").selectAll("p").remove();
+		
+		
+		
+		// Make flows to show in the legend. 
+		maxFlowStartPt = {x: flowLeft, y: flowGap, value: 0, id: "legendMaxStart"};
+		maxFlowEndPt = {x: flowLeft + flowLength, y: flowGap, value: 0, id: "legendMaxEnd"};
+		maxFlow = new Flox.Flow(maxFlowStartPt, maxFlowEndPt, maxLegendFlowWidth, "maxLegendFlow");
+		
+		midFlowStartPt = {x: flowLeft, y: flowGap + flowSpacer, value: 0, id: "legendMidStart"};
+		midFlowEndPt = {x: flowLeft + flowLength, y: flowGap + flowSpacer, value: 0, id: "legendMidEnd"};
+		midFlow = new Flox.Flow(midFlowStartPt, midFlowEndPt, midLegendFlowWidth, "midLegendFlow");
+		
+		minFlowStartPt = {x: flowLeft, y: flowGap + flowSpacer * 2, value: 0, id: "legendMaxStart"};
+		minFlowEndPt = {x: flowLeft + flowLength, y: flowGap + flowSpacer * 2, value: 0, id: "legendMaxEnd"};
+		minFlow = new Flox.Flow(minFlowStartPt, minFlowEndPt, minLegendFlowWidth, "minLegendFlow");
+		
+		legendFlows = [maxFlow, midFlow, minFlow];
+		
+		d3.select("#legendSlidingPanelContent")
+			.append("p")
+			.classed("legendTitle", true)
+			.html("Number of Migrations");
+		
+		// Append an svg to hold the flows
+		flowLegendItemContainer = d3.select("#legendSlidingPanelContent")
+			.append("svg")
+			.attr("id", "flowsLegend")
+			.attr("width", "100%")
+			.attr("height", function() {
+				var legendHeight = flowGap + ((legendFlows.length - 1) * flowSpacer) + (labelSizePx / 2) + 5;
+				if (notShownText !== "") {
+					legendHeight += flowSpacer;
+				}
+				return legendHeight;
+			})
+			.style("margin-top", -8)
+			.style("background-color", "none");
+		
+		// Draw the flows in the legend!
+		svgLegendFlows = flowLegendItemContainer.append("g").attr("id", "svgLegendFlows")
+			.selectAll("g")
+			.data(legendFlows)
+			.enter().append("g");
+		
+		// Arrows first
+		if(model_copy.settings.drawArrows) {
+			// Configure the arrow for each flow
+			for(i = 0; i < legendFlows.length; i += 1) {
+				arrowSettings = model_copy.getArrowSettings(legendFlows[i]);
+				arrowSettings.maxFlowWidth = maxLegendFlowWidth;
+				arrowSettings.minFlowWidth = minLegendFlowWidth;
+				arrowSettings.maxFlowValue = maxFlow.getValue();
+				arrowSettings.scaleMultiplier = 1;
+				legendFlows[i].configureArrow(arrowSettings);
+			}
+			svgLegendFlows.append("path")
+				.classed("arrow", true)
+				.style("cursor", "default")
+				.attr("stroke", "none")
+				.attr("fill", function(d) {
+					if(d.getId() === "minLegendFlow") {
+						return rgbArrayToString(colors.minFlowStroke);
+					}
+					if(d.getId() === "midLegendFlow") {
+						return rgbArrayToString(Flox.ColorUtils.blend(colors.maxFlowStroke, colors.minFlowStroke, 0.5));
+					}
+					return rgbArrayToString(colors.maxFlowStroke);
+				})
+				.attr("stroke-width", 5)
+				.attr("d", function(d) {
+					return buildSvgArrowPath(d);
+				});
+		}
+		
+		// Now curves
+		svgLegendFlows.append("path")
+			.classed("curve", true)
+			.attr("stroke", function(d) {
+				if(d.getId() === "minLegendFlow") {
+					return rgbArrayToString(colors.minFlowStroke);
+				}
+				if(d.getId() === "midLegendFlow") {
+					return rgbArrayToString(Flox.ColorUtils.blend(colors.maxFlowStroke, colors.minFlowStroke, 0.5));
+				}
+				return rgbArrayToString(colors.maxFlowStroke);
+			})
+			.style("cursor", "default")
+			.attr("fill", "none")
+			.attr("stroke-width", function(d) {
+				var strokeWidth = d.getValue();
+				// If the stroke width is below the minimum, make it the 
+				// minimum and dashed
+				if(d.getId() === "minLegendFlow") {
+					d3.select(this).attr("stroke-dasharray", strokeWidth * 6 + "," + strokeWidth * 3);
+				}
+				return strokeWidth;
+			})
+			.attr("d", function(d) {
+				return buildSvgFlowPath(d, model_copy.settings.drawArrows);
+			});
+		
+		// Flow labels!
+		legendFlowLabels = [
+			// max flow label
+			numberWithCommas(Math.round(maxFlowValue)) + " max",
+			numberWithCommas(Math.round(midFlowValue)),
+			"Less than " + numberWithCommas(Math.round(dashedFlowValue))
+		];
+		
+		svgLegendFlows.append("text")
+			.style("font-size", labelSizePx + "px")
+			.style("font-family", "Tahoma, Geneva, sans-serif")
+			.attr("fill", "white")
+			.text(function(d, i) {
+				return legendFlowLabels[i];
+			})
+			.attr("x", flowLeft + flowLength)
+			.attr("y", function(d, i) {
+				return flowGap + (flowSpacer * i) + labelSizePx/2 - 2;
+			})
+		
+		// If some flows aren't shown, add notShownText
+		flowLegendItemContainer.append("text")
+			.style("font-size", labelSizePx + "px")
+			.style("font-family", "Tahoma, Geneva, sans-serif")
+			.attr("fill", "white")
+			.text(notShownText)
+			.attr("x", flowLeft + s.flowDistanceFromStartPointPixel)
+			.attr("y", function(d, i) {
+				return flowGap + (flowSpacer * legendFlows.length) + labelSizePx/2 - 2;
+			})
+		
+		d3.select("#legendSlidingPanelContent")
+			.append("p")
+			.classed("legendTitle", true)
+			.html("2013 Population Density per sq.km.");
+		
+		// Append svg to hold the color swatches.
 		legendItemContainer = d3.select("#legendSlidingPanelContent")
 			.append("svg")
+			.attr("id", "areasLegend")
 			.attr("width", "100%")
 			.attr("height", function() {
 				var l = legendColors.length;
 				return (l * rectHeight + (l - 1) * rectSpacer);
-			});
-						
-		// rectangle = legendItemContainer.selectAll("rect")
-			// .data(legendData.slice(0, -1))
-			// .enter().append("rect")
-			// .attr("width", rectWidth)
-			// .attr("height", rectHeight)
-			// .attr("fill", "white")
-			// .attr("y", function(d, i) {
-				// return (rectHeight + rectSpacer) * i;
-			// })
-			// .attr("x", 2)
-			// .attr("fill", function(d) {
-				// return populationDensityColor(d);
-			// });
+			})
+			.style("margin-top", -5);
 			
 		legendItem = legendItemContainer.selectAll("g")
 			.data(populationDensityColor.range())
@@ -1742,11 +1906,7 @@ Flox.MapComponent_d3 = function() {
 			});
 	}
 	
-	//configureLegend([1,2,3,4,5,6,7]);
-	
 	// PUBLIC ---------------------------------------------------------------------
-
-
 
 	my.configureNecklaceMap = function (m) {
 		configureNecklaceMap(m);

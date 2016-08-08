@@ -547,19 +547,6 @@ Flox.Model = function() {
 		endPt = flow.getEndPt();
 		startPt = flow.getStartPt();
 		
-		// if(settings.useGlobalFlowWidth) {
-			// //minFlowWidth = (settings.maxFlowWidth * settings.minFlowValue / settings.maxFlowValue);
-			// minFlowWidth = settings.minFlowWidth
-		// } else {
-			// if(flows.length < settings.maxFlows) {
-				// lastFlowIndex = flows.length -1;
-			// } else {
-				// lastFlowIndex = settings.maxFlows - 1;
-			// }
-			// minFlowWidth = (settings.maxFlowWidth * flows[lastFlowIndex].getValue() / flows[0].getValue());
-		// }
-		
-		
 		if(endPt.necklaceMapNode) {
 			endClipRadius = endPt.r + endPt.strokeWidth;
 		} else {
@@ -643,13 +630,6 @@ Flox.Model = function() {
 	}
 
 	function getRelativeFlowValue(flow) {
-		// if(settings.useGlobalFlowWidth) {
-			// return (flow.getValue() - settings.minFlowValue)
-                // / (settings.maxFlowValue - settings.minFlowValue);
-		// }
-		// return (flow.getValue() - flows[flows.length-1].getValue())
-            // / (flows[0].getValue() - flows[flows.length-1].getValue());
-            
 		// Use width instead
 		var flowWidth = getFlowStrokeWidth(flow),
 			min = settings.minFlowWidth * settings.scaleMultiplier,
@@ -915,6 +895,10 @@ Flox.Model = function() {
 		configureArrows();
 	};
 	
+	my.getArrowSettings = function(flow) {
+		return getArrowSettings(flow);
+	};
+	
 	/**
 	 * Returns an empty array if arrows aren't being drawn.
 	 */
@@ -1030,10 +1014,6 @@ Flox.Model = function() {
 		// for(i = 0; i < nodes.length; i += 1) {
 			// nodesMap.set(nodes[i].id, nodes[i]);
 		// }
-	};
-
-	my.getArrowSettings = function(flow) {
-		return getArrowSettings(flow);
 	};
 
 	// TODO probably don't need to update minFlowWidth here.
