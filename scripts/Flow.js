@@ -950,10 +950,11 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 			baseT = endT + ((tipT - endT) * 5);
 		}
         
+        
         // Split the flow, add the first half to the arrow object.
 		//arrow.outFlow = split(baseT)[0];
 		
-		arrow = [basePt, corner1Pt, corner1cPt, tipPt, corner2cPt, corner2Pt, split(baseT)[0]];
+		//arrow = [basePt, corner1Pt, corner1cPt, tipPt, corner2cPt, corner2Pt, split(baseT)[0]];
 		
 		arrow = {
 			basePt: basePt,
@@ -968,6 +969,15 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 	}
 	
 // PUBLIC =====================================================================
+
+	my.getArrowCentroid = function() {
+		if(!arrow) {
+			throw new Error("Flow has no arrow");
+		}
+		var x = (arrow.tipPt.x + arrow.corner1Pt.x + arrow.corner2Pt.x) / 3,
+			y = (arrow.tipPt.y + arrow.corner1Pt.y + arrow.corner2Pt.y) / 3;
+        return {x: x, y: y};
+	};
 
 	my.configureArrow = function (arrowSettings) {
 		configureArrow(arrowSettings);

@@ -297,10 +297,26 @@ Flox.GUI = (function($){
 		} else {
 			slidingPanel.addClass("collapsed")
 						.animate({
-							left: "-190px"
+							left: "-200px"
 						}, 100);
 		}
 	}
+	
+	function toggleOptionsSlidingPanel() {
+		var slidingPanel = $("#optionsSlidingPanel");
+		if(slidingPanel.hasClass("collapsed")) {
+			slidingPanel.removeClass("collapsed")
+						.animate({
+							right: "0px"
+						}, 100);
+		} else {
+			slidingPanel.addClass("collapsed")
+						.animate({
+							right: "-190px"
+						}, 100);
+		}
+	}
+	
 
 	my.toggleLegendSlidingPanel = function() {
 		toggleLegendSlidingPanel();
@@ -314,6 +330,10 @@ Flox.GUI = (function($){
 
 	$("#legendSlidingPanelTab").on("click", function() {
 		toggleLegendSlidingPanel();
+	});
+	
+	$("#optionsSlidingPanelTab").on("click", function() {
+		toggleOptionsSlidingPanel();
 	});
 
 	function openSlidingPanel() {
@@ -705,7 +725,10 @@ Flox.GUI = (function($){
 	};
 
 // DEBUG GUI STUFF ------------------------------------------------------------
-
+$("#minFlowDensity").on("click", function() {
+	Flox.getModel().settings.maxFlows = 10;
+	Flox.updateMap();
+});
 $("#lowFlowDensity").on("click", function() {
 	Flox.getModel().settings.maxFlows = 25;
 	Flox.updateMap();
@@ -718,10 +741,14 @@ $("#highFlowDensity").on("click", function() {
 	Flox.getModel().settings.maxFlows = 75;
 	Flox.updateMap();
 });
+$("#maxFlowDensity").on("click", function() {
+	Flox.getModel().settings.maxFlows = 100;
+	Flox.updateMap();
+});
 
 $("#globalFlowWidthCheckbox").on("click", function() {
 	console.log("checkbox clicked!");
-	Flox.getModel().settings.useGlobalFlowWidth = this.checked;
+	Flox.getModel().settings.useGlobalFlowWidth = !this.checked;
 	Flox.updateMap();
 });
 

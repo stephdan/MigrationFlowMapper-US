@@ -800,6 +800,14 @@ my.getSelectedStateName = function() {
 	return my.lookupFIPS(filterSettings.selectedState);
 };
 
+my.zoomToCircle = function(c) {
+	mapComponent.zoomToCircle(c);
+};
+
+my.zoomToRectangle = function(rect) {
+	mapComponent.zoomToRectangle(rect);
+};
+
 // END DEBUG STUFF-------------------------------------
 
 return my;

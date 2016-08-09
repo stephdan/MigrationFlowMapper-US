@@ -52,13 +52,14 @@
 	
 	
 	<div id="creditText">
-		All data in this map can be found on<br />
-		 the US Census website at www.census.gov
+		All data used in this map can be found on<br />
+		 the US Census website at 
+		 <a href="http://www.census.gov/" target='_blank'>www.census.gov</a>
 	</div>
 	
 	<div id="slidingPanel"> <!-- Sliding Panel container --> 
 		
-		<div id="slidingPanelTab">
+		<div id="slidingPanelTab" class="UIPanel UIPanelTab">
 		</div>
 		
 		<div id="newProgressBar" class="hidden">
@@ -66,13 +67,12 @@
 			</div>
 		</div>
 		
-		<div id="slidingPanelContent">
+		<div id="slidingPanelContent" class="UIPanel ">
 			
 			<div id="subtitleText">Top 50 state-to-state flows</div>
-			
 			<p id="hintText">Click a state to see flows for that state</p>
+			
 			<ul> <!-- List of buttons -->
-				
 		        <li>
 		        	<div class="panelButtonContainer" id="usStateFlowsButton">
 						<img src="resources/icons/buttons/usOutline_white.svg"
@@ -122,18 +122,18 @@
 		        </li>
 		        
 		        <li>
-		        	<div class="panelButtonContainer bordered" id="incomingFlowsButton">
-		        		<img src="resources/icons/buttons/inFlows_white.svg"
-						class="buttonIcon"
-						id="inFlows" />
-		        	</div> 
-		        </li>
-		        
-		        <li>
 		        	<div class="panelButtonContainer bordered" id="outgoingFlowsButton">
 		        		<img src="resources/icons/buttons/outFlows_white.svg"
 						class="buttonIcon"
 						id="outFlows" />
+		        	</div> 
+		        </li>
+		        
+		        <li>
+		        	<div class="panelButtonContainer bordered" id="incomingFlowsButton">
+		        		<img src="resources/icons/buttons/inFlows_white.svg"
+						class="buttonIcon"
+						id="inFlows" />
 		        	</div> 
 		        </li>
 		        
@@ -142,62 +142,64 @@
 		</div> <!-- End panel content --> 
 	</div> <!-- End panel container --> 
 	
-	<div id="legendSlidingPanel" >
-		<div id="legendSlidingPanelTab"></div>
+	<div id="legendSlidingPanel">
+		<div id="legendSlidingPanelTab" class="UIPanel UIPanelTab"></div>
 		
-		<div id="legendSlidingPanelContent">
+		<div id="legendSlidingPanelContent" class="UIPanel">
 			<svg height="267px"></svg>
 		</div>
 	</div>
 	
-
-	
-	<div id="debugMenu">
-		<div class="checkbox">
-			<p style="font-size: 16px">Debug/Options</p>
-			
-			<label>
-				<input type="checkbox" value="" checked id="globalFlowWidthCheckbox"/>
-				Global Flow Width
-			</label>
-			
-			<!-- <label>
-				<input type="checkbox" value="" checked id="mfooCheckbox"/>
-				Move Flows Off Obstacles
-			</label>
-
-			<label>
-				<input type="checkbox" value="" checked id="moveFlowsOffArrowheads"/>
-				Arrow Obstacles
-			</label>
-			
-			<label>
-				<input type="checkbox" value="" checked id="moveFlowsOffNodes"/>
-				Node Obstacles
-			</label> -->
-		</div>
+	<div id="optionsSlidingPanel" >
+		<div id="optionsSlidingPanelTab" class="UIPanel UIPanelTab"></div>
 		
-		<p style="font-size: 14px">Max Flow Density</p>
-		
-		<div class="radio">
-			<label><input type="radio" name="optradio" id="lowFlowDensity">25 Flows</label>
+		<div id="optionsSlidingPanelContent" class="UIPanel ">
+			<div class="checkbox">
+				<p style="font-size: 16px">Options</p>
+				<label>
+					<input type="checkbox" value="" id="globalFlowWidthCheckbox"/>
+					Maximize Flow Width
+				</label>
+				<!-- <label>
+					<input type="checkbox" value="" checked id="mfooCheckbox"/>
+					Move Flows Off Obstacles
+				</label>
+				<label>
+					<input type="checkbox" value="" checked id="moveFlowsOffArrowheads"/>
+					Arrow Obstacles
+				</label>
+				<label>
+					<input type="checkbox" value="" checked id="moveFlowsOffNodes"/>
+					Node Obstacles
+				</label> -->
+			</div>
+			<p class="optionsMenuHeader">Max Flow Density</p>
+			<div class="radio">
+				<label><input type="radio" name="optradio" id="minFlowDensity">10 Flows</label>
+			</div>
+			<div class="radio">
+				<label><input type="radio" name="optradio" id="lowFlowDensity">25 Flows</label>
+			</div>
+			<div class="radio">
+				<label><input type="radio" name="optradio" id="midFlowDensity" checked>50 Flows</label>
+			</div>
+			<div class="radio">
+				<label><input type="radio" name="optradio" id="highFlowDensity">75 Flows</label>
+			</div>
+			<div class="radio">
+				<label><input type="radio" name="optradio" id="maxFlowDensity">100 Flows</label>
+			</div>
 		</div>
-		<div class="radio">
-			<label><input type="radio" name="optradio" id="midFlowDensity" checked>50 Flows</label>
-		</div>
-		<div class="radio">
-			<label><input type="radio" name="optradio" id="highFlowDensity">75 Flows</label>
-		</div>
-
-		
 	</div>
 	
-	<div id="coordinateDisplay">
+
+	
+	<!-- <div id="coordinateDisplay">
 		x: <span id="xCoord"></span> <br />
 		y: <span id="yCoord"></span> <br />
 		lat: <span id="latitude"></span> <br />
 		long: <span id="longitude"></span>
-	</div>
+	</div> -->
 	
 
     <!-- Map container. -->

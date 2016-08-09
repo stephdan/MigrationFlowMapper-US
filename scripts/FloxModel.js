@@ -95,17 +95,21 @@ Flox.Model = function() {
 		// determine an appropriate distance flows should be moved off nodes. 
 		stateScales = {
 			"FIPS01"  : 1, // Alabama
-			"FIPS04"  : 2.0, // Arizona
+			"FIPS04"  : 1.5, // Arizona
 			"FIPS06"  : 1.5, // California
+			"FIPS11": 0.2, // District of Columbia
+			"FIPS13": 0.5,  //"Georgia",//GA
 			"FIPS17" : 0.7, // Illinois
+			"FIPS21": 0.5,//"Kentucky",//KY
 			"FIPS34" : 0.5, // New Jersey
 			"FIPS36" : 0.35, // New York
 			"FIPS44" : 0.5, // Rhode Island
-			"FIPS48" : 1.75, // Texas
+			"FIPS48" : 1.25, // Texas
 			"FIPS54" : 1.0,  // West Virginia
 			"FIPS55" : 0.8,  // Wisconsin
-			"FIPS72" : 0.5, // Puerto Rico
-			"allStates": 0.2
+			"FIPS72" : 0.5 // Puerto Rico
+			//"allStates": 0.2,
+			
 		},
 				
 		// Public object		
