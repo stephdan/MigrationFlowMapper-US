@@ -1715,10 +1715,16 @@ Flox.MapComponent_d3 = function() {
 			midFlowValue = dashedFlowValue + ((maxFlowValue - dashedFlowValue) * 0.5),
 			legendFlowLabels,
 			flowGap,
-			notShownText = "";
+			notShownText = "",
+			percentShown,
+			percentShownText = "";
 		
-		if(largestFlows.length >= s.maxFlows) {
+		if(largestFlows.length >= s.maxFlows && 
+		   largestFlows.length < Flox.getCurrentFilteredModel().getFlows().length) {
 			notShownText = "Flows less than " + numberWithCommas(largestFlows[largestFlows.length-1].getValue()) + " not shown";
+			percentShown = Flox.getCurrentFilteredModel().getPercentageOfTotalFlowShown();
+			percentShown = (Math.floor(percentShown * 10)) / 10;
+			percentShownText = "Showing " + (percentShown) + "% of migrations";
 		}
 		
 		if(maxLegendFlowWidth / 2 > maxLegendFlowWidth * model_copy.settings.arrowWidthScaleFactor) {
@@ -1761,7 +1767,7 @@ Flox.MapComponent_d3 = function() {
 			.attr("height", function() {
 				var legendHeight = flowGap + ((legendFlows.length - 1) * flowSpacer) + (labelSizePx / 2) + 5;
 				if (notShownText !== "") {
-					legendHeight += flowSpacer;
+					legendHeight += flowSpacer * 2;
 				}
 				return legendHeight;
 			})
@@ -1860,6 +1866,16 @@ Flox.MapComponent_d3 = function() {
 			.attr("x", flowLeft + s.flowDistanceFromStartPointPixel)
 			.attr("y", function(d, i) {
 				return flowGap + (flowSpacer * legendFlows.length) + labelSizePx/2 - 2;
+			})
+			
+		flowLegendItemContainer.append("text")
+			.style("font-size", labelSizePx + "px")
+			.style("font-family", "Tahoma, Geneva, sans-serif")
+			.attr("fill", "white")
+			.text(percentShownText)
+			.attr("x", flowLeft + s.flowDistanceFromStartPointPixel)
+			.attr("y", function(d, i) {
+				return flowGap + (flowSpacer * (legendFlows.length + 1)) + labelSizePx/2 - 2;
 			})
 		
 		d3.select("#legendSlidingPanelContent")

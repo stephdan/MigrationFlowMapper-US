@@ -21,6 +21,8 @@ var mapComponent,
 	},
 	startTimeAll, 
 	endTimeAll,
+	numberOfDisplayedFlows,
+	currentFilteredModel,
 	fipsLookupTable,
 	starting = true,
 	my = {};
@@ -523,13 +525,18 @@ my.updateMap = function() {
 	// TODO Eventually, it might be nice to have the ability to not use 
 	// webworkers if the browser is not compatible with them. 
 	// FIXME Something is broken when not using webworkers. 
-	Flox.GUI.updateGUI();
+	
 	if(window.Worker && model_master.settings.useWebworkers) {
 		Flox.GUI.updateLayoutProgressBar(35);
 		runFilterWorker(function(filteredModel) {
 			Flox.GUI.updateLayoutProgressBar(50);
 			// configure the needed variables to get only above average flows.
 			filteredModel.setAboveAverageFlowCount();
+			
+			numberOfDisplayedFlows = filteredModel.getLargestFlows().length;
+			currentFilteredModel = filteredModel;
+			
+			Flox.GUI.updateGUI();
 			if(filterSettings.stateMode === false &&
 				filterSettings.selectedState !== false) {
 				mapComponent.configureNecklaceMap(filteredModel);
@@ -558,6 +565,11 @@ my.updateMap = function() {
 			largestFlowsModel = new Flox.Model(), i, oldFlows, newFlows, oldCPt, 
 			newCPt;
 		filteredModel = my.filterBySettings(model_master, filterSettings);
+		
+		numberOfDisplayedFlows = filteredModel.getLargestFlows().length;
+		currentFilteredModel = filteredModel;
+		
+		Flox.GUI.updateGUI();
 		if(filterSettings.stateMode === false) {
 			mapComponent.configureNecklaceMap(filteredModel);
 		}
@@ -812,7 +824,6 @@ my.lookupFIPS = function(FIPS) {
 	if(!fipsLookupTable.hasOwnProperty(FIPS)) {
 		throw new Error(FIPS + " is not a legit FIPS code");
 	} 
-
 	return fipsLookupTable[FIPS];
 };
 
@@ -831,6 +842,13 @@ my.zoomToRectangle = function(rect) {
 	mapComponent.zoomToRectangle(rect);
 };
 
+my.getNumberOfDisplayedFlows = function() {
+	return numberOfDisplayedFlows;
+};
+
+my.getCurrentFilteredModel = function() {
+	return currentFilteredModel;
+};
 // END DEBUG STUFF-------------------------------------
 
 return my;
