@@ -48,7 +48,7 @@ Flox.Model = function() {
 			useGlobalFlowWidth: true,
 			
 			// arrow settings
-			arrowSizeRatio : 0.2, // making small arrows bigger
+			arrowSizeRatio : 0.3, // making small arrows bigger
 			arrowLengthRatio : 0.0, // shortening all arrows roughtly the same amount
 			arrowLengthScaleFactor : 1.8,
 			arrowWidthScaleFactor : 1,
@@ -101,6 +101,7 @@ Flox.Model = function() {
 			"FIPS13": 0.5,  //"Georgia",//GA
 			"FIPS17" : 0.7, // Illinois
 			"FIPS21": 0.5,//"Kentucky",//KY
+			"FIPS31": 0.6, //"Nebraska",//NE
 			"FIPS34" : 0.5, // New Jersey
 			"FIPS36" : 0.35, // New York
 			"FIPS44" : 0.5, // Rhode Island

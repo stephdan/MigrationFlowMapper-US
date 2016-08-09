@@ -875,15 +875,15 @@ Flox.MapComponent_d3 = function() {
 		// but a modified copy created by the filter.
 		model_copy = m;
 		
-		// if this is county flow data, color the counties by pop density
-		// TODO this is done on every single iteration of the method.
-		// It only needs to be done once. 
-		if(Flox.isCountyMode() && Flox.getSelectedState() !== false){
-			colorCountiesByPopulationDensity();
-		} else {
-			// color the states by population density
-			colorStatesByPopulationDensity();
-		}
+		// // if this is county flow data, color the counties by pop density
+		// // TODO this is done on every single iteration of the method.
+		// // It only needs to be done once. 
+		// if(Flox.isCountyMode() && Flox.getSelectedState() !== false){
+			// colorCountiesByPopulationDensity();
+		// } else {
+			// // color the states by population density
+			// colorStatesByPopulationDensity();
+		// }
 
 		if (model_copy.settings.drawFlows) {
 			drawFlows(model_copy.settings.drawArrows);
@@ -2056,6 +2056,19 @@ Flox.MapComponent_d3 = function() {
 	
 	my.initialZoomAction = function() {
 		reset();
+	};
+	
+	my.setChoroplethAndLegend = function(m) {
+		model_copy = m;
+		// if this is county flow data, color the counties by pop density
+		// TODO this is done on every single iteration of the method.
+		// It only needs to be done once. 
+		if(Flox.isCountyMode() && Flox.getSelectedState() !== false){
+			colorCountiesByPopulationDensity();
+		} else {
+			// color the states by population density
+			colorStatesByPopulationDensity();
+		}
 	};
 	
 	return my;

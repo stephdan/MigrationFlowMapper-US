@@ -534,14 +534,22 @@ my.updateMap = function() {
 				filterSettings.selectedState !== false) {
 				mapComponent.configureNecklaceMap(filteredModel);
 			}
+			mapComponent.setChoroplethAndLegend(filteredModel);
 			mapComponent.enableTooltip();
-			runLayoutWorker(filteredModel, function() {
-				if(starting) {
-					my.runInitialAnimation();
-					starting = false;
-				}
-				refreshMap(filteredModel);
-			});	
+			
+			if(starting) {
+				starting = false;
+				my.runInitialAnimation();
+				setTimeout(function(){
+					runLayoutWorker(filteredModel, function(){
+						refreshMap(filteredModel);
+					})
+				}, 750)
+			} else {
+				runLayoutWorker(filteredModel, function() {
+					refreshMap(filteredModel);
+				});	
+			}
 		});
 	} else {
 		
