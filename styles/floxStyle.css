@@ -10,6 +10,30 @@ html, body {
   	pointer-events: all;
 }
 
+#mouseBlocker {
+	position: absolute;
+	margin: 0px;
+	width: 100%;
+	height: 100%;
+	pointer-events: all;
+	background-color: rgb(235,235,242);
+}
+
+#loadingMessage {
+	position: absolute;
+	width: 100px;
+	height: 40px;;
+	text-align: center;
+	pointer-events: all;
+	font-size: 12pt;
+	color: white;
+	whitespace: nowrap;
+	top: 50%;
+	left: 50%;
+	margin: -20px 0 0 -50px;
+	z-index: 5;
+}
+
 #map {
 	width: 100%;
 	height: 100%;
@@ -177,7 +201,7 @@ html, body {
 	width: 500px;
 	height: 117px;
 	position: fixed;
-	bottom: 0;
+	bottom: -150px;
 	margin: 0 auto;
   	left: 0;
 	right: 0;
@@ -221,6 +245,7 @@ html, body {
 	height: auto;
 	position: fixed;
 	bottom: 0px;
+	left: -250px;
 	pointer-events: none;
 }
 
@@ -242,18 +267,18 @@ html, body {
 
 #optionsSlidingPanel {
 	position: absolute;
-	width: 212px;
+	width: 185px;
 	height: auto;
 	position: fixed;
 	top: 40px;
-	right: 0px;
+	right: -250px;
 	pointer-events: none;
 }
 
 #optionsSlidingPanelContent {
 	border-radius: 5px 0px 0px 5px;
     height: auto;
-    width: 194px;
+    width: 167px;
     display: inline-block;
     color: white;
 }

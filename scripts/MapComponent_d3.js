@@ -19,15 +19,15 @@ Flox.MapComponent_d3 = function() {
 	    
 	    projection_albersUsa = d3.geo.albersUsa().scale(20000).translate([width / 2, height / 2]),
 	    projection_mercator = d3.geo.mercator().scale(20000).translate([width / 2, height / 2]),
-	    projectoin_albersUsaPR = albersUsaPr().scale(20000).translate([width / 2, height / 2]),
+	    projection_albersUsaPR = albersUsaPr().scale(20000).translate([width / 2, height / 2]),
 	    //projection_conicEqualArea = d3.geo.conicEqualArea().scale(1).translate([width / 2, height / 2]),
-	    projection = projectoin_albersUsaPR,
+	    projection = projection_albersUsaPR,
 	    
 	    // TODO the scale setting below could be set to zoom in to the bounding
 	    // box of the lower 48 based on the window size. 
 	    zoom = d3.behavior.zoom()
 				.translate([width / 2, height / 2])
-				.scale(0.06).scaleExtent([0.02, 10])// change these numbers to be able to zoom in or out further.
+				.scale(20).scaleExtent([0.02, 20])// change these numbers to be able to zoom in or out further.
 				.on("zoom", zoomed),
 
 		tooltipOffset = {x: 8, y: -38}, // FIXME y is not used
@@ -36,7 +36,6 @@ Flox.MapComponent_d3 = function() {
 					.style("display", "none"),
 		
 		defaultClasses = 7,
-		
 		stateStrokeWidth = 20,
 		stateHoverStrokeWidth = 40,
 		countyStrokeWidth = 8,
@@ -78,8 +77,8 @@ Flox.MapComponent_d3 = function() {
 			"25": "City"
 		},
 		
-		tooltipEnabled = true,
-		
+		tooltipEnabled = false,
+		starting = true,
 	    my = {};
 
 	function showTooltip() {
@@ -257,12 +256,10 @@ Flox.MapComponent_d3 = function() {
 			background.attr("width", "100%").attr("height", "100%");
 		});
 
-		// Create and arrange layers in the appropriate order.
-
-
-		svg.call(zoom)// delete this line to disable free zooming
-		.call(zoom.event);
-
+		// delete this line to disable free zooming
+		// NOTE: called after startup animation
+		svg.call(zoom).call(zoom.event); 
+		
 		d3.json("data/geometry/states_census_2015.json", function(error, us) {
 			if (error) {
 				throw error;
@@ -1338,7 +1335,7 @@ Flox.MapComponent_d3 = function() {
 			force, necklaceMap, nodes, i,
 			labelSize,	// in pixels
 			labelSize_max = (outerCircle.r * 0.08),
-			labelSize_min = (outerCircle.r * 0.04),
+			labelSize_min = (outerCircle.r * 0.03),
 			pt,
 			labelOffset = 0;
 			
@@ -2055,6 +2052,10 @@ Flox.MapComponent_d3 = function() {
 	
 	my.zoomToRectangle = function(rect) {
 		zoomToRectangle(rect);
+	};
+	
+	my.initialZoomAction = function() {
+		reset();
 	};
 	
 	return my;

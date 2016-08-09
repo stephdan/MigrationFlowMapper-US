@@ -22,6 +22,7 @@ var mapComponent,
 	startTimeAll, 
 	endTimeAll,
 	fipsLookupTable,
+	starting = true,
 	my = {};
 
 fipsLookupTable = {
@@ -270,7 +271,9 @@ function importStateToStateMigrationFlows(keepSelectedState) {
     mapComponent.hideAllCountyBorders();
     mapComponent.removeAllFlows();
     mapComponent.removeNecklaceMap();
-    mapComponent.zoomToFullExtent();
+    if(starting===false) {
+		mapComponent.zoomToFullExtent();
+    }
 	// filterSettings.stateMode = true;
 	// filterSettings.countyMode = false;
 	model_master.settings.scaleMultiplier = 4; // FIXME hardcoded
@@ -533,7 +536,10 @@ my.updateMap = function() {
 			}
 			mapComponent.enableTooltip();
 			runLayoutWorker(filteredModel, function() {
-				
+				if(starting) {
+					my.runInitialAnimation();
+					starting = false;
+				}
 				refreshMap(filteredModel);
 			});	
 		});
@@ -687,14 +693,6 @@ my.setInStateFlows = function(boo) {
 	filterSettings.inStateFlows = boo;
 };
 
-
-
-my.enterClickAStateMode = function() {
-	// Turn all the polygons gray
-	mapComponent.reset();
-	mapComponent.resetStateFillColor();
-};
-
 my.initFlox = function() {
 
 	Flox.GUI.updateGUI();
@@ -706,6 +704,23 @@ my.initFlox = function() {
 	
 	importStateToStateMigrationFlows();
 };
+
+my.runInitialAnimation = function() {
+	$("#loadingMessage").addClass("hidden");
+	$("#mouseBlocker").css("background", "none");
+	mapComponent.initialZoomAction();
+	setTimeout(function(){
+		Flox.GUI.toggleLegendSlidingPanel();
+		setTimeout(function(){
+			Flox.GUI.toggleSlidingPanel();
+			setTimeout(function(){
+				Flox.GUI.toggleOptionsSlidingPanel();
+				$("#mouseBlocker").css("pointer-events", "none");
+			}, 50);
+		}, 50);
+	}, 750);
+};
+
 
 
 // DEBUG STUFF-------------------------------------

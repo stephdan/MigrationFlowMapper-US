@@ -312,20 +312,24 @@ Flox.GUI = (function($){
 		} else {
 			slidingPanel.addClass("collapsed")
 						.animate({
-							right: "-190px"
+							right: "-163px"
 						}, 100);
 		}
 	}
 	
-
+	my.toggleSlidingPanel = function() {
+		toggleSlidingPanel();
+	};
 	my.toggleLegendSlidingPanel = function() {
 		toggleLegendSlidingPanel();
+	};
+	my.toggleOptionsSlidingPanel = function() {
+		toggleOptionsSlidingPanel();
 	};
 
 	$("#slidingPanelTab").on("click", function() {
 		// Change the height of if the slidingPanel
 		toggleSlidingPanel();
-		
 	});
 
 	$("#legendSlidingPanelTab").on("click", function() {
@@ -575,15 +579,6 @@ Flox.GUI = (function($){
 	$(".panelButtonContainer").mouseout(function() {
 		my.setHintText();
 	});
-
-
-	my.openSlidingPanel = function() {
-		openSlidingPanel();
-	};
-	
-	my.collapseSlidingPanel = function() {
-		collapseSlidingPanel();
-	};
 
 	/**
 	 * 
