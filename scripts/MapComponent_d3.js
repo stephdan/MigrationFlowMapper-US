@@ -19,15 +19,15 @@ Flox.MapComponent_d3 = function() {
 	    
 	    projection_albersUsa = d3.geo.albersUsa().scale(20000).translate([width / 2, height / 2]),
 	    projection_mercator = d3.geo.mercator().scale(20000).translate([width / 2, height / 2]),
-	    projectoin_albersUsaPR = albersUsaPr().scale(20000).translate([width / 2, height / 2]),
+	    projection_albersUsaPR = albersUsaPr().scale(20000).translate([width / 2, height / 2]),
 	    //projection_conicEqualArea = d3.geo.conicEqualArea().scale(1).translate([width / 2, height / 2]),
-	    projection = projectoin_albersUsaPR,
+	    projection = projection_albersUsaPR,
 	    
 	    // TODO the scale setting below could be set to zoom in to the bounding
 	    // box of the lower 48 based on the window size. 
 	    zoom = d3.behavior.zoom()
 				.translate([width / 2, height / 2])
-				.scale(0.06).scaleExtent([0.05, 80])// change these numbers to be able to zoom in or out further.
+				.scale(20).scaleExtent([0.02, 20])// change these numbers to be able to zoom in or out further.
 				.on("zoom", zoomed),
 
 		tooltipOffset = {x: 8, y: -38}, // FIXME y is not used
@@ -36,7 +36,6 @@ Flox.MapComponent_d3 = function() {
 					.style("display", "none"),
 		
 		defaultClasses = 7,
-		
 		stateStrokeWidth = 20,
 		stateHoverStrokeWidth = 40,
 		countyStrokeWidth = 8,
@@ -78,8 +77,8 @@ Flox.MapComponent_d3 = function() {
 			"25": "City"
 		},
 		
-		tooltipEnabled = true,
-		
+		tooltipEnabled = false,
+		starting = true,
 	    my = {};
 
 	function showTooltip() {
@@ -146,9 +145,7 @@ Flox.MapComponent_d3 = function() {
 			inStateText = "",
 			toText = "",
 			fromText = "";
-		
-		console.log(d);
-		
+				
 		if(d.properties.COUNTYFP){
 			// it's a county
 			node = model.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
@@ -157,7 +154,7 @@ Flox.MapComponent_d3 = function() {
 			node = model.findNodeByID(String(Number(d.properties.STATEFP)));
 		}
 		
-		if(Flox.isCountyMode()) {
+		if(Flox.isCountyMode() && !d.properties.COUNTYFP) {
 			// We're seeing counties, and flow values of states is just for the
 			// selected state.
 			inState = Flox.getSelectedStateName();
@@ -220,23 +217,23 @@ Flox.MapComponent_d3 = function() {
 		svg = d3.select("#map").append("svg")
 				.attr("width", "100%")
 				.attr("height", "100%")
-				.on("click", stopped, true)
-				.on("mousemove", function() {
-					var svgX = d3.event.x,
-						svgY = d3.event.y,
-						projectedX = 0,
-						projectedY = 0,
-						ll = projection.invert([svgX, svgY]),
-						lat = projection.invert(ll[1]),
-						lng = projection.invert(ll[0]);
-						
-					// get the appropriate spans, set the text to the things
-					$("#xCoord").html(svgX);
-					$("#yCoord").html(svgY);
-					$("#latitude").html(lat);
-					$("#longitude").html(lng);
-					//console.log(d3.mouse(this));
-				})
+				.on("click", stopped, true);
+				// .on("mousemove", function() {
+					// var svgX = d3.event.x,
+						// svgY = d3.event.y,
+						// projectedX = 0,
+						// projectedY = 0,
+						// ll = projection.invert([svgX, svgY]),
+						// lat = projection.invert(ll[1]),
+						// lng = projection.invert(ll[0]);
+// 						
+					// // get the appropriate spans, set the text to the things
+					// $("#xCoord").html(svgX);
+					// $("#yCoord").html(svgY);
+					// $("#latitude").html(lat);
+					// $("#longitude").html(lng);
+					// //console.log(d3.mouse(this));
+				// });
 
 		// MAP LAYERS ------------------------------------
 		// Add a background layer for detecting pointer events
@@ -259,12 +256,10 @@ Flox.MapComponent_d3 = function() {
 			background.attr("width", "100%").attr("height", "100%");
 		});
 
-		// Create and arrange layers in the appropriate order.
-
-
-		svg.call(zoom)// delete this line to disable free zooming
-		.call(zoom.event);
-
+		// delete this line to disable free zooming
+		// NOTE: called after startup animation
+		svg.call(zoom).call(zoom.event); 
+		
 		d3.json("data/geometry/states_census_2015.json", function(error, us) {
 			if (error) {
 				throw error;
@@ -880,15 +875,15 @@ Flox.MapComponent_d3 = function() {
 		// but a modified copy created by the filter.
 		model_copy = m;
 		
-		// if this is county flow data, color the counties by pop density
-		// TODO this is done on every single iteration of the method.
-		// It only needs to be done once. 
-		if(Flox.isCountyMode() && Flox.getSelectedState() !== false){
-			colorCountiesByPopulationDensity();
-		} else {
-			// color the states by population density
-			colorStatesByPopulationDensity();
-		}
+		// // if this is county flow data, color the counties by pop density
+		// // TODO this is done on every single iteration of the method.
+		// // It only needs to be done once. 
+		// if(Flox.isCountyMode() && Flox.getSelectedState() !== false){
+			// colorCountiesByPopulationDensity();
+		// } else {
+			// // color the states by population density
+			// colorStatesByPopulationDensity();
+		// }
 
 		if (model_copy.settings.drawFlows) {
 			drawFlows(model_copy.settings.drawArrows);
@@ -1117,22 +1112,39 @@ Flox.MapComponent_d3 = function() {
 		.call(zoom.translate(translate).scale(scale).event);
 	}
 	
-	// Zooms to a circle object {cx: center x, cy: center y, r: radius}
-	// Adds a litle padding to the circle and the edge of the window
-	function zoomToCircle(c){
-		var dx = c.r * 2,
-			dy = c.r * 2,
-			padding = 0.62, // The further below 1, the more padding it gets.
-			scale = padding / Math.max(dx / width, dy / height),
-			translate = [width / 2 - scale * c.cx, height / 2 - scale * c.cy];
+	// rect is {x, y, h, w}
+	function zoomToRectangle(rect) {
+		var dx = rect.w,
+			dy = rect.h,
+			x = (rect.x + dx) / 2,
+			y = (rect.y + dy) / 2,
+			scale = 0.6 / Math.max(dx / width, dy / height),
+		    translate = [width / 2 - scale * x, height / 2 - scale * y];
 		svg.transition()
 		.duration(750) // TODO long zoom for testing asynchronous stuff.
 		.call(zoom.translate(translate).scale(scale).event);
 	}
 	
+	// Zooms to a circle object {cx: center x, cy: center y, r: radius}
+	// Adds a litle padding to the circle and the edge of the window
+	function zoomToCircle(c){
+		var dx = c.r * 2,
+			dy = c.r * 2,
+			padding = 0.65, // The further below 1, the more padding it gets.
+			scale = padding / Math.max(dx / width, dy / height),
+			translate = [width / 2 - scale * c.cx, height / 2 - scale * (c.cy) - height * 0.05];
+		svg.transition()
+		.duration(750) // TODO long zoom for testing asynchronous stuff.
+		.call(zoom.translate(translate).scale(scale).event);
+	}
+	
+	
+	
 	// FIXME Hardcoded scale. Calculate scale from feature extent somehow.
 	function zoomToFullExtent() {
-		svg.transition().duration(750).call(zoom.translate([width / 2, height / 2]).scale(0.06).event);
+		zoomToRectangle({x: -8000, y: -5000, w: 9000, h: 7000})
+		//zoomToCircle({r: 3800, cx: 300, cy: 500});
+		//svg.transition().duration(750).call(zoom.translate([width / 2, height / 2]).scale(0.06).event);
 	}
 
 	// Zooms out to full extent, deselects everything, hides all county
@@ -1197,7 +1209,7 @@ Flox.MapComponent_d3 = function() {
 		// filterSettings.selectedState = stateFIPS;
 		// filterSettings.selectedFeatureName = statePolygon.properties.NAME;
 		
-		Flox.setSelectedCounty(false);
+		//Flox.setSelectedCounty(false);
 		Flox.setSelectedState(stateFIPS);
 		Flox.setSelectedFeatureName(statePolygon.properties.NAME);
 		
@@ -1208,6 +1220,7 @@ Flox.MapComponent_d3 = function() {
 			my.disableTooltip();
 			hideTooltip();
 			
+			Flox.setSelectedCounty(false);
 			
 			// Get the smallest circle around the polygon, save it for later.
 			outerCircle = getSmallestCircleAroundPolygon(statePolygon);
@@ -1322,7 +1335,7 @@ Flox.MapComponent_d3 = function() {
 			force, necklaceMap, nodes, i,
 			labelSize,	// in pixels
 			labelSize_max = (outerCircle.r * 0.08),
-			labelSize_min = (outerCircle.r * 0.04),
+			labelSize_min = (outerCircle.r * 0.03),
 			pt,
 			labelOffset = 0;
 			
@@ -1675,7 +1688,7 @@ Flox.MapComponent_d3 = function() {
 			rectHeight = 15,
 			rectSpacer = 4,
 			labelSizePx = 13,
-			flowLength = 60,
+			flowLength = 62,
 			flowSpacer = 18,
 			s = model_copy.settings,
 			flowLeft = 0 - s.flowDistanceFromStartPointPixel,
@@ -1705,7 +1718,7 @@ Flox.MapComponent_d3 = function() {
 			notShownText = "";
 		
 		if(largestFlows.length >= s.maxFlows) {
-			notShownText = "Flows under " + numberWithCommas(largestFlows[largestFlows.length-1].getValue()) + " not shown";
+			notShownText = "Flows less than " + numberWithCommas(largestFlows[largestFlows.length-1].getValue()) + " not shown";
 		}
 		
 		if(maxLegendFlowWidth / 2 > maxLegendFlowWidth * model_copy.settings.arrowWidthScaleFactor) {
@@ -2031,6 +2044,31 @@ Flox.MapComponent_d3 = function() {
 	
 	my.enableTooltip = function() {
 		tooltipEnabled = true;
+	};
+	
+	my.zoomToCircle = function(c) {
+		zoomToCircle(c);
+	};
+	
+	my.zoomToRectangle = function(rect) {
+		zoomToRectangle(rect);
+	};
+	
+	my.initialZoomAction = function() {
+		reset();
+	};
+	
+	my.setChoroplethAndLegend = function(m) {
+		model_copy = m;
+		// if this is county flow data, color the counties by pop density
+		// TODO this is done on every single iteration of the method.
+		// It only needs to be done once. 
+		if(Flox.isCountyMode() && Flox.getSelectedState() !== false){
+			colorCountiesByPopulationDensity();
+		} else {
+			// color the states by population density
+			colorStatesByPopulationDensity();
+		}
 	};
 	
 	return my;

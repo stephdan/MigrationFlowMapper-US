@@ -673,6 +673,10 @@ Flox.FlowLayouter = function (model) {
 	function getObstacles() {
 		var nodes = model.getPoints(),
 			arrows,
+			centroid,
+			rPx,
+			dx,
+			dy,
 			nodeObstacles = [],
 			arrowObstacles = [],
 			returnObstacles = [],
@@ -692,14 +696,22 @@ Flox.FlowLayouter = function (model) {
 								type: "node"});
 		}
 		
+		// Arrows are obstacles
 		if(model.settings.drawArrows) {
 			for(i = 0; i < flows.length; i += 1) {
 				flow = flows[i];
 				arrow = flow.getArrow();
-				arrowObstacles.push({x: arrow.basePt.x, y: arrow.basePt.y, 
-									r: arrow.arrowLength,
+				centroid = flow.getArrowCentroid();
+				
+				dx = centroid.x - arrow.tipPt.x;
+				dy = centroid.y - arrow.tipPt.y;
+				rPx = Math.sqrt(dx * dx + dy * dy);
+				
+				arrowObstacles.push({x: centroid.x, y: centroid.y, 
+									r: rPx,
 									node: flow.getEndPt(),
 									type: "arrow"});
+
 			}
 		}
 		
@@ -777,6 +789,7 @@ Flox.FlowLayouter = function (model) {
                     && flowIntersectsObstacle(flow, obstacles) === false) {
                 // found a new position for the control point that does not 
                 // result in an overlap with any obstacle
+                flow.setLocked(true);
                 return;
             }
 
@@ -787,6 +800,8 @@ Flox.FlowLayouter = function (model) {
         // obstacle. Restore the original coordinates.
         cPt.x = originalX;
         cPt.y = originalY;
+        
+        flow.unmoveable = true;
         
         console.log("Spiral Method did not find a solution");
 	}
@@ -942,15 +957,19 @@ Flox.FlowLayouter = function (model) {
 			
 		for(i = 0; i < flows.length; i += 1) {
 			flow = flows[i];
-			for(j = 0; j < obstacles.length; j += 1) {
-				obstacle = obstacles[j];
-				node = obstacle.node;
-				if(node !== flow.getStartPt() && node !== flow.getEndPt()) {
-					if(flowIntersectsNode(flow, obstacle)) {
-						intersectingFlows.push(flow);
+			if(flow.unmoveable !== true) {
+				for(j = 0; j < obstacles.length; j += 1) {
+					obstacle = obstacles[j];
+					node = obstacle.node;
+					if(node !== flow.getStartPt() && node !== flow.getEndPt()) {
+						if(flowIntersectsNode(flow, obstacle)) {
+							intersectingFlows.push(flow);
+						}
 					}
 				}
 			}
+			
+			
 			// if (flowIntersectsANode(flow)) {
 				// intersectingFlows.push(flows[i]);
 			// }

@@ -10,6 +10,30 @@ html, body {
   	pointer-events: all;
 }
 
+#mouseBlocker {
+	position: absolute;
+	margin: 0px;
+	width: 100%;
+	height: 100%;
+	pointer-events: all;
+	background-color: rgb(235,235,242);
+}
+
+#loadingMessage {
+	position: absolute;
+	width: 100px;
+	height: 39px;;
+	text-align: center;
+	pointer-events: all;
+	font-size: 12pt;
+	color: white;
+	whitespace: nowrap;
+	top: 50%;
+	left: 50%;
+	margin: -20px 0 0 -50px;
+	z-index: 5;
+}
+
 #map {
 	width: 100%;
 	height: 100%;
@@ -37,8 +61,6 @@ html, body {
 	color: rgb(90, 90, 90);
 }
 
-
-
 #creditText {
 	position: absolute;
 	width: auto;
@@ -63,41 +85,7 @@ html, body {
 	height: auto;
 }
 
-#slidingPanel {
-	position: absolute;
-	width: 500px;
-	height: 117px;
-	position: fixed;
-	bottom: 0;
-	margin: 0 auto;
-  	left: 0;
-	right: 0;
-	pointer-events: none;
-}
 
-#slidingPanelContent {
-	background: rgb(64, 64, 64);
-    background: rgba(64, 64, 64, 0.9);
-    box-shadow: 3px 3px 3px rgba(64,64,64,0.5);
-	padding: 5px;
-	height: 102px;
-	border-radius: 5px 5px 0px 0px;
-	pointer-events: all;
-	text-align:center;
-}
-
-#slidingPanelTab {
-	display: inline-block;
-	margin-left: 15px;
-	margin-bottom: -5px;
-	width: 40px;
-	height: 18px;
-	background: rgb(64, 64, 64);
-    background: rgba(64, 64, 64, 0.9);
-    box-shadow: 3px 3px 3px rgba(64,64,64,0.5);
-	border-radius: 2px 2px 0px 0px;
-	pointer-events: all;
-}
 
 #newProgressBar {
 	box-shadow: 2px 2px 2px rgba(64,64,64,0.5);
@@ -118,42 +106,9 @@ html, body {
 }
 
 
-#slidingPanelTab:hover {
-	background-color: #fdae6b;	
-	z-index: 1;
-}
 
-#slidingPanelContent ul {
-	list-style-type:none;
-	margin: 0px auto;
-	padding-left: 0;
-	font-size: 0;
-	bottom: 0px;
-}
 
-#slidingPanelContent ul li {
-	display: inline;
-	margin: 0px;
-	z-index: 2;
-	text-align: center;
-}
 
-#debugMenu {
-	position: absolute;
-	width: 200px;
-	height: auto;
-	right: 20px;
-	top: 20px;
-	background: rgb(64, 64, 64);
-    background: rgba(64, 64, 64, 0.9);
-    box-shadow: 3px 3px 3px rgba(64,64,64,0.5);
-    padding: 10px;
-    color: white;
-}
-
-#debugMenu .checkbox {
-	margin-top: 0px;
-}
 
 
 #subtitleText {
@@ -221,39 +176,132 @@ html, body {
     user-select: none;
 }
 
-#legendSlidingPanel {
-	position: absolute;
-	width: 212px;
-	height: auto;
-	position: fixed;
-	bottom: 0px;
-	pointer-events: none;
-}
 
-#legendSlidingPanelContent {
+
+
+
+.UIPanel {
 	background: rgb(64, 64, 64);
     background: rgba(64, 64, 64, 0.9);
     box-shadow: 3px 3px 3px rgba(64,64,64,0.5);
-    border-radius: 0px 5px 5px 0px;
-    height: auto;
-    width: 194px;
     pointer-events: all;
     padding: 8px;
 }
 
+.UIPanelTab:hover {
+	background: rgb(100, 100, 100);
+    /*background: rgba(90, 90, 90, 0.9);*/
+	z-index: 1;
+}
 
+/* Sliding Panel Stuff ---------------------------- */
+
+#slidingPanel {
+	position: absolute;
+	width: 500px;
+	height: 117px;
+	position: fixed;
+	bottom: -150px;
+	margin: 0 auto;
+  	left: 0;
+	right: 0;
+    pointer-events: none; /* Allows pointer events to pass through! */
+}
+
+#slidingPanelContent {
+	padding: 5px;
+	height: 102px;
+	border-radius: 5px 5px 0px 0px;
+	text-align:center;
+}
+
+#slidingPanelTab {
+	display: inline-block;
+	margin-left: 15px;
+	margin-bottom: -5px;
+	width: 40px;
+	height: 18px;
+	border-radius: 2px 2px 0px 0px;
+}
+
+#slidingPanelContent ul {
+	list-style-type:none;
+	margin: 0px auto;
+	padding-left: 0;
+	font-size: 0;
+	bottom: 0px;
+}
+
+#slidingPanelContent ul li {
+	display: inline;
+	margin: 0px;
+	z-index: 2;
+	text-align: center;
+}
+
+#legendSlidingPanel {
+	position: absolute;
+	width: 222px;
+	height: auto;
+	position: fixed;
+	bottom: 0px;
+	left: -250px;
+	pointer-events: none;
+}
+
+#legendSlidingPanelContent {
+    border-radius: 0px 5px 0px 0px;
+    height: auto;
+    width: 204px;
+    padding: 8px;
+}
 
 #legendSlidingPanelTab {
 	width: 18px;
 	height: 40px;
-	background: rgb(64, 64, 64);
-    background: rgba(64, 64, 64, 0.9);
-    box-shadow: 3px 3px 3px rgba(64,64,64,0.5);
 	border-radius: 0px 2px 2px 0px;
 	float: right;
 	margin-top: 15px;
-	pointer-events: all;
+
 }
+
+#optionsSlidingPanel {
+	position: absolute;
+	width: 185px;
+	height: auto;
+	position: fixed;
+	top: 40px;
+	right: -250px;
+	pointer-events: none;
+}
+
+#optionsSlidingPanelContent {
+	border-radius: 5px 0px 0px 5px;
+    height: auto;
+    width: 167px;
+    display: inline-block;
+    color: white;
+}
+
+#optionsSlidingPanelContent .checkbox {
+	margin-top: 0px;
+}
+
+#optionsSlidingPanelTab {
+	width: 18px;
+	height: 40px;
+	border-radius: 2px 0px 0px 2px;
+	margin-top: 15px;
+	float: left;
+}
+ 
+
+/* END Sliding Panel Stuff ----------------------- */
+
+
+
+
+
 
 .floxTooltip {
 	position: absolute;
@@ -276,9 +324,15 @@ html, body {
 
 }
 
+.optionsMenuHeader {
+	font-size: 14px;
+	margin-bottom: 0px;
+}
+
 .radio {
 	margin-top: 0px;
 	margin-bottom: 3px;
+	margin-left: 7px;
 }
 
 .tooltipTypeHolder {

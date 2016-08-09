@@ -22,6 +22,7 @@ var mapComponent,
 	startTimeAll, 
 	endTimeAll,
 	fipsLookupTable,
+	starting = true,
 	my = {};
 
 fipsLookupTable = {
@@ -270,7 +271,9 @@ function importStateToStateMigrationFlows(keepSelectedState) {
     mapComponent.hideAllCountyBorders();
     mapComponent.removeAllFlows();
     mapComponent.removeNecklaceMap();
-    mapComponent.zoomToFullExtent();
+    if(starting===false) {
+		mapComponent.zoomToFullExtent();
+    }
 	// filterSettings.stateMode = true;
 	// filterSettings.countyMode = false;
 	model_master.settings.scaleMultiplier = 4; // FIXME hardcoded
@@ -531,11 +534,22 @@ my.updateMap = function() {
 				filterSettings.selectedState !== false) {
 				mapComponent.configureNecklaceMap(filteredModel);
 			}
+			mapComponent.setChoroplethAndLegend(filteredModel);
 			mapComponent.enableTooltip();
-			runLayoutWorker(filteredModel, function() {
-				
-				refreshMap(filteredModel);
-			});	
+			
+			if(starting) {
+				starting = false;
+				my.runInitialAnimation();
+				setTimeout(function(){
+					runLayoutWorker(filteredModel, function(){
+						refreshMap(filteredModel);
+					})
+				}, 750)
+			} else {
+				runLayoutWorker(filteredModel, function() {
+					refreshMap(filteredModel);
+				});	
+			}
 		});
 	} else {
 		
@@ -687,14 +701,6 @@ my.setInStateFlows = function(boo) {
 	filterSettings.inStateFlows = boo;
 };
 
-
-
-my.enterClickAStateMode = function() {
-	// Turn all the polygons gray
-	mapComponent.reset();
-	mapComponent.resetStateFillColor();
-};
-
 my.initFlox = function() {
 
 	Flox.GUI.updateGUI();
@@ -706,6 +712,23 @@ my.initFlox = function() {
 	
 	importStateToStateMigrationFlows();
 };
+
+my.runInitialAnimation = function() {
+	$("#loadingMessage").addClass("hidden");
+	$("#mouseBlocker").css("background", "none");
+	mapComponent.initialZoomAction();
+	setTimeout(function(){
+		Flox.GUI.toggleLegendSlidingPanel();
+		setTimeout(function(){
+			Flox.GUI.toggleSlidingPanel();
+			setTimeout(function(){
+				Flox.GUI.toggleOptionsSlidingPanel();
+				$("#mouseBlocker").css("pointer-events", "none");
+			}, 50);
+		}, 50);
+	}, 750);
+};
+
 
 
 // DEBUG STUFF-------------------------------------
@@ -798,6 +821,14 @@ my.getSelectedStateName = function() {
 		throw new Error("No state is selected");
 	}
 	return my.lookupFIPS(filterSettings.selectedState);
+};
+
+my.zoomToCircle = function(c) {
+	mapComponent.zoomToCircle(c);
+};
+
+my.zoomToRectangle = function(rect) {
+	mapComponent.zoomToRectangle(rect);
 };
 
 // END DEBUG STUFF-------------------------------------
