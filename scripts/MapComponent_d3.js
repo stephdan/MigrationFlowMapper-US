@@ -275,6 +275,7 @@ Flox.MapComponent_d3 = function() {
 				.attr("stroke", function(d){
 					return rgbArrayToString(colors.polygonStroke);
 				})
+				.style("stroke-linejoin", "bevel")
 				.style("stroke-width", stateStrokeWidth)
 				.attr("fill", "#ccc") // The initial fill before it's assigned.
 				.on("click", stateClicked)
@@ -353,6 +354,7 @@ Flox.MapComponent_d3 = function() {
 						return rgbArrayToString(colors.polygonStroke);
 					})
 					.style("stroke-width", 8) // TODO hardcoded value
+					.style("stroke-linejoin", "bevel")
 					.on("mouseover", function(d) {
 						showTooltip();
 						d3.select(this)
