@@ -282,7 +282,7 @@ function importStateToStateMigrationFlows(keepSelectedState) {
 	model_master.settings.datasetName = "states";
 	
 	if(!keepSelectedState) {
-		filterSettings.selectedState = false;
+		my.setSelectedState(false);
 	}
 	
 	var flowPath = "data/census/US_state_migration_2013_flows.csv",

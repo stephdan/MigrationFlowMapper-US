@@ -256,9 +256,9 @@ Flox.MapComponent_d3 = function() {
 			background.attr("width", "100%").attr("height", "100%");
 		});
 
-		// delete this line to disable free zooming
-		// NOTE: called after startup animation
-		svg.call(zoom).call(zoom.event); 
+		// This line enables free zooming. 
+		// Also disables the double-click zooming default behavior. 
+		svg.call(zoom).on("dblclick.zoom", null).call(zoom.event); 
 		
 		d3.json("data/geometry/states_census_2015.json", function(error, us) {
 			if (error) {
@@ -1273,6 +1273,7 @@ Flox.MapComponent_d3 = function() {
 			my.disableTooltip();
 			reset();
 			// load the state to state flows?
+			Flox.setSelectedState(false);
 			Flox.importStateToStateMigrationFlows();
 		} else {
 			selectState(d.properties.STATEFP);
@@ -1334,7 +1335,7 @@ Flox.MapComponent_d3 = function() {
 		    ringR = outerCircle.r + nodeRadius, 
 			force, necklaceMap, nodes, i,
 			labelSize,	// in pixels
-			labelSize_max = (outerCircle.r * 0.08),
+			labelSize_max = (outerCircle.r * 0.07),
 			labelSize_min = (outerCircle.r * 0.03),
 			pt,
 			labelOffset = 0;
