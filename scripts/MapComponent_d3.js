@@ -283,7 +283,7 @@ Flox.MapComponent_d3 = function() {
 					//var settings = Flox.getFilterSettings();
 					showTooltip();
 					
-					console.log(d3.select(this).style("fill"))
+					//console.log(d3.select(this).style("fill"))
 					//console.log(rgbArrayToString(colors.unselectedStateHoverStroke))
 					
 					d3.select(this)
@@ -645,7 +645,7 @@ Flox.MapComponent_d3 = function() {
 
 	function drawPoints() {
 		var //points = model_copy.getPoints(),
-			points = model_copy.getPoints(),
+			points = model_copy.getNonNecklaceNodes(),
 		    circles = d3.select("#pointsLayer")
 						.selectAll("circle")
 						.data(points)

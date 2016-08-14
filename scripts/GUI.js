@@ -114,7 +114,7 @@ Flox.GUI = (function($){
 	
 	// boo : true if turning ON, false if turning OFF.
 	function toggleButtonIcon(buttonID, boo) {
-		console.log("toggling " + buttonID + " " + boo);
+		//console.log("toggling " + buttonID + " " + boo);
 		buttonID = buttonID[0] === "#" ? buttonID : "#" + buttonID;
 		var buttonIcon = $(buttonID).find("img"),
 			max_height = boo ? "100%" : "70%",
@@ -127,12 +127,9 @@ Flox.GUI = (function($){
 	
 	// Make sure the buttons match the current settings.
 	function updateFlowTypeRadioButtons(){
-		console.log("updating buttons!");
-		
 		var flowType = Flox.getFlowType(),
 			settingList = ["net", "total", "incoming", "outgoing"],
 			i;
-			
 		for(i = 0; i < settingList.length; i += 1) {
 			if(flowType === settingList[i]) {
 				toggleButtonIcon(settingList[i] + "FlowsButton", true);
@@ -670,7 +667,6 @@ Flox.GUI = (function($){
 	// Show and hide buttons and set button icons based on current model 
 	// and filter settings.
 	my.updateGUI = function() {
-		console.log("updateGUI called");
 		var hideThese = [],
 			showThese = [],
 			selectedCounty = Flox.getSelectedCounty(),

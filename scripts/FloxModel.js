@@ -71,7 +71,7 @@ Flox.Model = function() {
 			
 			// Draw Settings
 			drawFlows : true,
-			drawNodes : false,
+			drawNodes : true,
 			drawArrows : true,
 			drawControlPoints : false,
 			drawIntermediateFlowPoints : false,
@@ -1175,6 +1175,36 @@ Flox.Model = function() {
 			}
 		}
 		return (displayedTotal / allTotal) * 100;
+	};
+	
+	my.getNonNecklaceNodes = function() {
+		var nonNecklaceNodes = [],
+			i;
+			
+		for(i = 0; i < nodes.length; i += 1) {
+			if (!nodes[i].necklaceMapNode) {
+				nonNecklaceNodes.push(nodes[i]);
+			}
+		}
+		return nonNecklaceNodes;
+	};
+	
+	my.setMaxFlowWidth = function(){
+		var nonNecklaceNodes = my.getNonNecklaceNodes(),
+			clippingDist = settings.flowDistanceFromStartPointPixel +
+						   settings.flowDistanceFromEndPointPixel,
+			shortestDistanceBetweenPoints = closestPair.closestPairDivideAndConquer(nonNecklaceNodes),
+			maxFlowWidth;
+		
+		maxFlowWidth = (shortestDistanceBetweenPoints - clippingDist) / (settings.arrowLengthScaleFactor * 1.1);
+		
+		maxFlowWidth = maxFlowWidth / settings.scaleMultiplier;
+		
+		settings.maxFlowWidth = maxFlowWidth;
+		
+		settings.minFlowWidth = (maxFlowWidth / 10);
+		
+		console.log("maxFlowWidth set to: " + maxFlowWidth);
 	};
 	
 	// make settings public

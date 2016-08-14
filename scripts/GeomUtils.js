@@ -417,7 +417,9 @@ function makeCircle(points) {
                                   sPt.x, sPt.y, 
                                   ePt.x, ePt.y);
 	}
-		
+	
+
+	
 // PUBLIC ======================================================================
 	
 	my.squaredDistanceBetweenPoints = function(p1, p2){
@@ -447,6 +449,7 @@ function makeCircle(points) {
 	my.makeCircle = function(points) {
 		return makeCircle(points);
 	};
+
 
 	return my;
 

@@ -519,7 +519,9 @@ my.updateMap = function() {
 	
 	// Good time to assign xy coordinates to nodes.
 	my.assignXYToNodes(model_master.getPoints());
-
+	
+	//model_master.setMaxFlowWidth();
+	
 	// This if statement is here for debug just to make it easier to turn
 	// off webworkers in order to run performace tests. 
 	// TODO Eventually, it might be nice to have the ability to not use 
@@ -532,6 +534,8 @@ my.updateMap = function() {
 			Flox.GUI.updateLayoutProgressBar(50);
 			// configure the needed variables to get only above average flows.
 			filteredModel.setAboveAverageFlowCount();
+			
+			
 			
 			numberOfDisplayedFlows = filteredModel.getLargestFlows().length;
 			currentFilteredModel = filteredModel;
