@@ -535,8 +535,6 @@ my.updateMap = function() {
 			// configure the needed variables to get only above average flows.
 			filteredModel.setAboveAverageFlowCount();
 			
-			
-			
 			numberOfDisplayedFlows = filteredModel.getLargestFlows().length;
 			currentFilteredModel = filteredModel;
 			
@@ -557,9 +555,15 @@ my.updateMap = function() {
 					})
 				}, 750)
 			} else {
-				runLayoutWorker(filteredModel, function() {
+				if(model_master.settings.layoutFlows) {
+					runLayoutWorker(filteredModel, function() {
+						refreshMap(filteredModel);
+					});	
+				} else {
+					var layouter = new Flox.FlowLayouter(filteredModel);
+					layouter.straightenFlows();
 					refreshMap(filteredModel);
-				});	
+				}
 			}
 		});
 	} else {

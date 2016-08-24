@@ -282,10 +282,9 @@ Flox.MapComponent_d3 = function() {
 				.on("mouseover", function(d) {
 					//var settings = Flox.getFilterSettings();
 					showTooltip();
-					
+					highlightLegendRectangle(d);
 					//console.log(d3.select(this).style("fill"))
 					//console.log(rgbArrayToString(colors.unselectedStateHoverStroke))
-					
 					d3.select(this)
 					  .style("stroke", function(d) {
 					  	// It is in county or state view mode?
@@ -311,6 +310,7 @@ Flox.MapComponent_d3 = function() {
 				})
 				.on("mouseout", function(d) {
 					hideTooltip();
+					unhighlightLegendRectangles();
 					d3.select(this)
 					// .style("fill", function(d) {
 						// var node;
@@ -357,6 +357,7 @@ Flox.MapComponent_d3 = function() {
 					.style("stroke-linejoin", "bevel")
 					.on("mouseover", function(d) {
 						showTooltip();
+						highlightLegendRectangle(d);
 						d3.select(this)
 							.moveToFront()
 							.style("stroke", function(d) {
@@ -377,6 +378,7 @@ Flox.MapComponent_d3 = function() {
 					})
 					.on("mouseout", function() {
 						hideTooltip();
+						unhighlightLegendRectangles();
 						d3.select(this)
 							.moveToFront()
 							.style("stroke", function(d){
@@ -1893,20 +1895,21 @@ Flox.MapComponent_d3 = function() {
 			.attr("width", "100%")
 			.attr("height", function() {
 				var l = legendColors.length;
-				return (l * rectHeight + (l - 1) * rectSpacer);
+				return (l * rectHeight + (l - 1) * rectSpacer) + 3;
 			})
 			.style("margin-top", -5);
 			
 		legendItem = legendItemContainer.selectAll("g")
 			.data(populationDensityColor.range())
-			.enter().append("g");
+			.enter().append("g")
+			.classed("legendItem", true);
 			
 		legendItem.append("rect")
 			.attr("width", rectWidth)
 			.attr("height", rectHeight)
 			.attr("fill", "white")
 			.attr("y", function(d, i) {
-				return (rectHeight + rectSpacer) * i;
+				return 2 + (rectHeight + rectSpacer) * i;
 			})
 			.attr("x", 2)
 			.attr("fill", function(d, i) {
@@ -1934,8 +1937,49 @@ Flox.MapComponent_d3 = function() {
 			})
 			.attr("x", rectWidth + 10)
 			.attr("y", function(d, i) {
-				return (rectHeight/2 + (labelSizePx/2 - 1))+ ((rectHeight + rectSpacer) * i);
+				return 2 + (rectHeight/2 + (labelSizePx/2 - 1))+ ((rectHeight + rectSpacer) * i);
 			});
+		console.log(populationDensityColor.domain());
+	}
+	
+	function highlightLegendRectangle(d) {
+		var legendRect, 
+			legendValues = populationDensityColor.domain(),
+			node,
+			featureValue;
+		
+		// select the legend rectangles.
+		legendRect = d3.selectAll(".legendItem rect");
+		
+		
+		// get the node value
+		if(d.properties.COUNTYFP){
+			node = model_copy.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
+		} else {
+			// it's a state
+			node = model_copy.findNodeByID(String(Number(d.properties.STATEFP)));
+		}
+		
+		featureValue = Number(node.populationDensity);
+		
+		console.log(populationDensityColor(featureValue));
+		
+		legendRect.each(function(d, i) {
+			if(populationDensityColor(featureValue) === d) {
+				d3.select(this)
+					.style("stroke-width", 1.5)
+					.style("stroke", "white");
+			} else {
+				d3.select(this)
+					.style("stroke-width", 0)
+					.style("stroke", "none");
+			}
+		});
+	}
+	
+	function unhighlightLegendRectangles() {
+		d3.selectAll(".legendItem rect")
+			.style("stroke", "none");
 	}
 	
 	// PUBLIC ---------------------------------------------------------------------

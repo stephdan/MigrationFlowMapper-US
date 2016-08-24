@@ -32,6 +32,7 @@ Flox.Model = function() {
 			maxFlows : 50,
 			
 			liveDrawing: true,
+			layoutFlows: true,
 			
 			// adjusts sizes of features to fit scale better
 			// TODO hardcoded everywhere, could be based off actual map scale.
@@ -71,7 +72,7 @@ Flox.Model = function() {
 			
 			// Draw Settings
 			drawFlows : true,
-			drawNodes : true,
+			drawNodes : false,
 			drawArrows : true,
 			drawControlPoints : false,
 			drawIntermediateFlowPoints : false,
