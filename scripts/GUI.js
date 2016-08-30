@@ -114,7 +114,7 @@ Flox.GUI = (function($){
 	
 	// boo : true if turning ON, false if turning OFF.
 	function toggleButtonIcon(buttonID, boo) {
-		console.log("toggling " + buttonID + " " + boo);
+		//console.log("toggling " + buttonID + " " + boo);
 		buttonID = buttonID[0] === "#" ? buttonID : "#" + buttonID;
 		var buttonIcon = $(buttonID).find("img"),
 			max_height = boo ? "100%" : "70%",
@@ -127,12 +127,9 @@ Flox.GUI = (function($){
 	
 	// Make sure the buttons match the current settings.
 	function updateFlowTypeRadioButtons(){
-		console.log("updating buttons!");
-		
 		var flowType = Flox.getFlowType(),
 			settingList = ["net", "total", "incoming", "outgoing"],
 			i;
-			
 		for(i = 0; i < settingList.length; i += 1) {
 			if(flowType === settingList[i]) {
 				toggleButtonIcon(settingList[i] + "FlowsButton", true);
@@ -388,13 +385,18 @@ Flox.GUI = (function($){
 			preposition,
 			location,
 			specialCase = "",
-			newText;
+			newText,
+			nFlows = Flox.getNumberOfDisplayedFlows();
 			
 		// How many flows are being shown?
 		if(Flox.getModel()) {
-			flowCount = "Top " + Flox.getModel().settings.maxFlows + " ";
+			if(nFlows === Flox.getCurrentFilteredModel().getFlows().length) {
+				flowCount = "All " + nFlows + " ";
+			} else {
+				flowCount = "Top " + Flox.getModel().settings.maxFlows + " ";
+			}
 		} else {
-			flowCount = "Top 50 "
+			flowCount = "Top "
 		}
 		
 		
@@ -411,9 +413,9 @@ Flox.GUI = (function($){
 		if (Flox.getSelectedCounty() !== false) {
 			preposition = "for ";
 			if(Flox.isOuterStateFlows() === false) {
-				specialCase = " just within this state"
+				specialCase = " just within " + Flox.getSelectedStateName();
 			}
-		} else if (Flox.selectedState !== false) {
+		} else if (Flox.getSelectedState() !== false) {
 			if (Flox.isCountyMode() && Flox.isOuterStateFlows() === false) {
 				preposition = "just within ";
 			} else {
@@ -429,10 +431,13 @@ Flox.GUI = (function($){
 		// stateName, if a state is selected and no county is selected
 		if(Flox.getSelectedCounty() !== false) {
 			location = Flox.getSelectedFeatureName();
+			if(specialCase === "") {
+				location = location + ", " + Flox.getSelectedStateName();
+			}
 		} else if (Flox.getSelectedState() !== false) {
 			location = Flox.getSelectedFeatureName();
 		} else {
-			location = " all US states";
+			location = " US states";
 		}
 		newText = flowCount + stateOrCounty + flowType + preposition + location + specialCase;
 		setSubtitle(newText);
@@ -651,10 +656,10 @@ Flox.GUI = (function($){
 			// A state IS selected
 			// Is it in county mode?
 			if(Flox.isCountyMode()) {
-				hintText.text("Click a county, or click a different state");
+				hintText.text("Click a different county or state to view different flows");
 			} else {
 				// we're viewing flows to and from one state. 
-				hintText.text("View county flows by clicking the counties menu button");
+				hintText.text("View county-level flows by clicking the counties button below");
 			}
 		}
 	};
@@ -662,7 +667,6 @@ Flox.GUI = (function($){
 	// Show and hide buttons and set button icons based on current model 
 	// and filter settings.
 	my.updateGUI = function() {
-		console.log("updateGUI called");
 		var hideThese = [],
 			showThese = [],
 			selectedCounty = Flox.getSelectedCounty(),
@@ -717,6 +721,7 @@ Flox.GUI = (function($){
 		my.hidePanelButtons(hideThese);
 		my.showPanelButtons(showThese);
 		updateSubtitle();
+		my.setHintText();
 	};
 
 // DEBUG GUI STUFF ------------------------------------------------------------

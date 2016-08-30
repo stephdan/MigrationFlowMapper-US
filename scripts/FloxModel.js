@@ -32,6 +32,7 @@ Flox.Model = function() {
 			maxFlows : 50,
 			
 			liveDrawing: true,
+			layoutFlows: true,
 			
 			// adjusts sizes of features to fit scale better
 			// TODO hardcoded everywhere, could be based off actual map scale.
@@ -65,8 +66,9 @@ Flox.Model = function() {
 			maxFlowLength : 0,
 			minNodeValue : 0,
 			maxNodeValue : 0,
-			meanNodeValue : 0,	
+			meanNodeValue : 0,
 			
+			allFlowsTotalValue: 0,
 			
 			// Draw Settings
 			drawFlows : true,
@@ -97,6 +99,7 @@ Flox.Model = function() {
 			"FIPS01"  : 1, // Alabama
 			"FIPS04"  : 1.5, // Arizona
 			"FIPS06"  : 1.5, // California
+			"FIPS09": 0.5, //"Connecticut",//CT
 			"FIPS11": 0.2, // District of Columbia
 			"FIPS13": 0.5,  //"Georgia",//GA
 			"FIPS17" : 0.7, // Illinois
@@ -104,7 +107,7 @@ Flox.Model = function() {
 			"FIPS31": 0.6, //"Nebraska",//NE
 			"FIPS34" : 0.5, // New Jersey
 			"FIPS36" : 0.35, // New York
-			"FIPS44" : 0.5, // Rhode Island
+			"FIPS44" : 0.25, // Rhode Island
 			"FIPS48" : 1.25, // Texas
 			"FIPS54" : 1.0,  // West Virginia
 			"FIPS55" : 0.8,  // Wisconsin
@@ -200,7 +203,8 @@ Flox.Model = function() {
 		}
 		
 		meanFlowValue = flowSum / flowCounter;
-			
+		
+		
 		if(nodes.length < 1) {
 			minNodeValue = 0;
 		    maxNodeValue = 0;
@@ -242,6 +246,7 @@ Flox.Model = function() {
 		settings.minNodeValue = minNodeValue;
 		settings.maxNodeValue = maxNodeValue;
 		settings.meanNodeValue = meanNodeValue;
+		settings.allFlowsTotalValue = flowSum;
     }
     
     
@@ -1154,6 +1159,53 @@ Flox.Model = function() {
 		settings.aboveAverageFlowCount = count;
 		console.log(count + " out of " + flows.length + " flows above average of " + averageFlowValue);
 		
+	};
+	
+	// TODO Someday, the displayed flows might not be the largest ones.
+	my.getPercentageOfTotalFlowShown = function() {
+		var displayedFlows = my.getLargestFlows().length,
+			flow,
+			i,
+			allTotal = 0,
+			displayedTotal = 0;
+			
+		for(i = 0; i < flows.length; i += 1) {
+			allTotal += flows[i].getValue();
+			if (i < displayedFlows) {
+				displayedTotal += flows[i].getValue();
+			}
+		}
+		return (displayedTotal / allTotal) * 100;
+	};
+	
+	my.getNonNecklaceNodes = function() {
+		var nonNecklaceNodes = [],
+			i;
+			
+		for(i = 0; i < nodes.length; i += 1) {
+			if (!nodes[i].necklaceMapNode) {
+				nonNecklaceNodes.push(nodes[i]);
+			}
+		}
+		return nonNecklaceNodes;
+	};
+	
+	my.setMaxFlowWidth = function(){
+		var nonNecklaceNodes = my.getNonNecklaceNodes(),
+			clippingDist = settings.flowDistanceFromStartPointPixel +
+						   settings.flowDistanceFromEndPointPixel,
+			shortestDistanceBetweenPoints = closestPair.closestPairDivideAndConquer(nonNecklaceNodes),
+			maxFlowWidth;
+		
+		maxFlowWidth = (shortestDistanceBetweenPoints - clippingDist) / (settings.arrowLengthScaleFactor * 1.1);
+		
+		maxFlowWidth = maxFlowWidth / settings.scaleMultiplier;
+		
+		settings.maxFlowWidth = maxFlowWidth;
+		
+		settings.minFlowWidth = (maxFlowWidth / 10);
+		
+		console.log("maxFlowWidth set to: " + maxFlowWidth);
 	};
 	
 	// make settings public

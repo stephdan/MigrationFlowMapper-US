@@ -256,9 +256,9 @@ Flox.MapComponent_d3 = function() {
 			background.attr("width", "100%").attr("height", "100%");
 		});
 
-		// delete this line to disable free zooming
-		// NOTE: called after startup animation
-		svg.call(zoom).call(zoom.event); 
+		// This line enables free zooming. 
+		// Also disables the double-click zooming default behavior. 
+		svg.call(zoom).on("dblclick.zoom", null).call(zoom.event); 
 		
 		d3.json("data/geometry/states_census_2015.json", function(error, us) {
 			if (error) {
@@ -275,16 +275,16 @@ Flox.MapComponent_d3 = function() {
 				.attr("stroke", function(d){
 					return rgbArrayToString(colors.polygonStroke);
 				})
+				.style("stroke-linejoin", "bevel")
 				.style("stroke-width", stateStrokeWidth)
 				.attr("fill", "#ccc") // The initial fill before it's assigned.
 				.on("click", stateClicked)
 				.on("mouseover", function(d) {
 					//var settings = Flox.getFilterSettings();
 					showTooltip();
-					
-					console.log(d3.select(this).style("fill"))
+					highlightLegendRectangle(d);
+					//console.log(d3.select(this).style("fill"))
 					//console.log(rgbArrayToString(colors.unselectedStateHoverStroke))
-					
 					d3.select(this)
 					  .style("stroke", function(d) {
 					  	// It is in county or state view mode?
@@ -310,6 +310,7 @@ Flox.MapComponent_d3 = function() {
 				})
 				.on("mouseout", function(d) {
 					hideTooltip();
+					unhighlightLegendRectangles();
 					d3.select(this)
 					// .style("fill", function(d) {
 						// var node;
@@ -353,8 +354,10 @@ Flox.MapComponent_d3 = function() {
 						return rgbArrayToString(colors.polygonStroke);
 					})
 					.style("stroke-width", 8) // TODO hardcoded value
+					.style("stroke-linejoin", "bevel")
 					.on("mouseover", function(d) {
 						showTooltip();
+						highlightLegendRectangle(d);
 						d3.select(this)
 							.moveToFront()
 							.style("stroke", function(d) {
@@ -375,6 +378,7 @@ Flox.MapComponent_d3 = function() {
 					})
 					.on("mouseout", function() {
 						hideTooltip();
+						unhighlightLegendRectangles();
 						d3.select(this)
 							.moveToFront()
 							.style("stroke", function(d){
@@ -643,7 +647,7 @@ Flox.MapComponent_d3 = function() {
 
 	function drawPoints() {
 		var //points = model_copy.getPoints(),
-			points = model_copy.getPoints(),
+			points = model_copy.getNonNecklaceNodes(),
 		    circles = d3.select("#pointsLayer")
 						.selectAll("circle")
 						.data(points)
@@ -1273,6 +1277,7 @@ Flox.MapComponent_d3 = function() {
 			my.disableTooltip();
 			reset();
 			// load the state to state flows?
+			Flox.setSelectedState(false);
 			Flox.importStateToStateMigrationFlows();
 		} else {
 			selectState(d.properties.STATEFP);
@@ -1334,7 +1339,7 @@ Flox.MapComponent_d3 = function() {
 		    ringR = outerCircle.r + nodeRadius, 
 			force, necklaceMap, nodes, i,
 			labelSize,	// in pixels
-			labelSize_max = (outerCircle.r * 0.08),
+			labelSize_max = (outerCircle.r * 0.07),
 			labelSize_min = (outerCircle.r * 0.03),
 			pt,
 			labelOffset = 0;
@@ -1715,10 +1720,16 @@ Flox.MapComponent_d3 = function() {
 			midFlowValue = dashedFlowValue + ((maxFlowValue - dashedFlowValue) * 0.5),
 			legendFlowLabels,
 			flowGap,
-			notShownText = "";
+			notShownText = "",
+			percentShown,
+			percentShownText = "";
 		
-		if(largestFlows.length >= s.maxFlows) {
+		if(largestFlows.length >= s.maxFlows && 
+		   largestFlows.length < Flox.getCurrentFilteredModel().getFlows().length) {
 			notShownText = "Flows less than " + numberWithCommas(largestFlows[largestFlows.length-1].getValue()) + " not shown";
+			percentShown = Flox.getCurrentFilteredModel().getPercentageOfTotalFlowShown();
+			percentShown = (Math.floor(percentShown * 10)) / 10;
+			percentShownText = "Showing " + (percentShown) + "% of migrations";
 		}
 		
 		if(maxLegendFlowWidth / 2 > maxLegendFlowWidth * model_copy.settings.arrowWidthScaleFactor) {
@@ -1761,7 +1772,7 @@ Flox.MapComponent_d3 = function() {
 			.attr("height", function() {
 				var legendHeight = flowGap + ((legendFlows.length - 1) * flowSpacer) + (labelSizePx / 2) + 5;
 				if (notShownText !== "") {
-					legendHeight += flowSpacer;
+					legendHeight += flowSpacer * 2;
 				}
 				return legendHeight;
 			})
@@ -1861,6 +1872,16 @@ Flox.MapComponent_d3 = function() {
 			.attr("y", function(d, i) {
 				return flowGap + (flowSpacer * legendFlows.length) + labelSizePx/2 - 2;
 			})
+			
+		flowLegendItemContainer.append("text")
+			.style("font-size", labelSizePx + "px")
+			.style("font-family", "Tahoma, Geneva, sans-serif")
+			.attr("fill", "white")
+			.text(percentShownText)
+			.attr("x", flowLeft + s.flowDistanceFromStartPointPixel)
+			.attr("y", function(d, i) {
+				return flowGap + (flowSpacer * (legendFlows.length + 1)) + labelSizePx/2 - 2;
+			})
 		
 		d3.select("#legendSlidingPanelContent")
 			.append("p")
@@ -1874,20 +1895,21 @@ Flox.MapComponent_d3 = function() {
 			.attr("width", "100%")
 			.attr("height", function() {
 				var l = legendColors.length;
-				return (l * rectHeight + (l - 1) * rectSpacer);
+				return (l * rectHeight + (l - 1) * rectSpacer) + 3;
 			})
 			.style("margin-top", -5);
 			
 		legendItem = legendItemContainer.selectAll("g")
 			.data(populationDensityColor.range())
-			.enter().append("g");
+			.enter().append("g")
+			.classed("legendItem", true);
 			
 		legendItem.append("rect")
 			.attr("width", rectWidth)
 			.attr("height", rectHeight)
 			.attr("fill", "white")
 			.attr("y", function(d, i) {
-				return (rectHeight + rectSpacer) * i;
+				return 2 + (rectHeight + rectSpacer) * i;
 			})
 			.attr("x", 2)
 			.attr("fill", function(d, i) {
@@ -1915,8 +1937,53 @@ Flox.MapComponent_d3 = function() {
 			})
 			.attr("x", rectWidth + 10)
 			.attr("y", function(d, i) {
-				return (rectHeight/2 + (labelSizePx/2 - 1))+ ((rectHeight + rectSpacer) * i);
+				return 2 + (rectHeight/2 + (labelSizePx/2 - 1))+ ((rectHeight + rectSpacer) * i);
 			});
+		console.log(populationDensityColor.domain());
+	}
+	
+	function highlightLegendRectangle(d) {
+		var legendRect, 
+			legendValues = populationDensityColor.domain(),
+			node,
+			featureValue;
+		
+		// select the legend rectangles.
+		legendRect = d3.selectAll(".legendItem rect");
+		
+		
+		// get the node value
+		if(d.properties.COUNTYFP){
+			node = model_copy.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
+		} else {
+			// it's a state
+			
+			// If we're in county mode, do nothing! Abort!
+			if(Flox.isCountyMode()) {
+				return;
+			}
+			
+			node = model_copy.findNodeByID(String(Number(d.properties.STATEFP)));
+		}
+		
+		featureValue = Number(node.populationDensity);
+		
+		legendRect.each(function(d, i) {
+			if(populationDensityColor(featureValue) === d) {
+				d3.select(this)
+					.style("stroke-width", 1.5)
+					.style("stroke", "white");
+			} else {
+				d3.select(this)
+					.style("stroke-width", 0)
+					.style("stroke", "none");
+			}
+		});
+	}
+	
+	function unhighlightLegendRectangles() {
+		d3.selectAll(".legendItem rect")
+			.style("stroke", "none");
 	}
 	
 	// PUBLIC ---------------------------------------------------------------------
