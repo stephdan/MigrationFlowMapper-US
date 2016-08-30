@@ -1957,12 +1957,16 @@ Flox.MapComponent_d3 = function() {
 			node = model_copy.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
 		} else {
 			// it's a state
+			
+			// If we're in county mode, do nothing! Abort!
+			if(Flox.isCountyMode()) {
+				return;
+			}
+			
 			node = model_copy.findNodeByID(String(Number(d.properties.STATEFP)));
 		}
 		
 		featureValue = Number(node.populationDensity);
-		
-		console.log(populationDensityColor(featureValue));
 		
 		legendRect.each(function(d, i) {
 			if(populationDensityColor(featureValue) === d) {
