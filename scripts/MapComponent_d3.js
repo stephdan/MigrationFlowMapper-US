@@ -1,46 +1,77 @@
+/*
+ * Author: Daniel Stephen, daniel.macc.stephen@gmail.com
+ * Date: September, 2016
+ * This code was created as part of my masters thesis at Oregon State University.
+ * Please contant me before using any code from this application.
+ * 
+ * The following code is for an interactive flow map depicting US county-to-
+ * county migration. It uses a new algorithmic method of arranging flow curves
+ * in a manner that adheres to cartographic principles for origin-destination
+ * flow maps that improve readability and aesthetics. 
+ * 
+ * The following Javascript libaries are used in the creation of this map:
+ * 
+ *    D3.js
+ *    TopoJSON.js
+ *    jQuery
+ *    Bootstrap
+ *    simple_statistics.js
+ * 
+ * The code is written in a similar pattern to the one described here:
+ *    http://www.adequatelygood.com/JavaScript-Module-Pattern-In-Depth.html
+ */
+
+/**
+ * The map component module handles all the drawing of map features. It uses
+ * D3.js to set up the coordinate system, draw svg features, and handle 
+ * user interactions with map features. 
+ */
 Flox.MapComponent_d3 = function() {
 	"use strict";
 
-	var svg,
-		model_copy,
-	    selectedColor = "#59A4FF",
-	    defaultColor = "black",
-	    lockedColor = "gray",
-	    path,
-	    width = $(window).width(),
-	    height = $(window).height(),
-	    selectedStateFIPS,
-	    selectedCountyFIPS,
-	    populationDensityColor,
+	var svg, // The svg div that contains all map features
+		model_copy, // The model containing the flows to be drawn.
+	    windowWidth = $(window).width(),
+	    windowHeight = $(window).height(),
+	    
+	    // A d3 scale object. Takes a value, outputs an rgb string
+	    populationDensityColor, 
 	   
-	    mapScale = 1,
+	    mapScale = 1, // TODO obsolete? Used for debug mostly
 	    
-	    background,
+	    // Set up a few projection options
+	    projection_albersUsa = d3.geo.albersUsa().scale(20000).translate([windowWidth / 2, windowHeight / 2]),
+	    projection_mercator = d3.geo.mercator().scale(20000).translate([windowWidth / 2, windowHeight / 2]),
+	    projection_albersUsaPR = albersUsaPr().scale(20000).translate([windowWidth / 2, windowHeight / 2]),
 	    
-	    projection_albersUsa = d3.geo.albersUsa().scale(20000).translate([width / 2, height / 2]),
-	    projection_mercator = d3.geo.mercator().scale(20000).translate([width / 2, height / 2]),
-	    projection_albersUsaPR = albersUsaPr().scale(20000).translate([width / 2, height / 2]),
-	    //projection_conicEqualArea = d3.geo.conicEqualArea().scale(1).translate([width / 2, height / 2]),
+	    // Set the projection for the map
 	    projection = projection_albersUsaPR,
 	    
-	    // TODO the scale setting below could be set to zoom in to the bounding
-	    // box of the lower 48 based on the window size. 
+	    // generates SVG path data strings using the projection
+	    path = d3.geo.path().projection(projection), 
+	    
+		// A d3 zoom object. These are the initial settings when the app
+		// first start, which is zoomed in very far. 
 	    zoom = d3.behavior.zoom()
-				.translate([width / 2, height / 2])
-				.scale(20).scaleExtent([0.02, 20])// change these numbers to be able to zoom in or out further.
-				.on("zoom", zoomed),
+				.translate([windowWidth / 2, windowHeight / 2]) // center of map
+				.scale(20) // at the maximum zoom 
+				.scaleExtent([0.02, 20])// change these numbers to be able to zoom in or out further.
+				.on("zoom", zoomed), // call zoomed on zoom
 
 		tooltipOffset = {x: 8, y: -38}, // FIXME y is not used
+		
+		// Create a tooltip div
 		tooltip = d3.select("body").append("div")
 					.attr("class", "floxTooltip")
 					.style("display", "none"),
 		
-		defaultClasses = 7,
+		defaultClasses = 7, // The default number of classes in the choropleth
 		stateStrokeWidth = 20,
 		stateHoverStrokeWidth = 40,
 		countyStrokeWidth = 8,
 		countyHoverStrokeWidth = 16,
 		
+		// All the colors used on the map should be in here
 		colors = {
 			backgroundFill: [235,235,242],
 
@@ -65,6 +96,8 @@ Flox.MapComponent_d3 = function() {
 			
 		},
 		
+		// Lookup table for tooltips of the type of administrative unit
+		// being hovered over.
 		lookupLSAD = {
 			"03": "City and Borough",
 			"04": "Borough",
@@ -77,8 +110,8 @@ Flox.MapComponent_d3 = function() {
 			"25": "City"
 		},
 		
-		tooltipEnabled = false,
-		starting = true,
+		tooltipEnabled = false, // Flag for turning off tooltips
+		starting = true, // True only when the map is initializing.
 	    my = {};
 
 	function showTooltip() {
@@ -99,6 +132,7 @@ Flox.MapComponent_d3 = function() {
 		return "rgb(" +  rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
 	}
 
+	// Converts a number to a string with commas. Useful for tooltips.
 	function numberWithCommas(x) {
 	    var parts = x.toString().split(".");
 	    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -108,27 +142,30 @@ Flox.MapComponent_d3 = function() {
 	function buildFlowTooltipText(d) {
 		var moverText = "<span class='tooltipValue'>" + numberWithCommas(d.getValue()) + "</span>",
 			typeText,
-			toFromText,
-			flowType;
-			//filterSettings = Flox.getFilterSettings();
+			toFromText;
 		
 		if(Flox.getFlowType() === "total") {
 			// it's a total flow
 			typeText = " <div class='tooltipTypeHolder'>TOTAL<br/>MOVERS</div><br/>";
 			// But sometimes it's directional and needs to be treated differently.
-			
-			toFromText = "<div class='tooltipToFromText'>" + d.getStartPt().name + " <span class='tooltipTypeHolder'>  TO  </span> " + d.getEndPt().name + ": " + numberWithCommas(d.AtoB) + "<br/>" + 
-				            d.getEndPt().name + " <span class='tooltipTypeHolder'>  TO  </span> " + d.getStartPt().name + ": " + numberWithCommas(d.BtoA) + "</div>";
-
+			toFromText = "<div class='tooltipToFromText'>" + d.getStartPt().name 
+				+ " <span class='tooltipTypeHolder'>  TO  </span> " 
+				+ d.getEndPt().name + ": " + numberWithCommas(d.AtoB) 
+				+ "<br/>" + d.getEndPt().name 
+				+ " <span class='tooltipTypeHolder'>  TO  </span> " 
+				+ d.getStartPt().name + ": " + numberWithCommas(d.BtoA) 
+				+ "</div>";
 		} else if (Flox.getFlowType() === "net"){
 			// it's a net flow
 			typeText = " <div class='tooltipTypeHolder'>NET<br/>MOVERS</div><br/>";
-			toFromText = "<div class='tooltipToFromText'><span class='tooltipTypeHolder'>FROM </span> " + d.getStartPt().name + "<br/>" + 
-				             "<span class='tooltipTypeHolder'>TO </span> " + d.getEndPt().name + "</div>";
+			toFromText = "<div class='tooltipToFromText'><span class='tooltipTypeHolder'>FROM </span> " 
+				+ d.getStartPt().name + "<br/>" + "<span class='tooltipTypeHolder'>TO </span> " 
+				+ d.getEndPt().name + "</div>";
 		} else {
 			typeText = " <div class='tooltipTypeHolder'>TOTAL<br/>MOVERS</div><br/>";
-			toFromText = "<div class='tooltipToFromText'><span class='tooltipTypeHolder'>FROM </span> " + d.getStartPt().name + "<br/>" + 
-				         "<span class='tooltipTypeHolder''>TO </span> " + d.getEndPt().name + "</div>";
+			toFromText = "<div class='tooltipToFromText'><span class='tooltipTypeHolder'>FROM </span> " 
+				+ d.getStartPt().name + "<br/>" + "<span class='tooltipTypeHolder''>TO </span> " 
+				+ d.getEndPt().name + "</div>";
 		}
 		return moverText + typeText + toFromText;
 	}
@@ -167,10 +204,12 @@ Flox.MapComponent_d3 = function() {
 		incomingFlow = node.totalIncomingFlow;
 		
 		areaName = "<div class='tooltipAreaName'>" + node.name + "</div>";
-		inValue = "<span class='tooltipValue'>" + numberWithCommas(incomingFlow) + 
-				  "</span> <div class='tooltipTypeHolder'>MOVED<br/>IN" + fromText + "</div>" + inStateText + "<br/>";
-		outValue = "<span class='tooltipValue'>" + numberWithCommas(outgoingFlow) + 
-			       "</span> <div class='tooltipTypeHolder'>MOVED<br/>OUT" + toText + "</div>" + inStateText + "<br/>";
+		inValue = "<span class='tooltipValue'>" + numberWithCommas(incomingFlow) 
+			+ "</span> <div class='tooltipTypeHolder'>MOVED<br/>IN" + fromText 
+			+ "</div>" + inStateText + "<br/>";
+		outValue = "<span class='tooltipValue'>" + numberWithCommas(outgoingFlow) 
+			+ "</span> <div class='tooltipTypeHolder'>MOVED<br/>OUT" + toText 
+			+ "</div>" + inStateText + "<br/>";
 		
 		inOutText = "<div class='tooltipInOutText'>" + inValue +
 					outValue + "</div>";
@@ -187,10 +226,11 @@ Flox.MapComponent_d3 = function() {
 			areaName;
 				 
 		areaName = "<div class='tooltipAreaName'>" + nodeName + "</div>";		 
-		inValue = "<span class='tooltipValue'>" + numberWithCommas(incomingFlow) + 
-				  "</span> <div class='tooltipTypeHolder'>MOVED<br/>IN FROM</div> <div class='tooltipAreaName'>" + inState + "</div><br/>";
-		outValue = "<span class='tooltipValue'>" + numberWithCommas(outgoingFlow) + 
-			       "</span> <div class='tooltipTypeHolder'>MOVED<br/>OUT TO</div> <div class='tooltipAreaName'>" + inState + "</div><br/>";
+		inValue = "<span class='tooltipValue'>" + numberWithCommas(incomingFlow) 
+			+ "</span> <div class='tooltipTypeHolder'>MOVED<br/>IN FROM</div> <div class='tooltipAreaName'>" 
+			+ inState + "</div><br/>";
+		outValue = "<span class='tooltipValue'>" + numberWithCommas(outgoingFlow) 
+			+ "</span> <div class='tooltipTypeHolder'>MOVED<br/>OUT TO</div> <div class='tooltipAreaName'>" + inState + "</div><br/>";
 		inOutText = "<div class='tooltipInOutText'>" + inValue + outValue + "</div>";
 				 
 		return areaName + inOutText;
@@ -209,31 +249,13 @@ Flox.MapComponent_d3 = function() {
 	// and whatnot, add it all to the map div.
 	function initMap() {
 
-		// Make a d3 path object, which will handle translating path objects
-		// onto the projection. I think. 
-		path = d3.geo.path().projection(projection);
+		var background;
 		
 		// Create the svg element to hold all the map features.
 		svg = d3.select("#map").append("svg")
 				.attr("width", "100%")
 				.attr("height", "100%")
 				.on("click", stopped, true);
-				// .on("mousemove", function() {
-					// var svgX = d3.event.x,
-						// svgY = d3.event.y,
-						// projectedX = 0,
-						// projectedY = 0,
-						// ll = projection.invert([svgX, svgY]),
-						// lat = projection.invert(ll[1]),
-						// lng = projection.invert(ll[0]);
-// 						
-					// // get the appropriate spans, set the text to the things
-					// $("#xCoord").html(svgX);
-					// $("#yCoord").html(svgY);
-					// $("#latitude").html(lat);
-					// $("#longitude").html(lng);
-					// //console.log(d3.mouse(this));
-				// });
 
 		// MAP LAYERS ------------------------------------
 		// Add a background layer for detecting pointer events
@@ -242,6 +264,7 @@ Flox.MapComponent_d3 = function() {
 						.attr("height", "100%")
 						.attr("fill", rgbArrayToString(colors.backgroundFill))
 						.on("click", reset);
+						
 		var mapFeaturesLayer = svg.append("g").attr("id", "mapFeaturesLayer"),
 			statesLayer = mapFeaturesLayer.append("g").attr("id", "statesLayer"),
 			countiesLayer = mapFeaturesLayer.append("g").attr("id", "countieslayer");
@@ -250,8 +273,8 @@ Flox.MapComponent_d3 = function() {
 		mapFeaturesLayer.append("g").attr("id", "pointsLayer");
 		
 		$(window).resize(function() {
-			width = this.innerWidth;
-			height = this.innerHeight;
+			windowWidth = this.innerWidth;
+			windowHeight = this.innerHeight;
 			svg.attr("width", "100%").attr("height", "100%");
 			background.attr("width", "100%").attr("height", "100%");
 		});
@@ -1101,18 +1124,30 @@ Flox.MapComponent_d3 = function() {
 	/**
 	 * Zooms in to the provided json-based d3-style feature object. Needs
 	 * to be compatible with the d3.geo.path().bounds(d) function. 
+	 * d is the polygon to zoom to.
 	 */
 	function zoomToPolygon(d){
+		
+		// Get a bb (bounding box) around the polygon.
+		// TODO path is global to the mapComponent namespace, and this is the only 
+		// function that uses it. 
 		var bounds = path.bounds(d),
 			dx = bounds[1][0] - bounds[0][0],
 		    dy = bounds[1][1] - bounds[0][1],
 		    x = (bounds[0][0] + bounds[1][0]) / 2,
 		    y = (bounds[0][1] + bounds[1][1]) / 2,
-		    scale = 0.6 / Math.max(dx / width, dy / height),
-		    translate = [width / 2 - scale * x, height / 2 - scale * y];
 		    
+		    // Set the map scale to fit the larger side of the bb.
+		    // Adds a little padding to the outside.
+		    scale = 0.6 / Math.max(dx / windowWidth, dy / windowHeight),
+		    
+		    // translate is an [x,y] representing the coordinates at the 
+		    // center of the bb.
+		    translate = [windowWidth / 2 - scale * x, windowHeight / 2 - scale * y];
+		
+		// Zoom to the new scale and bb center.
 		svg.transition()
-		.duration(750) // TODO long zoom for testing asynchronous stuff.
+		.duration(750)
 		.call(zoom.translate(translate).scale(scale).event);
 	}
 	
@@ -1122,8 +1157,8 @@ Flox.MapComponent_d3 = function() {
 			dy = rect.h,
 			x = (rect.x + dx) / 2,
 			y = (rect.y + dy) / 2,
-			scale = 0.6 / Math.max(dx / width, dy / height),
-		    translate = [width / 2 - scale * x, height / 2 - scale * y];
+			scale = 0.6 / Math.max(dx / windowWidth, dy / windowHeight),
+		    translate = [windowWidth / 2 - scale * x, windowHeight / 2 - scale * y];
 		svg.transition()
 		.duration(750) // TODO long zoom for testing asynchronous stuff.
 		.call(zoom.translate(translate).scale(scale).event);
@@ -1135,8 +1170,8 @@ Flox.MapComponent_d3 = function() {
 		var dx = c.r * 2,
 			dy = c.r * 2,
 			padding = 0.65, // The further below 1, the more padding it gets.
-			scale = padding / Math.max(dx / width, dy / height),
-			translate = [width / 2 - scale * c.cx, height / 2 - scale * (c.cy) - height * 0.05];
+			scale = padding / Math.max(dx / windowWidth, dy / windowHeight),
+			translate = [windowWidth / 2 - scale * c.cx, windowHeight / 2 - scale * (c.cy) - windowHeight * 0.05];
 		svg.transition()
 		.duration(750) // TODO long zoom for testing asynchronous stuff.
 		.call(zoom.translate(translate).scale(scale).event);
@@ -2001,18 +2036,6 @@ Flox.MapComponent_d3 = function() {
 		initMap();
 	};
 
-	my.drawIntermediateFlowPoints = function() {
-
-	};
-
-	my.showHideCtrlPts = function() {
-
-	};
-
-	my.update = function() {
-
-	};
-
 	my.removeAllFlows = function() {
 		removeAllFlows();
 	};
@@ -2024,18 +2047,6 @@ Flox.MapComponent_d3 = function() {
 	my.clearAllMapFeatures = function() {
 		removeAllFlows();
 		d3.select("#necklaceMapLayer").remove(); 
-	};
-
-	my.resizeFlows = function() {
-
-	};
-
-	my.resizePoints = function() {
-
-	};
-
-	my.showHideRangeboxes = function() {
-
 	};
 
 	my.latLngToLayerPt = function(latLng) {

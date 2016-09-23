@@ -1,4 +1,42 @@
+/*
+ * Author: Daniel Stephen, daniel.macc.stephen@gmail.com
+ * Date: September, 2016
+ * This code was created as part of my masters thesis at Oregon State University.
+ * Please contant me before using any code from this application.
+ * 
+ * The following code is for an interactive flow map depicting US county-to-
+ * county migration. It uses a new algorithmic method of arranging flow curves
+ * in a manner that adheres to cartographic principles for origin-destination
+ * flow maps that improve readability and aesthetics. 
+ * 
+ * The following Javascript libaries are used in the creation of this map:
+ * 
+ *    D3.js
+ *    TopoJSON.js
+ *    jQuery
+ *    Bootstrap
+ *    simple_statistics.js
+ * 
+ * The code is written in a similar pattern to the one described here:
+ *    http://www.adequatelygood.com/JavaScript-Module-Pattern-In-Depth.html
+ */
 
+/*
+ * "Flox" is the primary namespace for the application, and includes several 
+ * modules, including:
+ *    Flox.Model
+ *    Flox.ModelFilter
+ *    Flox.MapComponent_d3
+ *    Flox.GUI
+ *    Flox.GeomUtils
+ *    Flox.FlowImporter
+ *    Flox.Flow
+ *    Flox.FlowLayouter
+ *    Flox.ColorUtils
+ * 
+ * The code is written similar to the pattern described here:
+ *     http://www.adequatelygood.com/JavaScript-Module-Pattern-In-Depth.html
+ */
 var Flox = (function() {
 
 "use strict";
@@ -8,25 +46,33 @@ var mapComponent,
     filterWorker,
     importWorker,
     model_master,
-	
-	filterSettings = {
-		flowType: "net",
-		inStateFlows: true,
-		outerStateFlows: true,
-		selectedCounty: false,
-		selectedState: false,
-		countyMode: false,
-		stateMode: false,
-		selectedFeatureName: false
-	},
 	startTimeAll, 
 	endTimeAll,
 	numberOfDisplayedFlows,
 	currentFilteredModel,
 	fipsLookupTable,
-	starting = true,
-	my = {};
+	
+	// This flag becomes and stays false after the starting animation.
+	starting = true, 
+	
+	/**
+	 * These settings determine which flows are shown on the map when 
+	 *  Flox.updateMap is called. They're changed through the GUI.
+	 */
+	filterSettings = {
+		flowType: "net", // can be net or total
+		inStateFlows: true, // show county flows inside selected state
+		outerStateFlows: true, // show county flows traveling outside selected state
+		selectedCounty: false, // A county is selected
+		selectedState: false, // A state is selected
+		countyMode: false, // County-level flows are being viewed
+		stateMode: false, // state-level flows are being viewed
+		selectedFeatureName: false // the name of the selected feature. False
+		// if nothing is selected
+	},
+	my = {}; // public object
 
+// A lookup table of US state 2-digit FIPS codes and the state names.
 fipsLookupTable = {
 	"01": "Alabama",//AL
 	"02": "Alaska",	//AK
@@ -81,8 +127,8 @@ fipsLookupTable = {
 	"56": "Wyoming",//WY
 	"60": "American Samoa",//AS
 	"64": "Federated States of Micronesia",//FM
-	"66": "Guam",//GU	1
-	"68": "Marshall Islands",//MH	3
+	"66": "Guam",//GU
+	"68": "Marshall Islands",//MH
 	"69": "Commonwealth of the Northern Mariana Islands",//MP
 	"70": "Palau",//PW
 	"72": "Puerto Rico",//PR
@@ -90,6 +136,9 @@ fipsLookupTable = {
 	"78": "U.S. Virgin Islands"//VI
 }
 
+/**
+ * Draw the features in the passed-in model to the map.
+ */
 function refreshMap(model_copy) {
 	if(!model_copy) {
 		throw new Error("refreshMap needs a model passed in");
@@ -97,6 +146,17 @@ function refreshMap(model_copy) {
     mapComponent.drawFeatures(model_copy);
 }
 
+
+/**
+ * START WEBWORKER STUFF -------------------------------------------------------
+ * 
+ * This app makes use of webworkers to prevent the browser from freezing while
+ * the flow map layout is being performed. 
+ */
+
+/**
+ * End all existing webworker processes. 
+ */
 function terminateWorkers() {
 	if (importWorker) {importWorker.terminate();}
 	if (filterWorker) {filterWorker.terminate();}
@@ -104,16 +164,18 @@ function terminateWorkers() {
 }
 
 // TODO If the browser can't do webworkers, then webworkers shouldn't be used.
+/**
+ * Initialize the webworker that performes the layout iterations.
+ */
 function initLayoutWorker(modelCopy, callback) {
 	var flows,
 		ctrlPts,
 		flow, flowCPt, 
 		i, j, latLng, progress;
+		
 	// If webworkers are compatible with this browser...
 	if (window.Worker) {
-		// If a layouter worker currently exists, call terminate on it. 
-		// If it was in the middle of something, it'll stop and do this
-		// instead. If it wasn't doing anything, then this won't matter.
+		// If a layouter worker currently exists, terminate it. 
 		if(layoutWorker) {layoutWorker.terminate();}
 		
 		// Web workers take a separate file. Note that the path is relative
@@ -122,12 +184,9 @@ function initLayoutWorker(modelCopy, callback) {
 		
 		// This happens when layoutWorker sends out a message
 		layoutWorker.onmessage = function(e) {
-			var progress;
+			var progress;		
 			
-			// progress is 50 plus 
-			
-			
-			// Update the progress bar.
+			// Update the progress bar based on the current iteration.
 			Flox.GUI.updateLayoutProgressBar(50 + (e.data[1]/2));
 			
 			// Get the new control points
@@ -135,6 +194,7 @@ function initLayoutWorker(modelCopy, callback) {
 			
 			// grab the flows from the same model that was fed to the webworker.	
 			flows = modelCopy.getLargestFlows();
+			
 			// Update the map if the worker is returning new control point
 			// locations (which it won't if it's just giving a progress update)
 			if(ctrlPts) {
@@ -142,15 +202,19 @@ function initLayoutWorker(modelCopy, callback) {
 					flowCPt = flows[i].getCtrlPt();
 					flowCPt.x = ctrlPts[i].x;
 					flowCPt.y = ctrlPts[i].y;
+					
 					// Also update the latLngs of the cPts
 					// TODO is this needed?
+					// ANSWER: nope. But I don't think it happens anywhere else.
 					latLng = mapComponent.layerPtToLatLng([ctrlPts[i].x, ctrlPts[i].y]);
 					flowCPt.lat = latLng.lat;
 					flowCPt.lng = latLng.lng;
 				}
-				// Run the callback function, which is typically refreshMap();
+				
+				// Run the callback function, which includes refreshMap() 
 				callback();
 			}
+			// If it's the last iteration, hide the progress bar.
 			if(e.data[1] === 100) {
 				Flox.GUI.hideLayoutProgressBar();
 			}
@@ -158,15 +222,27 @@ function initLayoutWorker(modelCopy, callback) {
 	}
 }
 
+/**
+ * modelCopy contains the flows that need to be layed out. 
+ * The callback is called in onmessage of the layout worker. 
+ */
 function runLayoutWorker(modelCopy, callback) {
 	initLayoutWorker(modelCopy, callback);
-	// Need the model json to only be for top 50 flows.	
-	var largestFlowsModel = new Flox.Model(),
+	
+	var largestFlowsModel = new Flox.Model(), // create a blank model
 		modelJSON;
+
+	// copy settings from the current model to the blank one.
 	largestFlowsModel.updateSettings(modelCopy.settings);
+	
+	// Copy the flows that will be displaed from the current model to the
+	// blank one.
 	largestFlowsModel.addFlows(modelCopy.getLargestFlows());
+	
+	// Convert new model to json
 	modelJSON = largestFlowsModel.toJSON();
-	// Pass the layoutWorker the modelJSON. It will then perform the layout.
+	
+	// Pass the layoutWorker the modelJSON, which will then perform the layout.
 	layoutWorker.postMessage(modelJSON);
 }
 
@@ -177,6 +253,7 @@ function initFilterWorker(callback) {
 		filterWorker.onmessage = function(e) {
 			var filteredModel = new Flox.Model();
 			filteredModel.deserializeModelJSON(e.data);	
+			// send the filtered model back to wherever runFilterWorker was called
 			callback(filteredModel);
 		};
 	}	
@@ -197,7 +274,7 @@ function initImportWorker(callback) {
 			// update progress bar
 			Flox.GUI.updateLayoutProgressBar(30);
 			
-			// Send the imported data to whoever called runImportWorker
+			// Send the imported data to wherever runImportWorker was called
 			callback(e.data);
 		}
 	}	
@@ -211,6 +288,11 @@ function runImportWorker(stuffImportWorkerNeeds, callback) {
 	// post a message to the import worker
 	importWorker.postMessage(stuffImportWorkerNeeds);
 }
+
+/**
+ * END WEBWORKER STUFF --------------------------------------------------------
+ */
+
 
 /**
  * Sets up and calls each iteration of FlowLayouter.layoutAllFlows(weight)
@@ -266,16 +348,28 @@ function layoutFlows(model) {
 	console.log("Layout time in milliseconds: " + Math.round(endTime - startTime));
 }
 
+/**
+ * Import the state-to-state migration data.
+ * Make keepSelectedState true if the currently selected state should 
+ * stay selected. 
+ */
 function importStateToStateMigrationFlows(keepSelectedState) {
-	// clear the model
+	
+	var flowPath = "data/census/US_state_migration_2013_flows.csv",
+		stuffImportWorkerNeeds = {};
+	
+	// Clear the current model and map.
 	terminateWorkers();
     model_master.deleteAllFlows();
     mapComponent.hideAllCountyBorders();
     mapComponent.removeAllFlows();
     mapComponent.removeNecklaceMap();
+    
+    // If the app is just being started, run the startup zoom animation.
     if(starting===false) {
 		mapComponent.zoomToFullExtent();
     }
+    
 	// filterSettings.stateMode = true;
 	// filterSettings.countyMode = false;
 	model_master.settings.scaleMultiplier = 4; // FIXME hardcoded
@@ -285,13 +379,10 @@ function importStateToStateMigrationFlows(keepSelectedState) {
 		my.setSelectedState(false);
 	}
 	
-	var flowPath = "data/census/US_state_migration_2013_flows.csv",
-		stuffImportWorkerNeeds = {};
-	
-	
 	stuffImportWorkerNeeds.flowPath = flowPath;
 	stuffImportWorkerNeeds.settings = model_master.settings;
 	
+	// Import the flows
 	if(window.Worker && model_master.settings.useWebworkers) {
 		runImportWorker(stuffImportWorkerNeeds, function(d) {
 			model_master.deserializeModelJSON(d);
@@ -308,20 +399,51 @@ function importStateToStateMigrationFlows(keepSelectedState) {
 	}
 }
 
+function importTotalCountyFlowData(stateFIPS) {		
+	terminateWorkers();
+	
+	var stuffImportWorkerNeeds = {};
+	
+	// erase all flows from the model.
+	model_master.deleteAllFlows();
+
+	filterSettings.selectedState = stateFIPS;
+	
+	// Set the mapScale in the model to the appropriate scale for this map.
+	// This scale is used by the layouter!
+	// Could it also be used by the renderer?
+	// FIXME this is goofy
+	model_master.setScaleMultiplierByState(stateFIPS);
+	model_master.settings.datasetName = "FIPS" + Number(stateFIPS);
+	
+	if(window.Worker && model_master.settings.useWebworkers) {
+		stuffImportWorkerNeeds.settings = model_master.settings;
+		stuffImportWorkerNeeds.stateFIPS = stateFIPS;
+		
+		runImportWorker(stuffImportWorkerNeeds, function(d) {
+			model_master.deserializeModelJSON(d);
+			my.updateMap();
+		});
+	} else {
+		console.log("Browser cannot use webworkers. UI will be locked during computations.");
+		console.log("Importing county flows...");
+		Flox.FlowImporter.importTotalCountyFlowData(stateFIPS, function(flows, countyNodes){
+			model_master.initNodes(countyNodes);
+			model_master.addFlows(flows);
+			my.updateMap();	
+		});
+	}
+}
+
 // PUBLIC =====================================================================
-
-my.update = function() {
-	mapComponent.update();
-};
-
 
 my.angleDif = function(startToCtrlAngle, fStartToCtrlAngle) {
 	return Flox.GeomUtils.angleDif(startToCtrlAngle, fStartToCtrlAngle);
 };
 
 /**
- * Takes pixel coordinates, converts them to latLng, 
- * makes a Point, returns it.
+ * Converts pixel coordinates to latLng, 
+ * makes a Point object, returns it.
  * lyrPt can be an array [x,y]
  */
 my.pointFromLayerPt = function(lyrPt) {
@@ -346,6 +468,7 @@ my.refreshMap = function(model_copy) {
     refreshMap(model_copy);
 };
 
+// Returns the model_master, which contains all imported flows. 
 my.getModel = function() {
     return model_master;
 };
@@ -377,12 +500,6 @@ my.midXYBetweenTwoPoints = function(p1, p2) {
     return Flox.GeomUtils.midXYBetweenTwoPoints(p1, p2);
 };
 
-// Returns a leaflet layer point between two points
-my.midLayerPointBetweenTwoPoints = function(p1, p2) {
-    var midPtCoords = Flox.GeomUtils.midXYBetweenTwoPoints(p1, p2);
-    return L.point(midPtCoords[0], midPtCoords[1]);
-};
-
 my.linesIntersect = function(x1, y1, x2, y2, x3, y3, x4, y4) {
     return Flox.GeomUtils.linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4);
 };
@@ -403,6 +520,10 @@ my.latLngToPoint = function(latLng) {
 	return new Flox.Point(latLng.lng, latLng.lat);
 };
 
+/**
+ * Project the lat and long of each node to the current map projection,
+ * assigning each node
+ */
 my.assignXYToNodes = function(nodes) {
 	var i, node, xy;
 	for(i = 0; i < nodes.length; i += 1) {
@@ -446,54 +567,8 @@ my.importStateToStateMigrationFlows = function (keepSelectedState) {
 	importStateToStateMigrationFlows(keepSelectedState);
 };
 
-my.importTotalCountyFlowData = function(stateFIPS) {		
-	terminateWorkers();
-	
-	var stuffImportWorkerNeeds = {};
-	
-	// erase all flows from the model.
-	model_master.deleteAllFlows();
-
-	
-	filterSettings.selectedState = stateFIPS;
-	
-	// Set the mapScale in the model to the appropriate scale for this map.
-	// This scale is used by the layouter!
-	// Could it also be used by the renderer?
-	// FIXME this is goofy
-	model_master.setScaleMultiplierByState(stateFIPS);
-	model_master.settings.datasetName = "FIPS" + Number(stateFIPS);
-	
-	if(window.Worker && model_master.settings.useWebworkers) {
-		stuffImportWorkerNeeds.settings = model_master.settings;
-		stuffImportWorkerNeeds.stateFIPS = stateFIPS;
-		
-		runImportWorker(stuffImportWorkerNeeds, function(d) {
-			model_master.deserializeModelJSON(d);
-			my.updateMap();
-		});
-	} else {
-		console.log("Browser cannot use webworkers. UI will be locked during computations.");
-		console.log("Importing county flows...");
-		Flox.FlowImporter.importTotalCountyFlowData(stateFIPS, function(flows, countyNodes){
-			model_master.initNodes(countyNodes);
-			model_master.addFlows(flows);
-			my.updateMap();	
-		});
-	}
-	
-	
-	
-	
-	
-};
-
-my.getMapScale = function () {
-	return mapComponent.getMapScale();
-};
-
-my.rotateProjection = function(lat, lng, roll) {
-	mapComponent.rotateProjection(lat, lng, roll);
+my.importTotalCountyFlowData = function(stateFIPS) {
+	importTotalCountyFlowData(stateFIPS);
 };
 
 /**
@@ -517,7 +592,7 @@ my.updateMap = function() {
 	
 	Flox.GUI.showLayoutProgressBar();
 	
-	// Good time to assign xy coordinates to nodes.
+	// Assign xy coordinates to nodes.
 	my.assignXYToNodes(model_master.getPoints());
 	
 	//model_master.setMaxFlowWidth();
@@ -749,10 +824,6 @@ my.runInitialAnimation = function() {
 	}, 750);
 };
 
-
-
-// DEBUG STUFF-------------------------------------
-
 my.logFlows = function(model) {
 	model.sortFlows();
 	var flows = model.getAllFlows(),
@@ -819,7 +890,7 @@ my.disableTooltip = function() {
 	mapComponent.disableTooltip();
 };
 
-// Get a FIPS, return a state name.
+// Take a FIPS, return a state name.
 my.lookupFIPS = function(FIPS) {
 	// if the fips is a number, make it at string. Or just string it anyway.
 	FIPS = String(FIPS);
@@ -857,7 +928,10 @@ my.getNumberOfDisplayedFlows = function() {
 my.getCurrentFilteredModel = function() {
 	return currentFilteredModel;
 };
-// END DEBUG STUFF-------------------------------------
+
+my.getMapScale = function () {
+	return mapComponent.getMapScale();
+};
 
 return my;
 
