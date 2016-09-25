@@ -355,7 +355,8 @@ function layoutFlows(model) {
  */
 function importStateToStateMigrationFlows(keepSelectedState) {
 	
-	var flowPath = "data/census/US_state_migration_2013_flows.csv",
+	var //flowPath = "data/census/US_state_migration_2013_flows.csv",
+		flowPath = "data/census/stateToStateFlows.csv",
 		stuffImportWorkerNeeds = {};
 	
 	// Clear the current model and map.

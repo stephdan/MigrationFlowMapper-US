@@ -298,8 +298,6 @@ Flox.FlowImporter = ( function(d3) {
 
 	/**
 	 * Imports the US Census state to state migration flows
- * @param {Object} flowPath
- * @param {Object} callback
 	 */
 	my.importStateToStateMigrationFlows = function(flowPath, callback) {
 		// Arrays to store the stuff
@@ -319,29 +317,18 @@ Flox.FlowImporter = ( function(d3) {
 				// For each row in the table...
 				for ( i = 0; i < flowData.length; i += 1) {
 
-					// destination is the id of the endPt
-					endID = flowData[i].destination;
+					// find the nodes. 
+					startPt = findNodeByID(nodes, flowData[i].from);
+					endPt = findNodeByID(nodes, flowData[i].to);
+					val = Number(flowData[i].value);
 
-					// Find the node with the same ID
-					endPt = findNodeByID(nodes, endID);
-
-					// For each column in the table...
-					for (startID in flowData[i]) {
-
-						// if originID matches one if the ids in nodes
-						startPt = findNodeByID(nodes, startID);
-
-						if (startPt && endPt && (startPt && endID !== startID)) {
-
-							// get the value!
-							val = Number(flowData[i][startID]);
-							if (val > 0) {
-								flows.push(new Flox.Flow(startPt, endPt, val));
-								startPt.totalOutgoingFlow += val;
-								startPt.netFlow -= val;					
-								endPt.totalIncomingFlow += val;
-								endPt.netFlow += val;
-							}
+					if (startPt && endPt) {
+						if (val > 0) {
+							flows.push(new Flox.Flow(startPt, endPt, val));
+							startPt.totalOutgoingFlow += val;
+							startPt.netFlow -= val;					
+							endPt.totalIncomingFlow += val;
+							endPt.netFlow += val;
 						}
 					}
 				}
