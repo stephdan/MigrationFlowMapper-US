@@ -810,7 +810,7 @@ my.initFlox = function() {
 };
 
 my.runInitialAnimation = function() {
-	$("#loadingMessage").addClass("hidden");
+	$("#loadingMessage").remove();
 	$("#mouseBlocker").css("background", "none");
 	mapComponent.initialZoomAction();
 	setTimeout(function(){

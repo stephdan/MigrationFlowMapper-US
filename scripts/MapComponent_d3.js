@@ -318,7 +318,14 @@ Flox.MapComponent_d3 = function() {
 					  	}
 						return rgbArrayToString(colors.polygonHoverStroke);
 					  })
-					  .style("stroke-width", stateHoverStrokeWidth )
+					  .style("stroke-width", function(d) {
+					  	if(Flox.isCountyMode() && Flox.getSelectedState() === d.properties.STATEFP) {
+					  		return stateStrokeWidth;
+					  	} else {
+					  		return stateHoverStrokeWidth;
+					  	}
+					  	
+					  })
 					  .moveToFront();
 				})
 				.on("mousemove", function(d) {
@@ -1306,6 +1313,11 @@ Flox.MapComponent_d3 = function() {
 	}
 
 	function stateClicked(d) {
+		// If it's in county mode and this is the selected state, do nothing.
+		if(Flox.isCountyMode() && Flox.getSelectedState() === d.properties.STATEFP) {
+			return;
+		}
+
 		// If it's in state mode, and this state is already selected...reset?
 		if(Number(Flox.getSelectedState()) === Number(d.properties.STATEFP)) {
 			hideTooltip();
@@ -1726,7 +1738,7 @@ Flox.MapComponent_d3 = function() {
 		
 		var rectWidth = 25,
 			rectHeight = 15,
-			rectSpacer = 4,
+			rectSpacer = 5,
 			labelSizePx = 13,
 			flowLength = 62,
 			flowSpacer = 18,
@@ -1773,11 +1785,12 @@ Flox.MapComponent_d3 = function() {
 			flowGap = maxLegendFlowWidth * model_copy.settings.arrowWidthScaleFactor;
 		}
 		
+		flowGap += 3;
+
 		// Remove the old legend svg. Title can stay.
 		d3.select("#legendSlidingPanelContent").selectAll("svg").remove();
 		d3.select("#legendSlidingPanelContent").selectAll("p").remove();
-		
-		
+		d3.select(".legendSectionSpacer").remove();
 		
 		// Make flows to show in the legend. 
 		maxFlowStartPt = {x: flowLeft, y: flowGap, value: 0, id: "legendMaxStart"};
@@ -1905,7 +1918,7 @@ Flox.MapComponent_d3 = function() {
 			.text(notShownText)
 			.attr("x", flowLeft + s.flowDistanceFromStartPointPixel)
 			.attr("y", function(d, i) {
-				return flowGap + (flowSpacer * legendFlows.length) + labelSizePx/2 - 2;
+				return flowGap + (flowSpacer * legendFlows.length) + labelSizePx/2 + 2;
 			})
 			
 		flowLegendItemContainer.append("text")
@@ -1915,9 +1928,13 @@ Flox.MapComponent_d3 = function() {
 			.text(percentShownText)
 			.attr("x", flowLeft + s.flowDistanceFromStartPointPixel)
 			.attr("y", function(d, i) {
-				return flowGap + (flowSpacer * (legendFlows.length + 1)) + labelSizePx/2 - 2;
+				return flowGap + (flowSpacer * (legendFlows.length + 1)) + labelSizePx/2 + 2;
 			})
 		
+		d3.select("#legendSlidingPanelContent")
+			.append("div")
+			.classed("legendSectionSpacer", true);
+
 		d3.select("#legendSlidingPanelContent")
 			.append("p")
 			.classed("legendTitle", true)
