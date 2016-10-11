@@ -338,18 +338,20 @@ function makeCircle(points) {
         r[2] = offset + u * (n - m);
         return 3;
     }
-	
+
 	function getDistanceToQuadraticBezierCurveSq(p0x, p0y, p1x, p1y, p2x, p2y, xy) {
 		
 		if (collinear(p0x, p0y, p1x, p1y, p2x, p2y)) {
             return getDistanceToLineSegmentSquare(xy[0], xy[1], p0x, p0y, p2x, p2y);
         }
 
-        var dx1 = p0x - xy[0],
-			dy1 = p0y - xy[1],
+        var x = xy[0],
+        	y = xy[1],
+        	dx1 = p0x - x,
+			dy1 = p0y - y,
 			d0sq = dx1 * dx1 + dy1 * dy1,
-			dx2 = p2x - xy[0],
-			dy2 = p2y - xy[1],
+			dx2 = p2x - x,
+			dy2 = p2y - y,
 			d2sq = dx2 * dx2 + dy2 * dy2,
 			minDistSq = Math.min(d0sq, d2sq),
 			
@@ -362,8 +364,8 @@ function makeCircle(points) {
 			
 			k3 = 2.0 * (ax * ax + ay * ay),
 			k2 = 3.0 * (ax * bx + ay * by),
-			k1 = bx * bx + by * by + 2.0 * ((cx - xy[0]) * ax + (cy - xy[1]) * ay),
-			k0 = (cx - xy[0]) * bx + (cy - xy[1]) * by,
+			k1 = bx * bx + by * by + 2.0 * ((cx - x) * ax + (cy - y) * ay),
+			k0 = (cx - x) * bx + (cy - y) * by,
 			
 			// FIXME allocating this array each time might not be efficient
 			res = [],
@@ -382,11 +384,11 @@ function makeCircle(points) {
                 posx = w0 * p0x + w1 * p1x + w2 * p2x;
                 posy = w0 * p0y + w1 * p1y + w2 * p2y;
 
-                dx = posx - xy[0];
-                dy = posy - xy[1];
+                dx = posx - x;
+                dy = posy - y;
                 distSq = dx * dx + dy * dy;
                 if (distSq < minDistSq) {
-                    minDistSq = dx * dx + dy * dy;
+                    minDistSq = distSq;
                     xy[0] = posx;
                     xy[1] = posy;
                 }

@@ -566,16 +566,16 @@ Flox.GUI = (function($){
 				hintText = "Show/hide flows entirely within the selected state";
 				break;
 			case "incomingFlowsButton":
-				hintText = "Show incoming flows";
+				hintText = "Show incoming flows to the selected location";
 				break;
 			case "outgoingFlowsButton":
-				hintText = "Show outgoing flows";
+				hintText = "Show outgoing flows from the selected location";
 				break;
 			case "netFlowsButton":
-				hintText = "Show net flows";
+				hintText = "Show the difference in flow between locations";
 				break;
 			case "totalFlowsButton":
-				hintText = "Show total flows";
+				hintText = "Show the total bidirectional flow between locations";
 				break;
 		}
 		$("#hintText").text(hintText);
