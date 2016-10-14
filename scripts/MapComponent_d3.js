@@ -1974,7 +1974,6 @@ Flox.MapComponent_d3 = function() {
 			.attr("y", function(d, i) {
 				return 2 + (rectHeight/2 + (labelSizePx/2 - 1))+ ((rectHeight + rectSpacer) * i);
 			});
-		console.log(populationDensityColor.domain());
 	}
 	
 	function highlightLegendRectangle(d) {
