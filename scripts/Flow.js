@@ -478,7 +478,7 @@ Flox.Flow = function(sPt, ePt, val, newID) {
 
 		// FIXME Creating a copy is expensive. How can this flow return
 		// itself? 'this' does not work, and has a notoriously fickle assignment
-		// in javascript.
+		// in javascript. Needs figurin'.
 		if (t <= 0 || t >= 1) {
 			f = makeCopy();
             return [f, f];

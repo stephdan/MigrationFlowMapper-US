@@ -169,28 +169,6 @@ Flox.GUI = (function($){
 		}
 	);
 	
-	// $("#innerFlowsButton").click(
-		// function() {
-			// var buttonIcon = $(this).find("img"),
-				// settings = Flox.getFilterSettings();
-			// if(settings.inStateFlows === true) {
-				// toggleButtonIcon("innerFlowsButton", false);
-				// if(settings.outerStateFlows === false) {
-					// settings.outerStateFlows = true;
-					// toggleButtonIcon("necklaceMapButton", true);
-				// }
-			// } else {
-				// toggleButtonIcon("innerFlowsButton", true);
-			// }
-			// settings.inStateFlows = !settings.inStateFlows;
-			// if(settings.stateMode === false) {
-				// Flox.updateMap();
-			// }
-		// }
-	// );
-	
-	
-	
 	$("#incomingFlowsButton").click(
 		function() {
 			if(Flox.getFlowType() !== "incoming") {
@@ -237,11 +215,7 @@ Flox.GUI = (function($){
 			Flox.updateMap();
 		}
 	);
-	
-	
-	
-	
-	// This works.
+
 	// TODO is this obsolete?
 	$("#inStateFlowsToggle").on("click", function() {
 		if(Flox.isInStateFlows()) {
@@ -364,16 +338,13 @@ Flox.GUI = (function($){
 			panelPadding = panel.outerWidth() - panelWidth,
 			fontSize = 16;
 		
-		//subtitle.hide();
-		
 		subtitle.css("font-size", fontSize);
 		subtitle.text(newSubtitle);
 		while (subtitle.width() >=  panelWidth) {
 			fontSize -= 0.2;
 			subtitle.css("font-size", fontSize);
 		}
-		
-		//subtitle.show();
+
 	}
 
 	// TopX + filter + description + location
@@ -566,16 +537,16 @@ Flox.GUI = (function($){
 				hintText = "Show/hide flows entirely within the selected state";
 				break;
 			case "incomingFlowsButton":
-				hintText = "Show incoming flows";
+				hintText = "Show incoming flows to the selected location";
 				break;
 			case "outgoingFlowsButton":
-				hintText = "Show outgoing flows";
+				hintText = "Show outgoing flows from the selected location";
 				break;
 			case "netFlowsButton":
-				hintText = "Show net flows";
+				hintText = "Show the difference in flow between locations";
 				break;
 			case "totalFlowsButton":
-				hintText = "Show total flows";
+				hintText = "Show the total bidirectional flow between locations";
 				break;
 		}
 		$("#hintText").text(hintText);
@@ -711,12 +682,6 @@ Flox.GUI = (function($){
 			hideThese.push("incomingFlowsButton");
 			hideThese.push("outgoingFlowsButton");
 		}
-		
-		// if it's not hovering over a button, set the hint text
-		// if ($('.panelButtonContainer:hover').length === 0) {
-		    // my.setHintText();
-		// }
-		//my.setHintText();
 		updateButtonIcons();
 		my.hidePanelButtons(hideThese);
 		my.showPanelButtons(showThese);
@@ -770,6 +735,6 @@ $("#moveFlowsOffNodes").on("click", function() {
 	Flox.updateMap();
 });
 
-	return my;
+return my;
 
 }($));

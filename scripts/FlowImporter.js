@@ -72,7 +72,7 @@ Flox.FlowImporter = ( function(d3) {
 				return nodes[i];
 			}
 		}
-		console.log(nodeID + " is not in there!");
+		console.log(id + " is not in there!");
 		return false;
 		// It's not in there!
 	}

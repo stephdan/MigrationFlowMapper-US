@@ -118,14 +118,6 @@ Flox.Model = function() {
 				
 		// Public object		
 		my = {};
-    
-	    // Stores all flows and points/
-	    // TODO All the code in FloxGraph could be moved into Model, since Model
-	    // is the only one who uses it.
-		// graph = Flox.getNewFlowGraph();
-
-
-// START STUFF FROM GRAPH ============================
 
 	// This updates and returns the min/max flow length in the model.
 	// Needed because flow lengths change on zoom and during drag events,
@@ -295,13 +287,6 @@ Flox.Model = function() {
 		if(findPoint(node)[0]===false) {
 			nodes.push(node);
 		}
-		
-		// if(!node.id) {
-			// console.log("node doesn't have an id! can't be added to nodesMap")
-		// } else {
-			// nodesMap.set(node.id, node);
-		// }
-		//updateCachedValues();
     }
     
     // FIXME this is usually sorting a lot of flows. It needs to not block 
@@ -325,10 +310,10 @@ Flox.Model = function() {
 	/**
 	 * Finds opposing flow in the model if there is one.
 	 * Assigns it as a property of flow, and assigns flow as a property
-	 * off the opposing flow.
-	 * TODO Assumes there could only be one opposing flow in the model.
-	 * Also, this might be dumb and bad. 
+	 * of the opposing flow.
 	 */
+	// FIXME Assumes there could only be one opposing flow in the model.
+	// Also, this all might be dumb and bad.
 	function assignOppositeFlow(flow) {
 		var candidates, i, j;
 		
@@ -380,8 +365,6 @@ Flox.Model = function() {
 		}
         startPoint.outgoingFlows.push(flow);
         endPoint.incomingFlows.push(flow);
-        
-        //updateCachedValues();
     }
     
     
@@ -1188,24 +1171,6 @@ Flox.Model = function() {
 			}
 		}
 		return nonNecklaceNodes;
-	};
-	
-	my.setMaxFlowWidth = function(){
-		var nonNecklaceNodes = my.getNonNecklaceNodes(),
-			clippingDist = settings.flowDistanceFromStartPointPixel +
-						   settings.flowDistanceFromEndPointPixel,
-			shortestDistanceBetweenPoints = closestPair.closestPairDivideAndConquer(nonNecklaceNodes),
-			maxFlowWidth;
-		
-		maxFlowWidth = (shortestDistanceBetweenPoints - clippingDist) / (settings.arrowLengthScaleFactor * 1.1);
-		
-		maxFlowWidth = maxFlowWidth / settings.scaleMultiplier;
-		
-		settings.maxFlowWidth = maxFlowWidth;
-		
-		settings.minFlowWidth = (maxFlowWidth / 10);
-		
-		console.log("maxFlowWidth set to: " + maxFlowWidth);
 	};
 	
 	// make settings public
