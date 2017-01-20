@@ -50,11 +50,6 @@ Flox.ModelFilter = function(model_master) {
 			// If the start or end point are not inside the selected state
 			if("FIPS" + sPt.STATEFP !== selectedStateFIPS || "FIPS" + ePt.STATEFP !== selectedStateFIPS) {
 				
-				// Delete oppositeFlow parameter. This will no longer be valid
-				// once flows are merged, and will be recalculated when flows
-				// are added to the model. 
-				
-				
 				// Is it the start or end point that is out of state?
 				if ("FIPS" + sPt.STATEFP === selectedStateFIPS) { // end point is out of state.
 					countyFIPS = sPt.id;
@@ -178,12 +173,9 @@ Flox.ModelFilter = function(model_master) {
 				} else { 
 					featureFlows = node.incomingFlows.concat(node.outgoingFlows);
 				}
-				
-				// Stop looping, it's done.
 				break;
 			}
 		}
-		//countyFlows = incomingFlows.concat(outgoingFlows);
 		model_copy.deleteAllFlows();
 		model_copy.addFlows(featureFlows);
 		
@@ -211,7 +203,6 @@ Flox.ModelFilter = function(model_master) {
 				break;
 			}
 		}
-		//countyFlows = incomingFlows.concat(outgoingFlows);
 		model_copy.deleteAllFlows();
 		model_copy.addFlows(countyFlows);
 	}
@@ -238,7 +229,6 @@ Flox.ModelFilter = function(model_master) {
 
 			}
 		}
-		// stateFlows = incomingFlows.concat(outgoingFlows);
 		model_copy.deleteAllFlows();
 		model_copy.addFlows(stateFlows);
 	}
@@ -339,7 +329,6 @@ Flox.ModelFilter = function(model_master) {
 		model_copy.deleteAllFlows();
 		model_copy.addFlows(netFlows);
 
-		//Flox.logFlows(model_copy);
 		return model_copy;
 	};
 	
@@ -390,8 +379,6 @@ Flox.ModelFilter = function(model_master) {
 		model_copy.deleteAllFlows();
 		model_copy.addFlows(totalFlows);
 
-		//Flox.logFlows(model_copy);
-		//model_copy.settings.drawArrows = false;
 		return model_copy;
 	};
 		
@@ -461,60 +448,12 @@ Flox.ModelFilter = function(model_master) {
 		// if it's in state mode or not as well. If no, then we're seeing
 		// county flows and don't want to filter anything.
 		// The case of flowType==="incoming" or "outgoing" is handled in
-		// getSelectedFeatureModel()
 		if(filterSettings.selectedCounty !== false || 
 		   (filterSettings.selectedState  !== false && filterSettings.stateMode)) {
 			getSelectedFeatureModel(filterSettings);
 		}
 		
-		
-		// Net flows if settings.netFlows
-		// if(filterSettings.netFlows) {
-			// if(!Flox.getDerivedModel("netFlowsModel")) { // if netFlowsModel isn't there yet
-				// model_copy = copyModel(model_master); // Copy the master
-				// filteredNodes = model_copy.getPoints();
-				// if(filterSettings.stateMode===false) {
-					// //mergeOutOfStateTotalFlows(); 
-				// }
-// 				
-				// my.getNetFlowsModel();
-// 				
-				// model_copy.updateCachedValues();
-				// // Set netFlowsModel to a COPY of the net flows model, so more changes
-				// // can be made to it in the filter without messing it up
-				// //Flox.setDerivedModels( { "netFlowsModel": (copyModel(model_copy)) } );
-			// } else {
-				// // netFlowsModel exists, get a COPY of it.
-				// //model_copy = copyModel(Flox.getDerivedModel("netFlowsModel"));
-			// }
-		// } else { // same as above, but with totalFlowsModel
-			// if(!Flox.getDerivedModel("totalFlowsModel")){
-				// model_copy = copyModel(model_master);
-				// if(filterSettings.stateMode===false) {
-					// //mergeOutOfStateTotalFlows(); 
-				// }
-// 				
-				// my.getTotalFlowsModel(filterSettings);
-// 				
-				// model_copy.updateCachedValues();
-				// //model_copy.settings.drawArrows = false; // total flows are bi-directional, so no arrows
-				// //Flox.setDerivedModels( { "totalFlowsModel": (copyModel(model_copy)) } );
-			// } else {
-				// //model_copy = copyModel(Flox.getDerivedModel("totalFlowsModel"));
-				// //model_copy.settings.drawArrows = false; 
-			// }
-		// }
-		
-		// If a county is selected, get the model for just that county.
-		// if(filterSettings.countyMode && filterSettings.selectedCounty !== false) {
-			// getSelectedCountyModel(filterSettings);
-		// }		
-		
-		// It it's in state mode, and a state is selected, filter out all
-		// flows not connected to that state.
-		// if(filterSettings.stateMode && filterSettings.selectedState !== false) {
-			// getSelectedStateModel(filterSettings);
-		// }
+	
 		
 		if(!filterSettings.outerStateFlows && !filterSettings.stateMode) {
 			my.removeOuterStateFlows();
@@ -527,10 +466,6 @@ Flox.ModelFilter = function(model_master) {
 		
 		// This is maybe the only time flows are sorted 
 		model_copy.sortFlows();
-		
-		//endTime = performance.now() - startTime;
-		//console.log("filterBySettings took " + Math.floor(endTime) + "ms");
-		
 		
 		return model_copy;
 	};

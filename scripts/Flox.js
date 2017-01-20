@@ -23,7 +23,7 @@
 
 /*
  * "Flox" is the primary namespace for the application, and includes several 
- * modules, including:
+ * sub-modules, including:
  *    Flox.Model
  *    Flox.ModelFilter
  *    Flox.MapComponent_d3
@@ -40,7 +40,6 @@
 var Flox = (function() {
 
 "use strict";
-
 var mapComponent,
     layoutWorker,
     filterWorker,
@@ -71,6 +70,7 @@ var mapComponent,
 		// if nothing is selected
 	},
 	my = {}; // public object
+
 
 // A lookup table of US state 2-digit FIPS codes and the state names.
 fipsLookupTable = {
@@ -677,25 +677,6 @@ my.updateMap = function() {
 	}
 };
 
-// my.getFilterSettings = function() {
-	// return filterSettings;
-// };
-
-/**
- * Loops over the filterSettings, changing the ones specified in settings.
- * @param {Object} settings - Key value pair(s) of filterSettings to change.
- */
-// my.setFilterSettings = function(settings) {
-	// var prop;
-	// for (prop in settings) {
-		// if(settings.hasOwnProperty(prop)) {
-			// if (filterSettings.hasOwnProperty(prop)) {
-				// filterSettings[prop] = settings[prop];
-			// }
-		// }
-	// }
-// };
-
 my.getFlowType = function() {
 	return filterSettings.flowType;
 };
@@ -720,7 +701,6 @@ my.getSelectedState = function() {
 	return filterSettings.selectedState;
 };
 
-// state is false if no state is selected
 my.setSelectedState = function(state) {
 	var flowType;
 	// if state is false, we gotta do some stuff. 
@@ -730,7 +710,6 @@ my.setSelectedState = function(state) {
 			my.setFlowType("total");
 		}
 	}
-	
 	filterSettings.selectedState = state;
 	Flox.GUI.updateFlowTypeRadioButtons();
 };
@@ -809,10 +788,11 @@ my.initFlox = function() {
 	importStateToStateMigrationFlows();
 };
 
+// This runs the startup animation. It's rather hacked in. Like other things.
 my.runInitialAnimation = function() {
 	$("#loadingMessage").addClass("hidden");
 	$("#mouseBlocker").css("background", "none");
-	mapComponent.initialZoomAction();
+	mapComponent.zoomToFullExtent();
 	setTimeout(function(){
 		Flox.GUI.toggleLegendSlidingPanel();
 		setTimeout(function(){
@@ -877,7 +857,7 @@ my.getNodeCoordinates = function() {
 		coords.push([nodes[i].x, nodes[i].y]);
 	}
 	return coords;
- };
+};
 
 my.getPopulationDensityColor = function() {
 	return mapComponent.getPopulationDensityColor();

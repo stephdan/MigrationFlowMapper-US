@@ -16,6 +16,8 @@ Flox.FlowLayouter = function (model) {
         this.fx = fx;
         this.fy = fy;
     };
+    
+    
     /**
      * Return the length of this Force
      */
@@ -367,7 +369,6 @@ Flox.FlowLayouter = function (model) {
 	
 	// flow: the target flow
     // maxFlowLength: The longest distance between endpoints of all Flows.
-    // TODO missing node on flow forces
     function computeForceOnFlow(targetFlow, maxFlowLength) {      
 
         var basePt = targetFlow.getBaselineMidPoint(),
@@ -412,7 +413,6 @@ Flox.FlowLayouter = function (model) {
         externalF.fy /= flowPoints.length;
 
         // compute anti-torsion force of targetFlow
-        // FIXME producing NaN
         antiTorsionF = computeAntiTorsionForce(targetFlow);
 
         // Compute spring force of targetFlow
@@ -968,11 +968,6 @@ Flox.FlowLayouter = function (model) {
 					}
 				}
 			}
-			
-			
-			// if (flowIntersectsANode(flow)) {
-				// intersectingFlows.push(flows[i]);
-			// }
 		}
 		return intersectingFlows;
 	}
@@ -988,7 +983,6 @@ Flox.FlowLayouter = function (model) {
 		for(i = 0, j = flowsOverlappingObstacles.length; i < j; i += 1) {
 			
 			if(model.settings.useSpiralMethod) {
-				// use the spiral methoid!
 				moveFlowIntersectingObstaclesSPIRAL(flowsOverlappingObstacles[i], obstacles);
 			} else {
 				moveFlowIntersectingObstacles(flowsOverlappingObstacles[i], obstacles);

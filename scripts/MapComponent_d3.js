@@ -2,7 +2,7 @@
  * Author: Daniel Stephen, daniel.macc.stephen@gmail.com
  * Date: September, 2016
  * This code was created as part of my masters thesis at Oregon State University.
- * Please contant me before using any code from this application.
+ * Please contact me before using any code from this application.
  * 
  * The following code is for an interactive flow map depicting US county-to-
  * county migration. It uses a new algorithmic method of arranging flow curves
@@ -93,7 +93,6 @@ Flox.MapComponent_d3 = function() {
 			unselectedStateFill : [230, 230, 230],
 			unselectedStateStroke: [215, 215, 215],
 			unselectedStateHoverStroke: [190, 190, 190],
-			
 		},
 		
 		// Lookup table for tooltips of the type of administrative unit
@@ -263,7 +262,7 @@ Flox.MapComponent_d3 = function() {
 						.attr("width", "100%")
 						.attr("height", "100%")
 						.attr("fill", rgbArrayToString(colors.backgroundFill))
-						.on("click", reset);
+						.on("click", zoomToFullExtent);
 						
 		var mapFeaturesLayer = svg.append("g").attr("id", "mapFeaturesLayer"),
 			statesLayer = mapFeaturesLayer.append("g").attr("id", "statesLayer"),
@@ -453,8 +452,6 @@ Flox.MapComponent_d3 = function() {
 		return gapDistanceToStartNode + startNodeRadius;
 	}
 
-
-
 	// takes a flow object, builts an SVG curve out of the 3 points, translating
 	// the LatLng coordinates to screen coordinates. Also handles flow clipping.
 	// Accounts for necklace map nodes.
@@ -498,8 +495,6 @@ Flox.MapComponent_d3 = function() {
 	function buildSvgArrowPath(f) {
 		var a = f.getArrow(),
 		    s;
-
-		//s = "M " + a[0].x + "," + a[0].y + " L" + a[1].x + "," + a[1].y + " Q" + a[2].x + "," + a[2].y + " " + a[3].x + "," + a[3].y + " Q" + a[4].x + "," + a[4].y + " " + a[5].x + "," + a[5].y + " L" + a[0].x + "," + a[0].y;
 
 		s = "M " + a.basePt.x + "," + a.basePt.y + 
 		    " L" + a.corner1Pt.x + "," + a.corner1Pt.y + 
@@ -578,24 +573,17 @@ Flox.MapComponent_d3 = function() {
 			.data(flows)// flow data added to GROUP
 			.enter().append("g");
 	
-		// Draw outlines first
-		// if (drawArrows) {
-			// svgFlows.append("path")// add a new path. This is the arrowhead!
-				// .classed("arrowOutline", true)
-				// .style("cursor", "default")
-				// .attr("stroke", "#ccc")
-				// .attr("fill", "#ccc")
-				// .attr("stroke-width", 2)
-				// .attr("d", function(d) {
-					// return buildSvgArrowPath(d);
-				// });
-		// }
+		
+		// Draw an invisible version of each flow to handle hover events.
+		// It's slightly wider in order to make hovering easier. 	
 		svgFlows.append("path")
 			.classed("curveOutline", true)
 			.attr("stroke", "#ccc")
 			.style("cursor", "default")
 			.attr("fill", "none")
 			.attr("stroke-width", function(d) {
+				// The 4 in the code below is that makes the 
+				// invisible flow a bit wider for easier hovering.
 				return (model_copy.getFlowStrokeWidth(d) + 4 * model_copy.settings.scaleMultiplier);
 			})
 			.attr("opacity", 0.0)
@@ -758,7 +746,7 @@ Flox.MapComponent_d3 = function() {
 		
 		for (i = 0; i < nodes.length; i += 1) {
 			node = nodes[i];
-			if(node.type === "county"){ // Even state nodes have this, so the state pop densities are being added.
+			if(node.type === "county"){
 				countyNodes.push(node);
 			}
 		}
@@ -775,8 +763,8 @@ Flox.MapComponent_d3 = function() {
 		if(popDensities.length <= defaultClasses) {
 			// There are as many or more colors than there are counties
 			// There will be only one county of each color. 
-			// Therefore, you don't need to make a jenks scale. You can just
-			// use the popDensities as breaks. Sorted, of course.
+			// Therefore, don't make a jenks scale. Just
+			// use the sorted popDensities as breaks.
 			popDensities.sort(function(a,b) {
 				return a - b;
 			});
@@ -792,10 +780,9 @@ Flox.MapComponent_d3 = function() {
 				.range(getColorRampForD3(classes));
 		}		
 					
-		// TODO update legend here!
+
 		configureLegend(jenksBreaks);
 
-		
 		counties.style("fill", function(d) {
 			node = model_master.findNodeByID(Number(d.properties.STATEFP) + d.properties.COUNTYFP);
 			popDensity = Number(node.populationDensity);
@@ -885,12 +872,8 @@ Flox.MapComponent_d3 = function() {
 	 * @param m : A copy of the model.
 	 */
 	function drawFeatures(m) {
-		// Stringify the model! For debugging. TODO
-		//m.stringifyModel();
 		
 		// Delete all the old flows before drawing new ones.
-		// TODO This needs to happen sooner. Old flows are still there during
-		// all the cool zoomy effects sometimes. 
 		removeAllFlows();
 	
 		if(!m) {
@@ -901,16 +884,6 @@ Flox.MapComponent_d3 = function() {
 		// It's called model_copy as a reminder that it isn't the master model,
 		// but a modified copy created by the filter.
 		model_copy = m;
-		
-		// // if this is county flow data, color the counties by pop density
-		// // TODO this is done on every single iteration of the method.
-		// // It only needs to be done once. 
-		// if(Flox.isCountyMode() && Flox.getSelectedState() !== false){
-			// colorCountiesByPopulationDensity();
-		// } else {
-			// // color the states by population density
-			// colorStatesByPopulationDensity();
-		// }
 
 		if (model_copy.settings.drawFlows) {
 			drawFlows(model_copy.settings.drawArrows);
@@ -919,9 +892,6 @@ Flox.MapComponent_d3 = function() {
 			console.log("The model says to draw nodes, so I'm drawing nodes.");
 			drawPoints();
 		} 
-
-		//drawObstacles();
-		//drawIntermediateFlowPoints();
 	}
 	
 	// TODO Are counties the only features that have a state fips as a class?
@@ -963,7 +933,6 @@ Flox.MapComponent_d3 = function() {
 		};
 	}
 
-	// This works.
 	function getCirclesAtBoundingBoxCorners(bb) {
 		var leftTop,
 		    leftBottom,
@@ -990,7 +959,6 @@ Flox.MapComponent_d3 = function() {
 			cy : bb[1][1],
 			r : 50
 		};
-
 		return [leftTop, leftBottom, rightTop, rightBottom];
 	}
 
@@ -1067,7 +1035,7 @@ Flox.MapComponent_d3 = function() {
 		return maxNetFlow;
 	}
 
-	// FIXME could I make one function that does both this and the above one?
+	// TODO could I make one function that does both this and the above one?
 	function getMaxOutOfStateTotalFlow() {
 		// Get the nodes
 		var nodes = Flox.getModel().getPoints(),
@@ -1151,7 +1119,7 @@ Flox.MapComponent_d3 = function() {
 		.call(zoom.translate(translate).scale(scale).event);
 	}
 	
-	// rect is {x, y, h, w}
+	// rect is {x, y, height, width}
 	function zoomToRectangle(rect) {
 		var dx = rect.w,
 			dy = rect.h,
@@ -1179,44 +1147,11 @@ Flox.MapComponent_d3 = function() {
 	
 	
 	
-	// FIXME Hardcoded scale. Calculate scale from feature extent somehow.
+	// FIXME Hardcoded extent. Calculate scale from features instead.
+	// ...Except this is optimized to make room for the UI at the bottom of
+	// the window. So keep it for now.
 	function zoomToFullExtent() {
 		zoomToRectangle({x: -8000, y: -5000, w: 9000, h: 7000})
-		//zoomToCircle({r: 3800, cx: 300, cy: 500});
-		//svg.transition().duration(750).call(zoom.translate([width / 2, height / 2]).scale(0.06).event);
-	}
-
-	// Zooms out to full extent, deselects everything, hides all county
-	// boundaries, resets some filter settings.
-	function reset() {
-
-		// // Hide county boundaries.
-		// d3.selectAll(".county").classed("hidden", true);
-// 		
-		// var settings = Flox.getFilterSettings();
-// 		
-		// // Remove flows if a state is selected, or if there is no state
-		// // selected but it's in county mode (to get rid of state to state
-		// // flows when the County Flows button is pushed)
-		// if(settings.selectedState !== false || (settings.selectedState === false && settings.countyMode)) {
-			// removeAllFlows();
-			// if(settings.countyMode){
-				// my.resetStateFillColor();
-			// }
-		// }
-// 		
-		// // If it's in state mode, and a state is selected, need to get
-		// // rid of them flows and add the state to state ones. 
-		// if(settings.stateMode && settings.selectedState !== false) {
-			// Flox.importStateToStateMigrationFlows();
-		// }
-		// // Also remove all necklace maps.
-		// d3.select("#necklaceMapLayer").remove(); 
-// 		
-		// // Deselect countys and states
-		// Flox.setFilterSettings({selectedState: false, selectedCounty: false});
-		
-		zoomToFullExtent();
 	}
 
 	/**
@@ -1310,7 +1245,7 @@ Flox.MapComponent_d3 = function() {
 		if(Number(Flox.getSelectedState()) === Number(d.properties.STATEFP)) {
 			hideTooltip();
 			my.disableTooltip();
-			reset();
+			zoomToFullExtent();
 			// load the state to state flows?
 			Flox.setSelectedState(false);
 			Flox.importStateToStateMigrationFlows();
@@ -1331,16 +1266,10 @@ Flox.MapComponent_d3 = function() {
 	
 
 	function zoomed() {
-		var //features = d3.selectAll(".feature"),
-			//hoveredFeatures = d3.selectAll(".feature.hovered"),
-			
-		g = svg.select("#mapFeaturesLayer");
+		var g = svg.select("#mapFeaturesLayer");
 
 		mapScale = d3.event.scale;
 
-		//console.log(mapScale);
-		
-		//g.style("stroke-width", 1 / mapScale + "px");
 		g.attr("transform", "translate(" + d3.event.translate + ")scale(" + mapScale + ")");
 	}
 
@@ -1350,8 +1279,6 @@ Flox.MapComponent_d3 = function() {
 		if (d3.event.defaultPrevented)
 			d3.event.stopPropagation();
 	}
-
-	
 
 	/**
 	 * Places nodes on the outer rim of circle, using d3 force directed graph
@@ -1642,7 +1569,6 @@ Flox.MapComponent_d3 = function() {
 			name: targetStatePolygon.properties.NAME
 		};
 		return formattedCircle;
-		
 	}
 
 	/**
@@ -1718,7 +1644,7 @@ Flox.MapComponent_d3 = function() {
 				//callback();
 			});
 		} else {
-			//console.log("No out of state nodes?");
+			console.log("No out of state nodes?");
 		}
 	}
 	
@@ -2093,10 +2019,6 @@ Flox.MapComponent_d3 = function() {
 		selectState(stateFIPS);
 	};
 
-	my.reset = function() {
-		reset();
-	};
-
 	my.resetStateFillColor = function() {
 		// select the states
 		var statePolygons = d3.selectAll(".feature.state");
@@ -2129,10 +2051,6 @@ Flox.MapComponent_d3 = function() {
 	
 	my.zoomToRectangle = function(rect) {
 		zoomToRectangle(rect);
-	};
-	
-	my.initialZoomAction = function() {
-		reset();
 	};
 	
 	my.setChoroplethAndLegend = function(m) {
