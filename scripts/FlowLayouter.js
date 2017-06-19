@@ -3,193 +3,196 @@
 // Needs the current map to calculate pixel coordinates.
 Flox.FlowLayouter = function (model) {
    
-	"use strict";
+  "use strict";
    
-	var	Force, my = {};
+  var Force;
 
-    /**
-     * A force vector. 
-     * @param {Number} fx x direction of this Force
-     * @param {Number} fy y direction of this Force
-     */
-    Force = function(fx, fy) {
-        this.fx = fx;
-        this.fy = fy;
-    };
-    
-    
-    /**
-     * Return the length of this Force
-     */
-    Force.prototype.getLength = function() {
-        return Math.sqrt(this.fx * this.fx + this.fy * this.fy);
-    };
-    /**
-     * Scale the Force by the provided scale
-     */
-    Force.prototype.scale = function(scale) {
-        this.fx *= scale;
-        this.fy *= scale;
-    };
-    Force.prototype.normalize = function() {
-        var l = Math.sqrt(this.fx * this.fx + this.fy * this.fy);
-        this.fx /= l;
-        this.fy /= l;
-    };
-    /**
-     * Add a Force to this Force.
-     * @param {Object} f The force to add.
-     */
-    Force.prototype.addForce = function(f) {
-        this.fx += f.fx;
-        this.fy += f.fy;
-    };
+  /**
+   * A force vector. 
+   * @param {Number} fx x direction of this Force
+   * @param {Number} fy y direction of this Force
+   */
+  Force = function(fx, fy) {
+      this.fx = fx;
+      this.fy = fy;
+  };
+  
+  
+  /**
+   * Return the length of this Force
+   */
+  Force.prototype.getLength = function() {
+      return Math.sqrt(this.fx * this.fx + this.fy * this.fy);
+  };
 
-	/**
-	 * Configures the arrows so they will be scaled according to a model with
-	 * more flows in it than the maxFlows model passed into drawFeatures. This
-	 * allows arrows to be drawn the correct size when viewing individual
-	 * county flows. 
-	 */
-	function configureArrows() {
-		var flows, flow, arrowSettings, i, j;
-		// get the flows from the model that was passed into FlowLayouter...
-		flows = model.getFlows();
-		for(i = 0, j = flows.length; i < j; i += 1) {
-			flow = flows[i];
-			// ...but get the settings from activeModel
-			arrowSettings = model.getArrowSettings(flow);
-			flow.configureArrow(arrowSettings);
-		}
-	}
+  /**
+   * Scale the Force by the provided scale
+   */
+  Force.prototype.scale = function(scale) {
+      this.fx *= scale;
+      this.fy *= scale;
+  };
 
-	function angleDif(a1, a2) {
-		var val = a1 - a2;
-	    if (val > Math.PI) {
-	    val -= 2 * Math.PI;
-	    }
-	    if (val < -Math.PI) {
-	        val += 2 * Math.PI;
-	    }
-	    return val;
-	}
+  Force.prototype.normalize = function() {
+      var l = Math.sqrt(this.fx * this.fx + this.fy * this.fy);
+      this.fx /= l;
+      this.fy /= l;
+  };
 
-    function geometricSeriesPower(a2, exp) {
-		
-		var a4, a8, a16;
-		
-		if (exp === 0) {
-            return 1;
-        }
-        if (exp === 1) {
-            return Math.sqrt(a2);
-        }
-        if (exp === 2) {
-            return a2;
-        }
-        a4 = a2 * a2;
-        if (exp <= 4) {
-            return a4;
-        }
-        a8 = a4 * a4;
-        if (exp <= 8) {
-            return a8;
-        }
-        a16 = a8 * a8;
-        if (exp <= 16) {
-            return a16;
-        }
-        return a16 * a16;
+  /**
+   * Add a Force to this Force.
+   * @param {Object} f The force to add.
+   */
+  Force.prototype.addForce = function(f) {
+      this.fx += f.fx;
+      this.fy += f.fy;
+  };
+
+  /**
+   * Configures the arrows so they will be scaled according to a model with
+   * more flows in it than the maxFlows model passed into drawFeatures. This
+   * allows arrows to be drawn the correct size when viewing individual
+   * county flows. 
+   */
+  function configureArrows() {
+    var flows, flow, arrowSettings, i, j;
+    // get the flows from the model that was passed into FlowLayouter...
+    flows = model.getFlows();
+    for(i = 0, j = flows.length; i < j; i += 1) {
+      flow = flows[i];
+      // ...but get the settings from activeModel
+      arrowSettings = model.getArrowSettings(flow);
+      flow.configureArrow(arrowSettings);
     }
+  }
 
-    /**
-     * Add two forces together
-     * @param {Object} f1  A Force
-     * @param {Object} f2  Another Force
-     */
-    function addForces(f1, f2) {
-        return new Force(f1.fx + f2.fx, f1.fy + f2.fy);
+  function angleDif(a1, a2) {
+    var val = a1 - a2;
+      if (val > Math.PI) {
+      val -= 2 * Math.PI;
+      }
+      if (val < -Math.PI) {
+          val += 2 * Math.PI;
+      }
+      return val;
+  }
+
+  function geometricSeriesPower(a2, exp) {
+    
+    var a4, a8, a16;
+    
+    if (exp === 0) {
+      return 1;
     }
+    if (exp === 1) {
+      return Math.sqrt(a2);
+    }
+    if (exp === 2) {
+      return a2;
+    }
+    a4 = a2 * a2;
+    if (exp <= 4) {
+      return a4;
+    }
+    a8 = a4 * a4;
+    if (exp <= 8) {
+      return a8;
+    }
+    a16 = a8 * a8;
+    if (exp <= 16) {
+      return a16;
+    }
+    return a16 * a16;
+  }
 
-    function boxesOverlap(a, b) {
-		if (a.max.x < b.min.x) {return false;} // a is left of b
-		if (a.min.x > b.max.x) {return false;} // a is right of b
-		if (a.max.y < b.min.y) {return false;}// a is above b
-		if (a.min.y > b.max.y) {return false;} // a is below b
-		return true; // boxes overlap
+  /**
+   * Add two forces together
+   * @param {Object} f1  A Force
+   * @param {Object} f2  Another Force
+   */
+  function addForces(f1, f2) {
+    return new Force(f1.fx + f2.fx, f1.fy + f2.fy);
+  }
+
+  function boxesOverlap(a, b) {
+    if (a.max.x < b.min.x) {return false;} // a is left of b
+    if (a.min.x > b.max.x) {return false;} // a is right of b
+    if (a.max.y < b.min.y) {return false;}// a is above b
+    if (a.min.y > b.max.y) {return false;} // a is below b
+    return true; // boxes overlap
+  }
+    
+  function getLongestAxisDistanceBetweenFlowBoundingBoxes(flow1, flow2) {
+  
+    var dx, dy, 
+      box1 = flow1.getCachedBoundingBox(), 
+      box2 = flow2.getCachedBoundingBox();
+    
+    // Do the boxes overlap or touch?
+    // This doesn't work
+    if (boxesOverlap(box1, box2)) {
+      return 0;
     }
     
-    function getLongestAxisDistanceBetweenFlowBoundingBoxes(flow1, flow2) {
-	
-		var dx, dy, 
-			box1 = flow1.getCachedBoundingBox(), 
-			box2 = flow2.getCachedBoundingBox();
-		
-		// Do the boxes overlap or touch?
-		// This doesn't work
-		if (boxesOverlap(box1, box2)) {
-			return 0;
-		}
-		
-		if (box1.max.x < box2.min.x) { // box1 is left of box2
-			dx = box2.min.x - box1.max.x;
-		} else { // box1 is right of box2
-			dx = box1.min.x - box2.max.x;
-		}
-		
-		if (box1.max.y < box2.min.y) { // box1 is above box2
-			dy = box2.min.y - box1.max.y;
-		} else { // box1 is below box2
-			dy = box1.min.y - box2.max.y; // can be negative
-		}
-		
-		if (dx > dy) {
-			return dx;
-		}
-		return dy;
-	}
+    if (box1.max.x < box2.min.x) { // box1 is left of box2
+      dx = box2.min.x - box1.max.x;
+    } else { // box1 is right of box2
+      dx = box1.min.x - box2.max.x;
+    }
     
-	/**
-	 * Computes the force of all intermediat flow points on the map against a 
-	 * target point.
-	 * @param targetPoint Forces upon this point will be computed.
-	 * @param targetFlow Flow containing the targetPoint
-	 */
-	function computeForceOnPoint(targetPoint, targetFlow) {
-	   
-	   // var flows = model.getFlows(), // Get the flows
-	    
-	        // Get the distance weight exponent
-		var distWeightExponent = model.settings.distanceWeightExponent,
-			fxTotal = 0, // total force along the x axis
-			fyTotal = 0, // total force along the y axis
-			wTotal = 0, // sum of the weight of all forces
-			i, j, k, flow, points, point, ptID, xDist, yDist, lSq, w, 
-			fxFinal, fyFinal, flowDist, flowDistW, threshold,
-			skipEndPoints, beginPtID, endPtID,
-			flows = model.getFlows();
-	
-	    // Iterate through the flows. The forces of each flow on the target 
-	    // is calculated and added to the total force.
-	    for (i = 0, j = flows.length; i< j; i += 1){
-	        
-	        flow = flows[i];
-	        if(targetFlow === flow) {
-				continue;
-	        }	        
-	        
+    if (box1.max.y < box2.min.y) { // box1 is above box2
+      dy = box2.min.y - box1.max.y;
+    } else { // box1 is below box2
+      dy = box1.min.y - box2.max.y; // can be negative
+    }
+    
+    if (dx > dy) {
+      return dx;
+    }
+    return dy;
+  }
+    
+  /**
+   * Computes the force of all intermediat flow points on the map against a 
+   * target point.
+   * @param targetPoint Forces upon this point will be computed.
+   * @param targetFlow Flow containing the targetPoint
+   */
+  function computeForceOnPoint(targetPoint, targetFlow) {
+     
+     // var flows = model.getFlows(), // Get the flows
+      
+          // Get the distance weight exponent
+    var distWeightExponent = model.settings.distanceWeightExponent,
+      fxTotal = 0, // total force along the x axis
+      fyTotal = 0, // total force along the y axis
+      wTotal = 0, // sum of the weight of all forces
+      i, j, k, flow, points, point, ptID, xDist, yDist, lSq, w, 
+      fxFinal, fyFinal, flowDist, flowDistW, threshold,
+      skipEndPoints, beginPtID, endPtID,
+      flows = model.getFlows();
+  
+      // Iterate through the flows. The forces of each flow on the target 
+      // is calculated and added to the total force.
+      for (i = 0, j = flows.length; i< j; i += 1){
+          
+          flow = flows[i];
+          if(targetFlow === flow) {
+        continue;
+          }         
+          
             // get the points along this flow
-			points = flow.getCachedLineSegments();
+      points = flow.getCachedLineSegments();
 
-			// skipEndPoints = Flox.isSkipEndPoints();
+      // skipEndPoints = Flox.isSkipEndPoints();
 // 
-			// if (skipEndPoints) {
-				// beginPtID = 1;
-				// endPtID = 1;
-			// } else {
-				beginPtID = 0;
-				endPtID = 0;
-			// }
+      // if (skipEndPoints) {
+        // beginPtID = 1;
+        // endPtID = 1;
+      // } else {
+        beginPtID = 0;
+        endPtID = 0;
+      // }
 
             // Iterate through the points
             for (ptID = beginPtID, k = points.length - endPtID; ptID < k; ptID += 1) {
@@ -204,37 +207,37 @@ Flox.FlowLayouter = function (model) {
                 // avoid division by zero
                 if (lSq!==0) {
                     // inverse distance weighting
-	                w = 1 / geometricSeriesPower(lSq, distWeightExponent);
-					
-	                // Apply the distance weight to each force
-	                xDist *= w;
-	                yDist *= w;
-	
-	                // Add the forces to the totals
-	                fxTotal += xDist;
-	                fyTotal += yDist;
-	                wTotal += w;
+                  w = 1 / geometricSeriesPower(lSq, distWeightExponent);
+          
+                  // Apply the distance weight to each force
+                  xDist *= w;
+                  yDist *= w;
+  
+                  // Add the forces to the totals
+                  fxTotal += xDist;
+                  fyTotal += yDist;
+                  wTotal += w;
                 }  
             }
-	    }
-	
-	// Calculate the final force of all nodes on the target point
-		if(wTotal!==0) {
-			fxFinal = fxTotal / wTotal;
-			fyFinal = fyTotal / wTotal;
-		} else {
-			console.log("total w of 0 in compute force on point")
-			fxFinal = 0;
-			fyFinal = 0;
-		}
-		
-	    if(isNaN(fxFinal) || isNaN(fyFinal)) {
-			throw new Error("NaN in computeForceOnPoint()!");
-	    }
-	    return new Force(fxFinal, fyFinal);
-	}
+      }
+  
+  // Calculate the final force of all nodes on the target point
+    if(wTotal!==0) {
+      fxFinal = fxTotal / wTotal;
+      fyFinal = fyTotal / wTotal;
+    } else {
+      console.log("total w of 0 in compute force on point")
+      fxFinal = 0;
+      fyFinal = 0;
+    }
+    
+      if(isNaN(fxFinal) || isNaN(fyFinal)) {
+      throw new Error("NaN in computeForceOnPoint()!");
+      }
+      return new Force(fxFinal, fyFinal);
+  }
 
-	function computeAntiTorsionForce(flow) {
+  function computeAntiTorsionForce(flow) {
         var basePt = flow.getBaselineMidPoint(),
             cPt = flow.getCtrlPt(),
             dx = basePt.x - cPt.x,
@@ -247,7 +250,7 @@ Flox.FlowLayouter = function (model) {
  
         // Avoid NaN
         if (diffToBaseNormal === Infinity){
-			diffToBaseNormal = 0;
+      diffToBaseNormal = 0;
         }
 
         torsionF = Math.sin(diffToBaseNormal) * l;
@@ -258,12 +261,12 @@ Flox.FlowLayouter = function (model) {
     }
 
 /**
-	 * Calculates the stiffness of the spring baed on the distance between the
-	 * start and end nodes. The closer together the nodes are, the stiffer the
-	 * spring usually is.
+   * Calculates the stiffness of the spring baed on the distance between the
+   * start and end nodes. The closer together the nodes are, the stiffer the
+   * spring usually is.
  * @param {Object} flowBaseLength  Base length of the target flow.
  * @param {Object} maxFlowLength  Longest base length of all flows.
-	 */
+   */
     function computeSpringConstant(flowBaseLength, maxFlowLength) {
 
         var relativeFlowLength = flowBaseLength / maxFlowLength,
@@ -273,119 +276,119 @@ Flox.FlowLayouter = function (model) {
         return flowSpringConstant;
     }
 
-	function computeSpringForce (startPt, endPt, springConstant) {
+  function computeSpringForce (startPt, endPt, springConstant) {
         // Calculates the length of the spring.  The spring is a vector connecting
         // the two points. 
         
         var sX = startPt.x,
-			sY = startPt.y,
-			eX = endPt.x,
-			eY = endPt.y,
-			springLengthX = startPt.x - endPt.x, // x-length of the spring
-			springLengthY = startPt.y - endPt.y, // y-length of the spring
-			springForceX = springConstant * springLengthX,
-			springForceY = springConstant * springLengthY;
+      sY = startPt.y,
+      eX = endPt.x,
+      eY = endPt.y,
+      springLengthX = startPt.x - endPt.x, // x-length of the spring
+      springLengthY = startPt.y - endPt.y, // y-length of the spring
+      springForceX = springConstant * springLengthX,
+      springForceY = springConstant * springLengthY;
 
-		// If either force is NaN, flap.
-		if (isNaN(springForceX)) {
-			springForceX = 0;
-		}
+    // If either force is NaN, flap.
+    if (isNaN(springForceX)) {
+      springForceX = 0;
+    }
 
-		if (isNaN(springForceY)) {
-			springForceY = 0;
-		}
+    if (isNaN(springForceY)) {
+      springForceY = 0;
+    }
 
         return new Force(springForceX, springForceY);
     }
-	
-	function isEven(i) {
+  
+  function isEven(i) {
         return ((i % 2) === 0);
     }
-	
-	function computeNodeForceOnFlow(flow) {
-		
-		var nodeWeight = model.settings.nodeWeight,
-			distWeightExponent = model.settings.distanceWeightExponent,
-			xy = {},
-			wTotal = 0,
-			fxTotal = 0,
-			fyTotal = 0,
-			nodes = model.getPoints(),
-			i, j, node, dx, dy, idw, fxFinal, fyFinal,
-			pointOnCurve,
-			thingTest, d;
+  
+  function computeNodeForceOnFlow(flow) {
+    
+    var nodeWeight = model.settings.nodeWeight,
+      distWeightExponent = model.settings.distanceWeightExponent,
+      xy = {},
+      wTotal = 0,
+      fxTotal = 0,
+      fyTotal = 0,
+      nodes = model.getPoints(),
+      i, j, node, dx, dy, idw, fxFinal, fyFinal,
+      pointOnCurve,
+      thingTest, d;
         
         for (i = 0, j = nodes.length; i < j; i += 1) {
-			node = nodes[i];
+      node = nodes[i];
 
             // If the node is the start or end point of the current flow
             if ((node !== flow.getStartPt() && node !== flow.getEndPt())) {
-				// find nearest point on target flow
-	            xy.x = node.x;
-	            xy.y = node.y;
-	            
-	            //pointOnCurve = flow.distance(xy);
-	            //dx = (pointOnCurve.x - node.x);
-	            //dy = (pointOnCurve.y - node.y);
-	
-				d = flow.distance(xy); // This changes the values inside xy
-				
-				dx = (xy.x - node.x); // If xy hadn't been changed, these two
-				dy = (xy.y - node.y); // values would be 0!
-	
-	            // compute IDW from distance
-	            // avoid division by zero
-	            if (d !== 0) {
-	                // TODO this could use a different method designed for nodes in
-		            // order to get a different distance weight.
-		            thingTest = geometricSeriesPower(d * d, distWeightExponent);
-		            
-		            idw = 1 / geometricSeriesPower(d * d, distWeightExponent);
-		            fxTotal += dx * idw;
-		            fyTotal += dy * idw;
-		            wTotal += idw;
-	            }
+        // find nearest point on target flow
+              xy.x = node.x;
+              xy.y = node.y;
+              
+              //pointOnCurve = flow.distance(xy);
+              //dx = (pointOnCurve.x - node.x);
+              //dy = (pointOnCurve.y - node.y);
+  
+        d = flow.distance(xy); // This changes the values inside xy
+        
+        dx = (xy.x - node.x); // If xy hadn't been changed, these two
+        dy = (xy.y - node.y); // values would be 0!
+  
+              // compute IDW from distance
+              // avoid division by zero
+              if (d !== 0) {
+                  // TODO this could use a different method designed for nodes in
+                // order to get a different distance weight.
+                thingTest = geometricSeriesPower(d * d, distWeightExponent);
+                
+                idw = 1 / geometricSeriesPower(d * d, distWeightExponent);
+                fxTotal += dx * idw;
+                fyTotal += dy * idw;
+                wTotal += idw;
+              }
             }  
         }
 
         fxFinal = fxTotal / wTotal;
         fyFinal = fyTotal / wTotal;
 
-		if(isNaN(fxFinal)) {
-			fxFinal = 0;
-		}
-		
-		if(isNaN(fyFinal)) {
-			fyFinal = 0;
-		}
-		
+    if(isNaN(fxFinal)) {
+      fxFinal = 0;
+    }
+    
+    if(isNaN(fyFinal)) {
+      fyFinal = 0;
+    }
+    
 
         // Multiply by the value of the GUI slider for node weight.
         fxFinal *= nodeWeight;
         fyFinal *= nodeWeight;
 
         return new Force(fxFinal, fyFinal);
-	}
-	
-	// flow: the target flow
+  }
+  
+  // flow: the target flow
     // maxFlowLength: The longest distance between endpoints of all Flows.
     function computeForceOnFlow(targetFlow, maxFlowLength) {      
 
         var basePt = targetFlow.getBaselineMidPoint(),
-			cPt = targetFlow.getCtrlPt(),
-			flowBaseLength = targetFlow.getBaselineLength(),
-			flowPoints = targetFlow.getCachedLineSegments(),
-			externalF = new Force(0,0),
-			lengthOfForceVectorsSum = 0,
-			forceRatio, antiTorsionF, flowSpringConstant, springF, fx, fy,
-			finalForce, nodeF,
-			i, j, pt, f,
-			flowSubset = [],
-			flows, 
-			flowDistance, // longest axis distance between flow bounding boxes
-			flowDistW,
-			distWeightExponent = model.settings.distanceWeightExponent,
-			threshold = model.settings.flowDistanceThreshold;
+      cPt = targetFlow.getCtrlPt(),
+      flowBaseLength = targetFlow.getBaselineLength(),
+      flowPoints = targetFlow.getCachedLineSegments(),
+      externalF = new Force(0,0),
+      lengthOfForceVectorsSum = 0,
+      forceRatio, antiTorsionF, flowSpringConstant, springF, fx, fy,
+      finalForce, nodeF,
+      i, j, pt, f,
+      flowSubset = [],
+      flows, 
+      flowDistance, // longest axis distance between flow bounding boxes
+      flowDistW,
+      distWeightExponent = model.settings.distanceWeightExponent,
+      threshold = model.settings.flowDistanceThreshold;
 
 
 
@@ -405,9 +408,9 @@ Flox.FlowLayouter = function (model) {
         // of the shorter forces. This is a measure of how peripheral the targetFlow 
         // is.
         forceRatio = externalF.getLength() / lengthOfForceVectorsSum;
-		if (isNaN(forceRatio)) {
-			forceRatio = 0;
-		}
+    if (isNaN(forceRatio)) {
+      forceRatio = 0;
+    }
 
         externalF.fx /= flowPoints.length;
         externalF.fy /= flowPoints.length;
@@ -417,77 +420,77 @@ Flox.FlowLayouter = function (model) {
 
         // Compute spring force of targetFlow
         flowSpringConstant = computeSpringConstant(flowBaseLength, 
-			maxFlowLength); 
+      maxFlowLength); 
 
         flowSpringConstant *= forceRatio * forceRatio 
                            * model.settings.peripheralStiffnessFactor + 1;
         
         springF = computeSpringForce(basePt, cPt, flowSpringConstant);
 
-		nodeF = computeNodeForceOnFlow(targetFlow);
+    nodeF = computeNodeForceOnFlow(targetFlow);
 
         // Add up the forces, return a new force
         fx = externalF.fx + springF.fy + antiTorsionF.fx + nodeF.fx;
         fy = externalF.fy + springF.fy + antiTorsionF.fy + nodeF.fy;
-		
-		finalForce = new Force(fx, fy);
+    
+    finalForce = new Force(fx, fy);
 
         return finalForce;
     }
 
 
-	function angularW(angleDiff){
-		// FIXME hard-coded parameter
-		var K = 4,
-		    w = Math.exp(-K * angleDiff * angleDiff);
-		return (angleDiff < 0) ? -w : w;
-	}
+  function angularW(angleDiff){
+    // FIXME hard-coded parameter
+    var K = 4,
+        w = Math.exp(-K * angleDiff * angleDiff);
+    return (angleDiff < 0) ? -w : w;
+  }
 
-	function computeAngularDistributionForce(flow) {
-		
+  function computeAngularDistributionForce(flow) {
+    
         var startPoint = flow.getStartPt(),
-			endPoint = flow.getEndPt(),
-			startToCtrlAngle = flow.startToCtrlAngle(),
-			endToCtrlAngle = flow.endToCtrlAngle(),
-			startAngleSum = 0,
-			endAngleSum = 0,
-			flows = model.getFlows(),
-			i, j, f, fStart, fEnd, fStartToCtrlAngle, d, fEndToCtrlAngle,
-			startVectorLength, endVectorLength, startDir, endDir,
-			startTangentX, startTangentY, endTangentX, endTangentY,
-			angularDistributionWeight, vectX, vectY, force, K, d1, d2,
-			lmax, l;
+      endPoint = flow.getEndPt(),
+      startToCtrlAngle = flow.startToCtrlAngle(),
+      endToCtrlAngle = flow.endToCtrlAngle(),
+      startAngleSum = 0,
+      endAngleSum = 0,
+      flows = model.getFlows(),
+      i, j, f, fStart, fEnd, fStartToCtrlAngle, d, fEndToCtrlAngle,
+      startVectorLength, endVectorLength, startDir, endDir,
+      startTangentX, startTangentY, endTangentX, endTangentY,
+      angularDistributionWeight, vectX, vectY, force, K, d1, d2,
+      lmax, l;
 
         // Iterate over flows
         for (i = 0, j = flows.length; i < j; i += 1) {
             f = flows[i];
             if ( f !== flow) {
                 fStart = f.getStartPt();
-	            fEnd = f.getEndPt();
-	
-	            if (startPoint === fStart) {
-	                fStartToCtrlAngle = f.startToCtrlAngle();
-	                d = angleDif(startToCtrlAngle, fStartToCtrlAngle);
-	                startAngleSum += angularW(d);
-	            }
-	
-	            if (startPoint === fEnd) {
-	                fEndToCtrlAngle = f.endToCtrlAngle();
-	                d = angleDif(startToCtrlAngle, fEndToCtrlAngle);
-	                startAngleSum += angularW(d);
-	            }
-	
-	            if (endPoint === fStart) {
-	                fStartToCtrlAngle = f.startToCtrlAngle();
-	                d = angleDif(endToCtrlAngle, fStartToCtrlAngle);
-	                endAngleSum += angularW(d);
-	            }
-	
-	            if (endPoint === fEnd) {
-	                fEndToCtrlAngle = f.endToCtrlAngle();
-	                d = angleDif(endToCtrlAngle, fEndToCtrlAngle);
-	                endAngleSum += angularW(d);
-	            }
+              fEnd = f.getEndPt();
+  
+              if (startPoint === fStart) {
+                  fStartToCtrlAngle = f.startToCtrlAngle();
+                  d = angleDif(startToCtrlAngle, fStartToCtrlAngle);
+                  startAngleSum += angularW(d);
+              }
+  
+              if (startPoint === fEnd) {
+                  fEndToCtrlAngle = f.endToCtrlAngle();
+                  d = angleDif(startToCtrlAngle, fEndToCtrlAngle);
+                  startAngleSum += angularW(d);
+              }
+  
+              if (endPoint === fStart) {
+                  fStartToCtrlAngle = f.startToCtrlAngle();
+                  d = angleDif(endToCtrlAngle, fStartToCtrlAngle);
+                  endAngleSum += angularW(d);
+              }
+  
+              if (endPoint === fEnd) {
+                  fEndToCtrlAngle = f.endToCtrlAngle();
+                  d = angleDif(endToCtrlAngle, fEndToCtrlAngle);
+                  endAngleSum += angularW(d);
+              }
             }
         }
 
@@ -527,250 +530,250 @@ Flox.FlowLayouter = function (model) {
         force.scale(angularDistributionWeight);
         
         if(isNaN(force.fx)){
-			console.log("NaN in computeAngularDistributionForce!");
+      console.log("NaN in computeAngularDistributionForce!");
         }
         
         if(isNaN(force.fy)){
-			console.log("NaN in computeAngularDistributionForce!");
+      console.log("NaN in computeAngularDistributionForce!");
         }
         
         return force;
     }
 
-	/**
-	 * Performs s single iteration of the force-directed layout method.
+  /**
+   * Performs s single iteration of the force-directed layout method.
      * @param weight Number from 0 to 1, determines strength of forces in 
-	 * this iteration.
-	 */
-    function layoutAllFlows(weight) {
-		
-		var forces = [],
-			flows = model.getFlows(),
-			i, j, 
-			maxFlowLength = model.settings.maxFlowLength,
-			angularDistForces = [],
-			flowID, flow, fnew, f, ctrlPt, angularDistWeight, angularDistForce,
-			newCPtX, newCPtY, tempPoint,
-			activeModel;
-		
-		for (i=0, j = flows.length; i < j; i += 1) {
-            forces.push(new Force(0,0));
-        }
-		
-        // If there are less than 2 flows, do nothing.
-        if (flows.length===undefined || flows.length < 2) {
-            console.log("There are fewer than 2 flows");
-            return;
-        }
-
-        // Create points along flows
-        model.cacheAllFlowLineSegments();
-        model.cacheAllFlowBoundingBoxes();
-
-		if(model.settings.drawArrows) {
-			configureArrows();
-		}
-
-        // Angular distribution forces
-        for (i = 0, j = flows.length; i < j; i += 1) {
-			angularDistForces.push(new Force(0,0));
-        }
-
-        // Iterate through the Flows
-        for (flowID = 0; flowID < flows.length; flowID += 1) {
-
-            flow = flows[flowID];
-            
-            if(!flow.isLocked()) {
-				// compute the force exerted by flows and nodes
-	            fnew = computeForceOnFlow(flow, maxFlowLength); 
-	
-	            f = forces[flowID];
-
-	            f.fx = fnew.fx;
-	            f.fy = fnew.fy;
-	
-				angularDistForces[flowID] = computeAngularDistributionForce(flow);
-            }   
-        }
-
-        // Apply forces onto control points of each flow
-        // iterate over flows again
-        for (i = 0, j = flows.length; i < j; i += 1) {
-            flow = flows[i];
-            if(!flow.isLocked()) {
-                ctrlPt = flow.getCtrlPt();
-	
-	            f = forces[i];
-	
-	            // Add the forces to the control point of the flow
-	            ctrlPt.x = ctrlPt.x + weight * f.fx;
-	            ctrlPt.y = ctrlPt.y + weight * f.fy;
-	
-				// Angular distribution weight gets larger with each iteration.
-	            angularDistWeight = weight * (1 - weight);
-	            angularDistForce = angularDistForces[i];				
-
-	            ctrlPt.x = ctrlPt.x + angularDistWeight * angularDistForce.fx;
-	            ctrlPt.y = ctrlPt.y + angularDistWeight * angularDistForce.fy;
-	
-	            if(model.settings.enforceRangebox) {	                
-	                flow.enforceRangebox(model.settings.flowRangeboxHeight);
-	            }
-	            
-	            // reset the latLng of ctrlPt
-	            ctrlPt.lat = undefined;
-	            ctrlPt.lng = undefined;
-            }
-        }
-    }  
-	
-    /**
-     * Sets the control point of each flow to the middle of a straight line 
-     * connecting the start and end points
-     * 
-     * @param onlySelected Boolean, true if only selected flows should be 
-     * straightened
-     */
-    function straightenFlows(onlySelected) {
-        var flows = model.getFlows(),
-        i, j;
-        for (i = 0, j = flows.length; i < j; i += 1) {			
-			if(!onlySelected || (onlySelected && flows[i].isSelected())) {
-				flows[i].straighten();
-			}
-        }
+   * this iteration.
+   */
+  function layoutAllFlows(weight) {
+    
+    var forces = [],
+      flows = model.getFlows(),
+      i, j, 
+      maxFlowLength = model.settings.maxFlowLength,
+      angularDistForces = [],
+      flowID, flow, fnew, f, ctrlPt, angularDistWeight, angularDistForce,
+      newCPtX, newCPtY, tempPoint,
+      activeModel;
+    
+    for (i=0, j = flows.length; i < j; i += 1) {
+        forces.push(new Force(0,0));
+    }
+    
+    // If there are less than 2 flows, do nothing.
+    if (flows.length===undefined || flows.length < 2) {
+        console.log("There are fewer than 2 flows");
+        return;
     }
 
-	function getDistanceToLine(x, y, x0, y0, x1, y1) {
-        var distToLine = (Math.abs((y0 - y1) * x + (x1 - x0) * y + (x0 * y1 - x1 * y0))
-                / (Math.sqrt(((x1 - x0) * (x1 - x0)) + ((y1 - y0) * (y1 - y0)))));
+    // Create points along flows
+    model.cacheAllFlowLineSegments();
+    model.cacheAllFlowBoundingBoxes();
+
+    if(model.settings.drawArrows) {
+      configureArrows();
+    }
+
+    // Angular distribution forces
+    for (i = 0, j = flows.length; i < j; i += 1) {
+      angularDistForces.push(new Force(0,0));
+    }
+
+    // compute the force exerted by flows and nodes
+    for (flowID = 0; flowID < flows.length; flowID += 1) {
+      flow = flows[flowID];
+      if(!flow.isLocked()) {
+        
+        fnew = computeForceOnFlow(flow, maxFlowLength); 
+        f = forces[flowID];
+        f.fx = fnew.fx;
+        f.fy = fnew.fy;
+        angularDistForces[flowID] = computeAngularDistributionForce(flow);
+      }   
+    }
+
+    // Apply forces onto control points of each flow
+    // iterate over flows again
+    var enforcer = new Flox.RangeboxEnforcer(model);
+
+    for (i = 0, j = flows.length; i < j; i += 1) {
+      flow = flows[i];
+      if(!flow.isLocked()) {
+        ctrlPt = flow.getCtrlPt();
+
+        f = forces[i];
+
+        // Add the forces to the control point of the flow
+        ctrlPt.x = ctrlPt.x + weight * f.fx;
+        ctrlPt.y = ctrlPt.y + weight * f.fy;
+
+        // Angular distribution weight gets larger with each iteration.
+        angularDistWeight = weight * (1 - weight);
+        angularDistForce = angularDistForces[i];        
+
+        ctrlPt.x = ctrlPt.x + angularDistWeight * angularDistForce.fx;
+        ctrlPt.y = ctrlPt.y + angularDistWeight * angularDistForce.fy;
+
+        if(model.settings.enforceRangebox) {
+            enforcer.enforceFlowControlPointRange(flow);
+        }
+        
+        // reset the latLng of ctrlPt
+        ctrlPt.lat = undefined;
+        ctrlPt.lng = undefined;
+      }
+    }
+
+
+
+  }  
+  
+  /**
+   * Sets the control point of each flow to the middle of a straight line 
+   * connecting the start and end points
+   * 
+   * @param onlySelected Boolean, true if only selected flows should be 
+   * straightened
+   */
+  function straightenFlows(onlySelected) {
+      var flows = model.getFlows(),
+      i, j;
+      for (i = 0, j = flows.length; i < j; i += 1) {      
+    if(!onlySelected || (onlySelected && flows[i].isSelected())) {
+      flows[i].straighten();
+    }
+      }
+  }
+
+  function getDistanceToLine(x, y, x0, y0, x1, y1) {
+        var distToLine = (Math.abs((y0 - y1) * x + (x1 - x0) * y 
+          + (x0 * y1 - x1 * y0)) / (Math.sqrt(((x1 - x0) 
+          * (x1 - x0)) + ((y1 - y0) * (y1 - y0)))));
         return isNaN(distToLine) ? 0 : distToLine;
     }
-	
-	function getDistanceFromCtrlPtToBaseline(flow) {
-		// Collect needed points from the flow
+  
+  function getDistanceFromCtrlPtToBaseline(flow) {
+    // Collect needed points from the flow
         var cPt = flow.getCtrlPt(),
-			sPt = flow.getStartPt(),
-			ePt = flow.getEndPt();
+      sPt = flow.getStartPt(),
+      ePt = flow.getEndPt();
         
-		return getDistanceToLine(cPt.x, cPt.y, 
+    return getDistanceToLine(cPt.x, cPt.y, 
                                   sPt.x, sPt.y, 
                                   ePt.x, ePt.y);
-	}
+  }
 
-	function flowIntersectsNode(flow, node) {
-		var flowStrokeWidth = model.getFlowStrokeWidth(flow),
-			nodeRadius = node.r 
-		                     + (model.settings.minObstacleDistPx 
-		                     / model.settings.scaleMultiplier),
-			threshDist =  nodeRadius + (flowStrokeWidth/2),
-			// how far is the node from the flow?
-			shortestDist = flow.distance({x: node.x, y: node.y});
-		return (shortestDist < threshDist);
-	}
+  function flowIntersectsNode(flow, node) {
+    var flowStrokeWidth = model.getFlowStrokeWidth(flow),
+      nodeRadius = node.r + (model.settings.minObstacleDistPx / model.settings.scaleMultiplier),
+      threshDist =  nodeRadius + (flowStrokeWidth/2),
+      // how far is the node from the flow?
+      shortestDist = flow.distance({x: node.x, y: node.y});
+    return (shortestDist < threshDist);
+  }
 
-	function getObstacles() {
-		var nodes = model.getPoints(),
-			arrows,
-			centroid,
-			rPx,
-			dx,
-			dy,
-			nodeObstacles = [],
-			arrowObstacles = [],
-			returnObstacles = [],
-			i, j, node, arrow, radius, 
-			flows = model.getLargestFlows(), // Assumed these all have arrows
-			flow;
-			
-		for(i = 0, j = nodes.length; i < j; i += 1) {
-			node = nodes[i];
-			// need the radius of node... Unless it's a necklace node.
-			if(node.necklaceMapNode) { // it already has an r
-				radius = node.r;
-			} else {
-				radius = model.getNodeRadius(node);
-			}
-			nodeObstacles.push({x: node.x, y: node.y, r: radius, node: node,
-								type: "node"});
-		}
-		
-		// Arrows are obstacles
-		if(model.settings.drawArrows) {
-			for(i = 0; i < flows.length; i += 1) {
-				flow = flows[i];
-				arrow = flow.getArrow();
-				centroid = flow.getArrowCentroid();
-				
-				dx = centroid.x - arrow.tipPt.x;
-				dy = centroid.y - arrow.tipPt.y;
-				rPx = Math.sqrt(dx * dx + dy * dy);
-				
-				arrowObstacles.push({x: centroid.x, y: centroid.y, 
-									r: rPx,
-									node: flow.getEndPt(),
-									type: "arrow"});
+  function getObstacles() {
+    var nodes = model.getPoints(),
+      arrows,
+      centroid,
+      rPx,
+      dx,
+      dy,
+      nodeObstacles = [],
+      arrowObstacles = [],
+      returnObstacles = [],
+      i, j, node, arrow, radius, 
+      flows = model.getLargestFlows(), // Assumed these all have arrows
+      flow;
+      
+    for(i = 0, j = nodes.length; i < j; i += 1) {
+      node = nodes[i];
+      // need the radius of node... Unless it's a necklace node.
+      if(node.necklaceMapNode) { // it already has an r
+        radius = node.r;
+      } else {
+        radius = model.getNodeRadius(node);
+      }
+      nodeObstacles.push({x: node.x, y: node.y, r: radius, node: node,
+                type: "node"});
+    }
+    
+    // Arrows are obstacles
+    if(model.settings.drawArrows) {
+      for(i = 0; i < flows.length; i += 1) {
+        flow = flows[i];
+        arrow = flow.getArrow();
+        centroid = flow.getArrowCentroid();
+        
+        dx = centroid.x - arrow.tipPt.x;
+        dy = centroid.y - arrow.tipPt.y;
+        rPx = Math.sqrt(dx * dx + dy * dy);
+        
+        arrowObstacles.push({x: centroid.x, y: centroid.y, 
+                  r: rPx,
+                  node: flow.getEndPt(),
+                  type: "arrow"});
 
-			}
-		}
-		
-		
-		if(model.settings.moveFlowsOffNodes) {
-			returnObstacles = returnObstacles.concat(nodeObstacles);
-		}
-		
-		if(model.settings.moveFlowsOffArrowheads) {
-			returnObstacles = returnObstacles.concat(arrowObstacles);
-		}
-		
-		return returnObstacles;
-	}
+      }
+    }
+    
+    
+    if(model.settings.moveFlowsOffNodes) {
+      returnObstacles = returnObstacles.concat(nodeObstacles);
+    }
+    
+    if(model.settings.moveFlowsOffArrowheads) {
+      returnObstacles = returnObstacles.concat(arrowObstacles);
+    }
+    
+    return returnObstacles;
+  }
 
-	function flowIntersectsObstacle(flow, obstacles) {
-		var i, j, obs;
-		for(i = 0, j = obstacles.length; i < j; i += 1) {
-			obs = obstacles[i];
-			if(obs.node !== flow.getEndPt() && obs.node !== flow.getStartPt()) {
-				if(flowIntersectsNode(flow, obs)) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+  function flowIntersectsObstacle(flow, obstacles) {
+    var i, j, obs;
+    for(i = 0, j = obstacles.length; i < j; i += 1) {
+      obs = obstacles[i];
+      if(obs.node !== flow.getEndPt() && obs.node !== flow.getStartPt()) {
+        if(flowIntersectsNode(flow, obs)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 
-	function longestDistanceSqToCorner(box, x, y) {
-		var maxDistSq = 0,
-			i, corner, dx, dy, distSq;
-			
-		for(i = 0; i < box.length; i += 1) {
-			corner = box[i];
-			dx = x - corner.x;
-			dy = y - corner.y;
-			distSq = dx * dx + dy * dy;
-			if (distSq > maxDistSq) {
+  function longestDistanceSqToCorner(box, x, y) {
+    var maxDistSq = 0,
+      i, corner, dx, dy, distSq;
+      
+    for(i = 0; i < box.length; i += 1) {
+      corner = box[i];
+      dx = x - corner.x;
+      dy = y - corner.y;
+      distSq = dx * dx + dy * dy;
+      if (distSq > maxDistSq) {
                 maxDistSq = distSq;
             }
-		}
-		return maxDistSq;
-	}
+    }
+    return maxDistSq;
+  }
 
-	function isPointInBox(box, x, y) {
-		
-	}
 
-	function moveFlowIntersectingObstaclesSPIRAL(flow, obstacles) {
-		var dist = model.settings.SPIRAL_SPACING_PX * model.settings.scaleMultiplier,
-			cPt = flow.getCtrlPt(),
-			originalX = cPt.x,
-			originalY = cPt.y,
-			angleRad = Math.PI,
-			rangeboxHeight = model.settings.flowRangeboxHeight,
-			rangebox = flow.computeRangebox(rangeboxHeight),
-			maxSpiralRSq = longestDistanceSqToCorner(rangebox, cPt.x, cPt.y),
-			spiralR, dx, dy;
-		do {
+  function moveFlowIntersectingObstaclesSPIRAL(flow, obstacles) {
+    var dist = model.settings.SPIRAL_SPACING_PX * model.settings.scaleMultiplier,
+      cPt = flow.getCtrlPt(),
+      originalX = cPt.x,
+      originalY = cPt.y,
+      angleRad = Math.PI,
+      rangeboxHeight = model.settings.flowRangeboxHeight,
+      enforcer = new Flox.RangeboxEnforcer(model),
+      rangebox = enforcer.computeRangebox(flow),
+      maxSpiralRSq = enforcer.longestDistanceSqToCorner(rangebox, cPt.x, cPt.y),
+      spiralR, 
+      
+      dx, 
+      dy;
+    do {
             // radius of spiral for the current angle.
             // The distance between two windings is dist.
             spiralR = dist * angleRad / Math.PI / 2;
@@ -785,7 +788,7 @@ Flox.FlowLayouter = function (model) {
             // has an approximate distance of dist to the current point
             angleRad += dist / spiralR;
 
-            if (flow.isPointInRangebox(rangeboxHeight, cPt.x, cPt.y)
+            if (enforcer.isPointInRangebox(flow, cPt.x, cPt.y)
                     && flowIntersectsObstacle(flow, obstacles) === false) {
                 // found a new position for the control point that does not 
                 // result in an overlap with any obstacle
@@ -804,27 +807,27 @@ Flox.FlowLayouter = function (model) {
         flow.unmoveable = true;
         
         console.log("Spiral Method did not find a solution");
-	}
+  }
 
-	function moveFlowIntersectingObstacles(flow, obstacles) {
-		
-		// Collect needed points from the flow
+  function moveFlowIntersectingObstacles(flow, obstacles) {
+    
+    // Collect needed points from the flow
         var cPt = flow.getCtrlPt(),
-			sPt = flow.getStartPt(),
-			ePt = flow.getEndPt(),
-			
-			// Get the distance of startPt to endPt
-			dx = ePt.x - sPt.x,
-			dy = ePt.y - sPt.y,
-			dist = Math.sqrt(dx * dx + dy * dy),
-			rightPt, rightPtD, pt0D, 
-			unitVectorX, unitVectorY,
-			maxDist, startingXY, flipCount,
-			distFromBaseline, 
-			newX, newY,
-			nodeObstacles = [],
-			arrowObstacles = [],
-			i, obs;
+      sPt = flow.getStartPt(),
+      ePt = flow.getEndPt(),
+      
+      // Get the distance of startPt to endPt
+      dx = ePt.x - sPt.x,
+      dy = ePt.y - sPt.y,
+      dist = Math.sqrt(dx * dx + dy * dy),
+      rightPt, rightPtD, pt0D, 
+      unitVectorX, unitVectorY,
+      maxDist, startingXY, flipCount,
+      distFromBaseline, 
+      newX, newY,
+      nodeObstacles = [],
+      arrowObstacles = [],
+      i, obs;
         
         // Create a point known to be on the right side of the line.
         if (dy > 0) {
@@ -845,11 +848,11 @@ Flox.FlowLayouter = function (model) {
         // negative. This will allow us to find out.
         rightPtD = (rightPt.x - sPt.x) * (ePt.y - sPt.y) 
                        - (rightPt.y - sPt.y) * (ePt.x - sPt.x);
-		
-		// Get the d value of the flow's control point.
+    
+    // Get the d value of the flow's control point.
         pt0D = (cPt.x - sPt.x) * (ePt.y - sPt.y) 
                    - (cPt.y - sPt.y) * (ePt.x - sPt.x);
-		
+    
         // Assign the perpendicular unitVector of the flow's baseline.
         // The values assigned to these will depend on whether the control
         // point is on the right or left side of the baseline.
@@ -877,145 +880,136 @@ Flox.FlowLayouter = function (model) {
         flipCount = 0;
         
         for(i = 0; i < obstacles.length; i += 1) {
-			obs = obstacles[i];
-			if(obs.type === "node") {
-				nodeObstacles.push(obs);
-			}
-			if(obs.type === "arrow") {
-				arrowObstacles.push(obs);
-			}
+      obs = obstacles[i];
+      if(obs.type === "node") {
+        nodeObstacles.push(obs);
+      }
+      if(obs.type === "arrow") {
+        arrowObstacles.push(obs);
+      }
         }
         
         if(flow.cannotBeMovedOffNodes) {
-			obstacles = arrowObstacles;
+      obstacles = arrowObstacles;
         }
         
         while(flipCount < 3 && (flowIntersectsObstacle(flow, obstacles))) {
-			distFromBaseline = getDistanceFromCtrlPtToBaseline(flow);
-			if(distFromBaseline > dist * model.settings.flowRangeboxHeight) { // FIXME 2 could equal rangebox height
-				// move cPt to baseline, reverse polarity
-				cPt.x = flow.getBaselineMidPoint().x;
-	            cPt.y = flow.getBaselineMidPoint().y;
-	            unitVectorX *= -1;
-	            unitVectorY *= -1;
-	            flipCount += 1;
-	            //continue;
-			} else {
-				// Add the unitVectors to the control point. Also, multiply the
-		        // unitVectors by 2. This will cut the iterations in half without
-		        // losing significant fidelity. 
-		        newX = cPt.x + ((unitVectorX / model.settings.scaleMultiplier) * 2);
-		        newY = cPt.y + ((unitVectorY / model.settings.scaleMultiplier) * 2);
-		        cPt.x = newX;
-		        cPt.y = newY;
-	       }
+      distFromBaseline = getDistanceFromCtrlPtToBaseline(flow);
+      if(distFromBaseline > dist * model.settings.flowRangeboxHeight) { // FIXME 2 could equal rangebox height
+        // move cPt to baseline, reverse polarity
+        cPt.x = flow.getBaselineMidPoint().x;
+              cPt.y = flow.getBaselineMidPoint().y;
+              unitVectorX *= -1;
+              unitVectorY *= -1;
+              flipCount += 1;
+              //continue;
+      } else {
+        // Add the unitVectors to the control point. Also, multiply the
+            // unitVectors by 2. This will cut the iterations in half without
+            // losing significant fidelity. 
+            newX = cPt.x + ((unitVectorX / model.settings.scaleMultiplier) * 2);
+            newY = cPt.y + ((unitVectorY / model.settings.scaleMultiplier) * 2);
+            cPt.x = newX;
+            cPt.y = newY;
+         }
         }
         
         // Try again, but with nust the nodes?
         // FIXME repeated code
         if(!flow.cannotBeMovedOffNodes) {
-			while(flipCount < 5 && (flowIntersectsObstacle(flow, nodeObstacles))) {
-				distFromBaseline = getDistanceFromCtrlPtToBaseline(flow);
-				if(distFromBaseline > dist * model.settings.flowRangeboxHeight) {
-					// move cPt to baseline, reverse polarity
-					cPt.x = flow.getBaselineMidPoint().x;
-		            cPt.y = flow.getBaselineMidPoint().y;
-		            unitVectorX *= -1;
-		            unitVectorY *= -1;
-		            flipCount += 1;
-		            //continue;
-				} else {
-					// Add the unitVectors to the control point. Also, multiply the
-			        // unitVectors by 2. This will cut the iterations in half without
-			        // losing significant fidelity. 
-			        newX = cPt.x + ((unitVectorX / model.settings.scaleMultiplier) * 2);
-			        newY = cPt.y + ((unitVectorY / model.settings.scaleMultiplier) * 2);
-			        cPt.x = newX;
-			        cPt.y = newY;
-		       }
-		    }
+      while(flipCount < 5 && (flowIntersectsObstacle(flow, nodeObstacles))) {
+        distFromBaseline = getDistanceFromCtrlPtToBaseline(flow);
+        if(distFromBaseline > dist * model.settings.flowRangeboxHeight) {
+          // move cPt to baseline, reverse polarity
+          cPt.x = flow.getBaselineMidPoint().x;
+                cPt.y = flow.getBaselineMidPoint().y;
+                unitVectorX *= -1;
+                unitVectorY *= -1;
+                flipCount += 1;
+                //continue;
+        } else {
+          // Add the unitVectors to the control point. Also, multiply the
+              // unitVectors by 2. This will cut the iterations in half without
+              // losing significant fidelity. 
+              newX = cPt.x + ((unitVectorX / model.settings.scaleMultiplier) * 2);
+              newY = cPt.y + ((unitVectorY / model.settings.scaleMultiplier) * 2);
+              cPt.x = newX;
+              cPt.y = newY;
+           }
+        }
        } else {
-       		flipCount = 5;
+          flipCount = 5;
        }
 
         // If the flipcount is 3 or more, then no solution was found.
         // Move the cPt back to its original position. 
         if (flipCount >= 5) {
-			console.log("Found a flow that was impossible to move off all obstacles.");
-			cPt.x = startingXY.x;
-	        cPt.y = startingXY.y;
-	        flow.cannotBeMovedOffNodes = true;
+      console.log("Found a flow that was impossible to move off all obstacles.");
+      cPt.x = startingXY.x;
+          cPt.y = startingXY.y;
+          flow.cannotBeMovedOffNodes = true;
         } else {
-			flow.setLocked(true);
+      flow.setLocked(true);
         }
-	}
+  }
 
-	function getFlowsOverlappingObstacles(obstacles) {
-		var flows = model.getFlows(),
-			intersectingFlows = [],
-			i, j, flow, node, obstacle;
-			
-		for(i = 0; i < flows.length; i += 1) {
-			flow = flows[i];
-			if(flow.unmoveable !== true) {
-				for(j = 0; j < obstacles.length; j += 1) {
-					obstacle = obstacles[j];
-					node = obstacle.node;
-					if(node !== flow.getStartPt() && node !== flow.getEndPt()) {
-						if(flowIntersectsNode(flow, obstacle)) {
-							intersectingFlows.push(flow);
-						}
-					}
-				}
-			}
-		}
-		return intersectingFlows;
-	}
+  function getFlowsOverlappingObstacles(obstacles) {
+    var flows = model.getFlows(),
+      intersectingFlows = [],
+      i, j, flow, node, obstacle;
+      
+    for(i = 0; i < flows.length; i += 1) {
+      flow = flows[i];
+      if(flow.unmoveable !== true) {
+        for(j = 0; j < obstacles.length; j += 1) {
+          obstacle = obstacles[j];
+          node = obstacle.node;
+          if(node !== flow.getStartPt() && node !== flow.getEndPt()) {
+            if(flowIntersectsNode(flow, obstacle)) {
+              intersectingFlows.push(flow);
+            }
+          }
+        }
+      }
+    }
+    return intersectingFlows;
+  }
 
-	function moveFlowsIntersectingNodes(){
-		// Get flows that overlap a node. 
-		var obstacles, flowsOverlappingObstacles, i, j;
-		
-		obstacles = getObstacles();
-		
-		flowsOverlappingObstacles = getFlowsOverlappingObstacles(obstacles);
-		
-		for(i = 0, j = flowsOverlappingObstacles.length; i < j; i += 1) {
-			
-			if(model.settings.useSpiralMethod) {
-				moveFlowIntersectingObstaclesSPIRAL(flowsOverlappingObstacles[i], obstacles);
-			} else {
-				moveFlowIntersectingObstacles(flowsOverlappingObstacles[i], obstacles);
-			}
-		}		
-	}
+  function moveFlowsIntersectingNodes(){
+    // Get flows that overlap a node. 
+    var obstacles, flowsOverlappingObstacles, i, j;
+    
+    obstacles = getObstacles();
+    
+    flowsOverlappingObstacles = getFlowsOverlappingObstacles(obstacles);
+    
+    for(i = 0, j = flowsOverlappingObstacles.length; i < j; i += 1) {
+      
+      if(model.settings.useSpiralMethod) {
+        moveFlowIntersectingObstaclesSPIRAL(flowsOverlappingObstacles[i], obstacles);
+      } else {
+        moveFlowIntersectingObstacles(flowsOverlappingObstacles[i], obstacles);
+      }
+    }   
+  }
+
+  function layoutIteration(iteration, iterBeforeMovingFlowsOffObstacles, canvas) {
+    console.log(1 + iteration + "/" + model.settings.NBR_ITERATIONS);
+
+    model.invalidateCachedValues();
+
+
+
+  }
 
 // PUBLIC ======================================================================
 
-    my.createForce = function(fx, fy) {
-        return new Force(fx, fy);
-    };
-
-    my.makeForce = function(fx,fy) {
-        return new Force(fx, fy);
-    };
-
-    my.layoutAllFlows = function(weight) {
-        layoutAllFlows(weight);
-    };
-
-    my.straightenFlows = function(boo) {
-        straightenFlows(boo);
-    };
-    
-    my.moveFlowsIntersectingNodes = function() {
-		moveFlowsIntersectingNodes();
-    };
-
-	my.getObstacles = function() {
-		return getObstacles();
-	};
-
-	return my;
+  return {
+    layoutAllFlows: layoutAllFlows,
+    straightenFlows: straightenFlows,
+    moveFlowsIntersectingNodes: moveFlowsIntersectingNodes,
+    getObstacles: getObstacles,
+    layoutIteration: layoutIteration
+  }
 
 };
