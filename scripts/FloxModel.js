@@ -30,6 +30,8 @@ Flox.Model = function() {
 			multipleIterations : true,// match
 			NBR_ITERATIONS : 100,// match
 			maxFlows : 50,
+
+			resolveIntersectionsForSiblingFlows: true,
 			
 			liveDrawing: true,
 			layoutFlows: true,
@@ -637,11 +639,20 @@ Flox.Model = function() {
 		return Flox.ColorUtils.blend(minFlowColor, maxFlowColor, w);
 	}
 
+	function invalidateCachedValues() {
+		for(var i = 0; i < flows.length; i += 1) {
+			flows[i].invalidateCachedValues();
+		}
+	}
+
 // PUBLIC ======================================================================
-	
-	my.getRelativeFlowValue = function(flow) {
-		return getRelativeFlowValue(flow);
-	};
+	my.invalidateCachedValues = invalidateCachedValues;
+
+	my.getRelativeFlowValue = getRelativeFlowValue;
+
+	// my.getRelativeFlowValue = function(flow) {
+	// 	return getRelativeFlowValue(flow);
+	// };
 	
 	my.getNodeRadius = function (node) {
 		return getNodeRadius(node);
@@ -678,117 +689,6 @@ Flox.Model = function() {
 		for(i = 0, j = flows.length; i < j; i += 1) {
 			flows[i].cacheBoundingBox();
 		}
-	};
-
-	
-
-	// Convert the nodes into json readable by the editableTable.js library
-	/**
-	 * @param editable Boolean determining whether the table is editable.
-	 */
-	my.getNodeTable = function (editable) {
-		var data = [],
-			metadata = [],
-			i, j, node;
-			
-		metadata.push({ 
-			name: "id", 
-			label: "ID", 
-			datatype: "string", 
-			editable: false});
-		metadata.push({ 
-			name: "lat", 
-			label: "LAT", 
-			datatype: "double", 
-			editable: true});
-		metadata.push({ 
-			name: "lng", 
-			label: "LNG", 
-			datatype: "double", 
-			editable: true});
-		metadata.push({ 
-			name: "value", 
-			label: "VALUE", 
-			datatype: "double", 
-			decimal_point: '.',
-			thousands_separator: ',',
-			editable: true});
-		metadata.push({ 
-			name: "action", 
-			label: " ", 
-			datatype: "html", 
-			editable: false});
-			
-			
-		for (i = 0, j = nodes.length; i < j; i += 1) {
-			node = nodes[i];
-			if(!node.id) {
-				node.id = i;
-			}
-			data.push({
-				id: node.id,
-				values: {
-					"id": node.id,
-					"lat": node.lat,
-					"lng": node.lng,
-					"value": node.value
-				}
-			});
-		}
-		return {"metadata": metadata, "data": data};
-	};
-
-	my.getFlowTable = function () {
-		var data = [],
-			metadata = [],
-			i, j, flow;
-			
-		metadata.push({ 
-			name: "id", 
-			label: "ID", 
-			datatype: "string", 
-			editable: false});
-		metadata.push({ 
-			name: "start", 
-			label: "START", 
-			datatype: "string", 
-			editable: false});
-		metadata.push({ 
-			name: "end", 
-			label: "END", 
-			datatype: "string", 
-			editable: false});
-		metadata.push({ 
-			name: "value", 
-			label: "VALUE", 
-			datatype: "double", 
-			decimal_point: '.',
-			thousands_separator: ',',
-			editable: true});
-		metadata.push({ 
-			name: "action", 
-			label: " ", 
-			datatype: "html", 
-			editable: false});
-			
-		for (i = 0, j = flows.length; i < j; i += 1) {
-			flow = flows[i];
-			if(isNaN(flow.getId())) {
-				flow.setId(i);
-			}
-			data.push({
-				id: flow.getId(),
-				values: {
-					"id": flow.getId(),
-					"start": flow.getStartPt().id,
-					"end": flow.getEndPt().id,
-					"value": flow.getValue()
-				}
-			});
-		}
-		
-		
-		return {"metadata": metadata, "data": data};
 	};
 	
 	my.getLocks = function() {

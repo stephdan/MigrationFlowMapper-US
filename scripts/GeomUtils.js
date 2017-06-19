@@ -246,7 +246,7 @@ function det(a,b,c,d) {
 	return a * d - b * c;
 }
 
-function getLineLineIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
+function getLineLineIntersection(x1, y1, x2, y2, x3, y3, x4, y4, xy) {
 	var det1And2 = det(x1, y1, x2, y2),
 		det3And4 =det(x3, y3, x4, y4),
 		x1LessX2 = x1 - x2,
@@ -265,7 +265,12 @@ function getLineLineIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
     y1 = (det(det1And2, y1LessY2,
             det3And4, y3LessY4) / det1Less2And3Less4);
     
-    
+    if(typeof xy !== "undefined") {
+      xy.x = x1;
+      xy.y = y1;
+      return xy;
+    }
+
     return {x: x1, y: y1};
 }
 
@@ -435,8 +440,8 @@ my.linesIntersect = function(x1, y1, x2, y2, x3, y3, x4, y4) {
 	return linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4);
 };
 
-my.getLineLineIntersection = function(x1, y1, x2, y2, x3, y3, x4, y4) {
-	return getLineLineIntersection(x1, y1, x2, y2, x3, y3, x4, y4);
+my.getLineLineIntersection = function(x1, y1, x2, y2, x3, y3, x4, y4, xy) {
+	return getLineLineIntersection(x1, y1, x2, y2, x3, y3, x4, y4, xy);
 };
 
 my.getDistanceToQuadraticBezierCurve = function(p0x, p0y, p1x, p1y, p2x, p2y, xy) {

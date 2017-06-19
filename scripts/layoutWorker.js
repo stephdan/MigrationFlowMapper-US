@@ -6,7 +6,9 @@ importScripts("Flox.js",
 			  "Flow.js",
 			  "FloxModel.js",
 			  "ModelFilter.js",
-			  "FlowLayouter.js");
+			  "FlowLayouter.js",
+        "RangeboxEnforcer.js",
+        "GeomUtils.js");
 
 var model;
 
